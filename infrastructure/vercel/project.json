@@ -1,0 +1,45 @@
+{
+  "name": "freelance-flow",
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm ci",
+  "devCommand": "npm run dev",
+  "env": [
+    {
+      "key": "NEXT_PUBLIC_SUPABASE_URL",
+      "target": ["production", "preview", "development"]
+    },
+    {
+      "key": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "target": ["production", "preview", "development"]
+    },
+    {
+      "key": "SUPABASE_SERVICE_ROLE_KEY",
+      "target": ["production", "preview", "development"]
+    },
+    {
+      "key": "OPENAI_API_KEY",
+      "target": ["production", "preview", "development"]
+    },
+    {
+      "key": "ENCRYPTION_KEY",
+      "target": ["production", "preview", "development"]
+    },
+    {
+      "key": "NEXTAUTH_URL",
+      "target": ["production", "preview"]
+    },
+    {
+      "key": "NEXTAUTH_SECRET",
+      "target": ["production", "preview", "development"]
+    }
+  ],
+  "regions": ["iad1"],
+  "functions": {
+    "pages/api/**/*.ts": {
+      "runtime": "nodejs18.x",
+      "maxDuration": 30
+    }
+  }
+}

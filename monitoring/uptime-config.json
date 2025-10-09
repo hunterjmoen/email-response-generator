@@ -1,0 +1,71 @@
+{
+  "name": "FreelanceFlow Uptime Monitoring",
+  "description": "Configuration for external uptime monitoring services",
+  "endpoints": [
+    {
+      "name": "Application Health",
+      "url": "https://your-domain.vercel.app/api/health",
+      "method": "GET",
+      "expectedStatus": 200,
+      "interval": "5m",
+      "timeout": "30s",
+      "alerts": {
+        "email": ["admin@your-domain.com"],
+        "webhook": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+      }
+    },
+    {
+      "name": "Main Landing Page",
+      "url": "https://your-domain.vercel.app",
+      "method": "GET",
+      "expectedStatus": 200,
+      "interval": "5m",
+      "timeout": "10s"
+    },
+    {
+      "name": "Authentication",
+      "url": "https://your-domain.vercel.app/auth/login",
+      "method": "GET",
+      "expectedStatus": 200,
+      "interval": "10m",
+      "timeout": "10s"
+    },
+    {
+      "name": "API Endpoints",
+      "url": "https://your-domain.vercel.app/api/trpc/auth.me",
+      "method": "POST",
+      "expectedStatus": [200, 401],
+      "interval": "10m",
+      "timeout": "15s",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  ],
+  "notifications": {
+    "downtime_threshold": "2m",
+    "recovery_notification": true,
+    "escalation_policy": {
+      "first_alert": "immediate",
+      "second_alert": "5m",
+      "final_alert": "15m"
+    }
+  },
+  "recommended_services": [
+    {
+      "name": "Uptime Robot",
+      "url": "https://uptimerobot.com",
+      "description": "Free uptime monitoring for up to 50 monitors"
+    },
+    {
+      "name": "Better Uptime",
+      "url": "https://betteruptime.com",
+      "description": "Advanced uptime monitoring with incident management"
+    },
+    {
+      "name": "Pingdom",
+      "url": "https://pingdom.com",
+      "description": "Comprehensive website monitoring and performance insights"
+    }
+  ]
+}
