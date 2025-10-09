@@ -1,7 +1,7 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { createClient } from '@supabase/supabase-js';
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
 import type { User } from '@freelance-flow/shared';
 import { createRateLimitMiddleware } from './middleware/rateLimit';
 
@@ -33,14 +33,15 @@ export const createContext = async (opts: CreateNextContextOptions): Promise<Con
     {
       cookies: {
         getAll() {
-          return Object.keys(req.cookies).map(name => ({
-            name,
-            value: req.cookies[name] || ''
-          }))
+          // Parse cookies from header string for Pages Router
+          const cookieHeader = req.headers.cookie || '';
+          return parseCookieHeader(cookieHeader);
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            res?.setHeader('Set-Cookie', `${name}=${value}; Path=/; ${options?.maxAge ? `Max-Age=${options.maxAge};` : ''} ${options?.httpOnly ? 'HttpOnly;' : ''} ${options?.secure ? 'Secure;' : ''} ${options?.sameSite ? `SameSite=${options.sameSite};` : ''}`)
+          // Set cookies using proper serialization
+          cookiesToSet.forEach((cookie) => {
+            const serialized = serializeCookieHeader(cookie.name, cookie.value, cookie.options);
+            res?.setHeader('Set-Cookie', serialized);
           })
         },
       },
@@ -50,6 +51,12 @@ export const createContext = async (opts: CreateNextContextOptions): Promise<Con
   try {
     // Get user from session cookie
     const { data: { user }, error } = await supabase.auth.getUser();
+
+    console.log('[tRPC Context] Session check:', {
+      hasUser: !!user,
+      userId: user?.id,
+      error: error?.message,
+    });
 
     if (error || !user) {
       return { req, res };
