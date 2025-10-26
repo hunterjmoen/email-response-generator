@@ -7,6 +7,8 @@ export const ResponseContextSchema = z.object({
   urgency: z.enum(['immediate', 'standard', 'non_urgent']),
   messageType: z.enum(['update', 'question', 'concern', 'deliverable', 'payment', 'scope_change']),
   customNotes: z.string().optional(),
+  clientName: z.string().optional(),
+  userName: z.string().optional(),
 });
 
 // Message input validation

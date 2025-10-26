@@ -16,7 +16,8 @@ export class AIResponseService {
    */
   static async generateResponses(
     originalMessage: string,
-    context: ResponseContext
+    context: ResponseContext,
+    styleProfile?: any
   ): Promise<AIResponseOptions[]> {
     try {
       const prompt = this.buildPrompt(originalMessage, context);
@@ -26,7 +27,7 @@ export class AIResponseService {
         messages: [
           {
             role: 'system',
-            content: this.getSystemPrompt(),
+            content: this.getSystemPrompt(styleProfile),
           },
           {
             role: 'user',
@@ -47,6 +48,16 @@ export class AIResponseService {
       return this.validateAndFormatResponse(parsedResponse);
     } catch (error: any) {
       console.error('AIResponseService: Error generating responses', error);
+
+      // Handle specific OpenAI errors with better messaging
+      if (error.status === 429) {
+        throw new Error('OpenAI quota exceeded. Please check your billing at https://platform.openai.com/account/billing');
+      }
+
+      if (error.status === 401) {
+        throw new Error('Invalid OpenAI API key. Please verify your OPENAI_API_KEY in .env.local');
+      }
+
       throw new Error(`AI response generation failed: ${error.message}`);
     }
   }
@@ -70,6 +81,8 @@ Requirements:
 - Generate exactly 2-3 response variations (brief, standard, detailed)
 - Each response should be professional and appropriate for the context
 - Vary the tone and length while maintaining professionalism
+${context.clientName ? `- Start each response with "Hello ${context.clientName}," or "Hi ${context.clientName}," depending on the tone` : '- Use an appropriate greeting'}
+${context.userName ? `- End each response with an appropriate sign-off using the name "${context.userName}" (e.g., "Best regards, ${context.userName}" or "Thanks, ${context.userName}" depending on tone)` : '- End with an appropriate professional sign-off'}
 - Include confidence scores (0-1) for each response
 - Provide brief reasoning for each response approach
 
@@ -80,9 +93,31 @@ Return responses in JSON format with the exact structure specified in the system
   /**
    * Get system prompt for consistent response formatting
    */
-  private static getSystemPrompt(): string {
+  private static getSystemPrompt(styleProfile?: any): string {
+    let styleInstructions = '';
+
+    if (styleProfile) {
+      styleInstructions = `
+
+IMPORTANT: You MUST adopt the following communication style, which has been learned from the user's past writing.
+This is not a suggestion, it is a requirement. The user has a specific style and you must match it.
+
+Communication Style Profile:
+- Overall Summary: ${styleProfile.summary}
+- Formality Level: ${styleProfile.formality}
+- Tone: ${styleProfile.tone}
+- Sentence Complexity: ${styleProfile.sentenceComplexity}
+- Common Phrases to use when appropriate: ${styleProfile.commonPhrases?.join(', ') || 'None identified'}
+- Structural Habits to follow: ${styleProfile.structuralHabits?.join('. ') || 'None identified'}
+- Emoji Usage: ${styleProfile.emojiUsage ? 'Use emojis where appropriate.' : 'Do not use emojis.'}
+
+When generating responses, carefully incorporate these style elements to match the user's natural writing voice.
+      `.trim();
+    }
+
     return `
 You are an expert freelancer communication assistant. Generate professional email/message responses that help freelancers communicate effectively with their clients.
+${styleInstructions}
 
 Always respond with valid JSON in this exact format:
 {
@@ -142,6 +177,8 @@ Guidelines:
     };
 
     return `
+${context.clientName ? `- Client Name: ${context.clientName}` : ''}
+${context.userName ? `- Your Name: ${context.userName}` : ''}
 - Urgency: ${descriptions.urgency[context.urgency]}
 - Message Type: ${descriptions.messageType[context.messageType]}
 - Relationship Stage: ${descriptions.relationshipStage[context.relationshipStage]}
@@ -193,7 +230,8 @@ ${context.customNotes ? `- Additional Context: ${context.customNotes}` : ''}
     originalMessage: string,
     context: ResponseContext,
     previousResponses: AIResponseOptions[],
-    refinementInstructions: string
+    refinementInstructions: string,
+    styleProfile?: any
   ): Promise<AIResponseOptions[]> {
     const refinedPrompt = `
 ${this.buildPrompt(originalMessage, context)}
@@ -213,7 +251,7 @@ Please generate improved responses based on the refinement feedback above.
         messages: [
           {
             role: 'system',
-            content: this.getSystemPrompt(),
+            content: this.getSystemPrompt(styleProfile),
           },
           {
             role: 'user',
@@ -234,6 +272,16 @@ Please generate improved responses based on the refinement feedback above.
       return this.validateAndFormatResponse(parsedResponse);
     } catch (error: any) {
       console.error('AIResponseService: Error during refinement', error);
+
+      // Handle specific OpenAI errors with better messaging
+      if (error.status === 429) {
+        throw new Error('OpenAI quota exceeded. Please check your billing at https://platform.openai.com/account/billing');
+      }
+
+      if (error.status === 401) {
+        throw new Error('Invalid OpenAI API key. Please verify your OPENAI_API_KEY in .env.local');
+      }
+
       throw new Error(`AI refinement failed: ${error.message}`);
     }
   }

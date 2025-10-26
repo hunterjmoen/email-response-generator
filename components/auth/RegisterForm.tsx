@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { RegisterSchema, type RegisterInput } from '@freelance-flow/shared';
 import { trpc } from '../../utils/trpc';
 import { useAuthStore } from '../../stores/auth';
+import { supabase } from '../../utils/supabase';
 
 interface RegisterFormProps {
   onSuccess?: () => void;
@@ -14,17 +15,38 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  
+  const [passwordChecks, setPasswordChecks] = useState({
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    special: false,
+  });
+
   const { setAuth } = useAuthStore();
   const registerMutation = trpc.auth.register.useMutation();
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<RegisterInput>({
     resolver: zodResolver(RegisterSchema),
   });
+
+  const passwordValue = watch('password');
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const password = e.target.value;
+    setPasswordChecks({
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[^A-Za-z0-9]/.test(password),
+    });
+  };
 
   const onSubmit = async (data: RegisterInput) => {
     setIsSubmitting(true);
@@ -33,15 +55,42 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
 
     try {
       const result = await registerMutation.mutateAsync(data);
-      
-      if (result.session) {
-        setAuth(result.user, result.session);
+
+      if (!result.session) {
+        console.error('[RegisterForm] No session returned from registration');
+        setSubmitError('Registration successful, but failed to log in automatically. Please try logging in manually.');
+        return;
       }
-      
+
+      // Update auth store - this now persists to localStorage via middleware
+      setAuth(result.user, result.session);
+
+      // Then set the session in Supabase client to store it in cookies
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: result.session.access_token,
+        refresh_token: result.session.refresh_token,
+      });
+
+      if (sessionError) {
+        console.error('[RegisterForm] Error setting session:', sessionError);
+        throw new Error('Failed to establish session. Please try again.');
+      }
+
       setSubmitMessage(result.message);
       onSuccess?.();
     } catch (error: any) {
-      setSubmitError(error.message || 'Registration failed. Please try again.');
+      console.error('[RegisterForm] Registration error:', error);
+
+      // Provide user-friendly error messages
+      if (error.message?.toLowerCase().includes('already registered')) {
+        setSubmitError('This email is already registered. Please log in instead.');
+      } else if (error.message?.toLowerCase().includes('invalid email')) {
+        setSubmitError('Please enter a valid email address.');
+      } else if (error.message?.toLowerCase().includes('password')) {
+        setSubmitError('Password must be at least 8 characters long.');
+      } else {
+        setSubmitError(error.message || 'Registration failed. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -133,14 +182,46 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                 Password
               </label>
               <input
-                {...register('password')}
+                {...register('password', {
+                  onChange: handlePasswordChange
+                })}
                 type="password"
                 autoComplete="new-password"
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                 placeholder="Minimum 8 characters"
               />
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+
+              {/* Real-time password strength indicator */}
+              {passwordValue && (
+                <div className="mt-3 space-y-2 p-3 bg-gray-50 rounded-md">
+                  <p className="text-xs font-medium text-gray-700">Password must contain:</p>
+                  <ul className="space-y-1.5">
+                    <li className={`flex items-center text-xs ${passwordChecks.length ? 'text-green-600' : 'text-gray-500'}`}>
+                      <span className="mr-2 font-bold">{passwordChecks.length ? '✓' : '○'}</span>
+                      At least 8 characters
+                    </li>
+                    <li className={`flex items-center text-xs ${passwordChecks.uppercase ? 'text-green-600' : 'text-gray-500'}`}>
+                      <span className="mr-2 font-bold">{passwordChecks.uppercase ? '✓' : '○'}</span>
+                      One uppercase letter (A-Z)
+                    </li>
+                    <li className={`flex items-center text-xs ${passwordChecks.lowercase ? 'text-green-600' : 'text-gray-500'}`}>
+                      <span className="mr-2 font-bold">{passwordChecks.lowercase ? '✓' : '○'}</span>
+                      One lowercase letter (a-z)
+                    </li>
+                    <li className={`flex items-center text-xs ${passwordChecks.number ? 'text-green-600' : 'text-gray-500'}`}>
+                      <span className="mr-2 font-bold">{passwordChecks.number ? '✓' : '○'}</span>
+                      One number (0-9)
+                    </li>
+                    <li className={`flex items-center text-xs ${passwordChecks.special ? 'text-green-600' : 'text-gray-500'}`}>
+                      <span className="mr-2 font-bold">{passwordChecks.special ? '✓' : '○'}</span>
+                      One special character (!@#$%^&*)
+                    </li>
+                  </ul>
+                </div>
+              )}
+
+              {errors.password && !passwordValue && (
+                <p className="mt-2 text-sm text-red-600">{errors.password.message}</p>
               )}
             </div>
           </div>

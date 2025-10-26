@@ -21,6 +21,7 @@ export interface Context {
   user?: User;
   req?: CreateNextContextOptions['req'];
   res?: CreateNextContextOptions['res'];
+  supabase: ReturnType<typeof createClient>;
 }
 
 export const createContext = async (opts: CreateNextContextOptions): Promise<Context> => {
@@ -39,10 +40,11 @@ export const createContext = async (opts: CreateNextContextOptions): Promise<Con
         },
         setAll(cookiesToSet) {
           // Set cookies using proper serialization
-          cookiesToSet.forEach((cookie) => {
-            const serialized = serializeCookieHeader(cookie.name, cookie.value, cookie.options);
-            res?.setHeader('Set-Cookie', serialized);
-          })
+          // IMPORTANT: setHeader with an array appends all cookies correctly
+          const serialized = cookiesToSet.map((cookie) =>
+            serializeCookieHeader(cookie.name, cookie.value, cookie.options)
+          );
+          res?.setHeader('Set-Cookie', serialized);
         },
       },
     }
@@ -59,19 +61,27 @@ export const createContext = async (opts: CreateNextContextOptions): Promise<Con
     });
 
     if (error || !user) {
-      return { req, res };
+      return { req, res, supabase: supabaseAdmin };
     }
 
     // Fetch additional user data from our users table using admin client
+    // Optimized to avoid slow JOIN - fetch separately
     const { data: userData, error: userError } = await supabaseAdmin
       .from('users')
-      .select('*, subscriptions(*)')
+      .select('*')
       .eq('id', user.id)
       .single();
 
     if (userError || !userData) {
-      return { req };
+      return { req, res, supabase: supabaseAdmin };
     }
+
+    // Fetch subscription separately for better performance
+    const { data: subscriptionData } = await supabaseAdmin
+      .from('subscriptions')
+      .select('tier, status, usage_count, monthly_limit, usage_reset_date')
+      .eq('user_id', user.id)
+      .single();
 
     const fullUser: User = {
       id: userData.id,
@@ -85,10 +95,11 @@ export const createContext = async (opts: CreateNextContextOptions): Promise<Con
         length: 'standard'
       },
       subscription: {
-        tier: userData.subscriptions?.tier || 'free',
-        status: userData.subscriptions?.status || 'active',
-        usageCount: userData.subscriptions?.usage_count || 0,
-        billingCycle: userData.subscriptions?.usage_reset_date || undefined,
+        tier: subscriptionData?.tier || 'free',
+        status: subscriptionData?.status || 'active',
+        usageCount: subscriptionData?.usage_count || 0,
+        monthlyLimit: subscriptionData?.monthly_limit || 10,
+        billingCycle: subscriptionData?.usage_reset_date || undefined,
       },
       preferences: userData.preferences || {
         defaultContext: {
@@ -103,10 +114,10 @@ export const createContext = async (opts: CreateNextContextOptions): Promise<Con
       updatedAt: userData.updated_at,
     };
 
-    return { user: fullUser, req };
+    return { user: fullUser, req, res, supabase: supabaseAdmin };
   } catch (error) {
     console.error('Error creating context:', error);
-    return { req };
+    return { req, res, supabase: supabaseAdmin };
   }
 };
 

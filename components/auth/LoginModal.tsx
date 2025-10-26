@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { LoginSchema, type LoginInput } from '@freelance-flow/shared';
+import { LoginSchema, RegisterSchema, type LoginInput, type RegisterInput } from '@freelance-flow/shared';
 import { trpc } from '../../utils/trpc';
 import { useAuthStore } from '../../stores/auth';
 import { useRouter } from 'next/router';
@@ -10,9 +10,18 @@ import { supabase } from '../../utils/supabase';
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialMode?: 'login' | 'register';
 }
 
-export function LoginModal({ isOpen, onClose }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModalProps) {
+  const [mode, setMode] = useState<'login' | 'register'>(initialMode);
+
+  // Sync mode with initialMode when modal opens or initialMode changes
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+    }
+  }, [isOpen, initialMode]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -20,22 +29,20 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const router = useRouter();
   const { setAuth } = useAuthStore();
   const loginMutation = trpc.auth.login.useMutation();
+  const registerMutation = trpc.auth.register.useMutation();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginInput>({
+  const loginForm = useForm<LoginInput>({
     resolver: zodResolver(LoginSchema),
   });
 
+  const registerForm = useForm<RegisterInput>({
+    resolver: zodResolver(RegisterSchema),
+  });
+
+  const { register, handleSubmit, formState: { errors } } = mode === 'login' ? loginForm : registerForm;
+
   const handleSocialLogin = async (provider: 'google' | 'apple') => {
     try {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-      );
-
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
@@ -51,16 +58,16 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     }
   };
 
-  const onSubmit = async (data: LoginInput) => {
+  const onLoginSubmit = async (data: LoginInput) => {
     setIsSubmitting(true);
     setSubmitError(null);
 
     try {
       console.log('[LoginModal] Starting login...');
 
-      // Create a timeout promise
+      // Create a timeout promise to prevent hanging requests
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Login request timed out')), 30000);
+        setTimeout(() => reject(new Error('TIMEOUT')), 30000);
       });
 
       // Race between the login mutation and timeout
@@ -71,9 +78,25 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
       console.log('[LoginModal] Login successful, result:', result);
 
-      // Update Zustand store - this persists to localStorage
+      // Update Zustand store - this now persists to localStorage via middleware
       setAuth(result.user, result.session);
       console.log('[LoginModal] Auth state updated in Zustand store');
+
+      // IMPORTANT: Set the session in Supabase client to store it in cookies
+      // This allows the server to read the session from cookies for authentication
+      // We do this AFTER setAuth to avoid the onAuthStateChange listener from re-fetching user data
+      if (result.session) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: result.session.access_token,
+          refresh_token: result.session.refresh_token,
+        });
+
+        if (sessionError) {
+          console.error('[LoginModal] Error setting session:', sessionError);
+          throw new Error('SESSION_ERROR');
+        }
+        console.log('[LoginModal] Session set in Supabase client (cookies)');
+      }
 
       console.log('[LoginModal] Preparing redirect...');
 
@@ -82,24 +105,100 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         ? localStorage.getItem('pendingCheckout')
         : null;
 
-      if (pendingCheckout) {
-        console.log('[LoginModal] Redirecting to pricing page...');
-        // Redirect to pricing page to complete checkout
-        await router.push('/pricing');
-      } else {
-        console.log('[LoginModal] Redirecting to dashboard...');
-        // Normal login flow
-        await router.push('/dashboard/generate');
-      }
+      const redirectUrl = pendingCheckout ? '/pricing' : '/dashboard/generate';
+      console.log('[LoginModal] Redirecting to:', redirectUrl);
 
-      onClose();
+      // Use window.location for reliable navigation after login
+      // Don't reset isSubmitting since we're redirecting
+      window.location.href = redirectUrl;
     } catch (error: any) {
       console.error('[LoginModal] Login error:', error);
-      setSubmitError(error.message || 'Login failed. Please check your credentials.');
-    } finally {
       setIsSubmitting(false);
+
+      // Provide user-friendly error messages based on error type
+      if (error.message === 'TIMEOUT') {
+        setSubmitError('Request timed out. Please check your internet connection and try again.');
+      } else if (error.message === 'SESSION_ERROR') {
+        setSubmitError('Failed to establish session. Please try again.');
+      } else if (error.code === 'UNAUTHORIZED') {
+        setSubmitError('Invalid email or password. Please try again.');
+      } else if (error.message?.toLowerCase().includes('network')) {
+        setSubmitError('Network error. Please check your connection and try again.');
+      } else {
+        setSubmitError(error.message || 'Login failed. Please try again.');
+      }
     }
   };
+
+  const onRegisterSubmit = async (data: RegisterInput) => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      console.log('[LoginModal] Starting registration...');
+
+      const result = await registerMutation.mutateAsync(data);
+
+      console.log('[LoginModal] Registration successful, result:', result);
+
+      if (!result.session) {
+        console.error('[LoginModal] No session returned from registration');
+        setSubmitError('Registration successful, but failed to log in automatically. Please log in manually.');
+        setMode('login'); // Switch to login mode so user can log in
+        return;
+      }
+
+      // Update Zustand store - this now persists to localStorage via middleware
+      setAuth(result.user, result.session);
+      console.log('[LoginModal] Auth state updated in Zustand store');
+
+      // IMPORTANT: Set the session in Supabase client to store it in cookies
+      // This allows the server to read the session from cookies for authentication
+      // We do this AFTER setAuth to avoid the onAuthStateChange listener from re-fetching user data
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: result.session.access_token,
+        refresh_token: result.session.refresh_token,
+      });
+
+      if (sessionError) {
+        console.error('[LoginModal] Error setting session:', sessionError);
+        throw new Error('SESSION_ERROR');
+      }
+      console.log('[LoginModal] Session set in Supabase client (cookies)');
+
+      console.log('[LoginModal] Preparing redirect...');
+
+      // Check if user was trying to checkout before registration
+      const pendingCheckout = typeof window !== 'undefined'
+        ? localStorage.getItem('pendingCheckout')
+        : null;
+
+      const redirectUrl = pendingCheckout ? '/pricing' : '/dashboard/generate';
+      console.log('[LoginModal] Redirecting to:', redirectUrl);
+
+      // Use window.location for reliable navigation after registration
+      // Don't reset isSubmitting since we're redirecting
+      window.location.href = redirectUrl;
+    } catch (error: any) {
+      console.error('[LoginModal] Registration error:', error);
+      setIsSubmitting(false);
+
+      // Provide user-friendly error messages based on error type
+      if (error.message === 'SESSION_ERROR') {
+        setSubmitError('Failed to establish session. Please try again.');
+      } else if (error.message?.toLowerCase().includes('already registered')) {
+        setSubmitError('This email is already registered. Please log in instead.');
+      } else if (error.message?.toLowerCase().includes('invalid email')) {
+        setSubmitError('Please enter a valid email address.');
+      } else if (error.message?.toLowerCase().includes('password')) {
+        setSubmitError('Password must be at least 8 characters long.');
+      } else {
+        setSubmitError(error.message || 'Registration failed. Please try again.');
+      }
+    }
+  };
+
+  const onSubmit = mode === 'login' ? onLoginSubmit : onRegisterSubmit;
 
   if (!isOpen) return null;
 
@@ -121,14 +220,53 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
           <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
             <span className="text-green-600 font-bold text-xl">FL</span>
           </div>
-          <h2 className="text-2xl font-semibold text-gray-900">Welcome to FreelanceFlow</h2>
-          <p className="text-sm text-gray-600 mt-1">Use your work email for a better experience</p>
+          <h2 className="text-2xl font-semibold text-gray-900">
+            {mode === 'login' ? 'Welcome Back' : 'Create Your Account'}
+          </h2>
+          <p className="text-sm text-gray-600 mt-1">
+            {mode === 'login'
+              ? 'Sign in to continue to FreelanceFlow'
+              : 'Join FreelanceFlow and streamline your client communications'}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {mode === 'register' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-900 mb-1">
+                  First Name
+                </label>
+                <input
+                  {...register('firstName')}
+                  type="text"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="John"
+                />
+                {errors.firstName && (
+                  <p className="mt-1 text-sm text-red-600">{errors.firstName.message}</p>
+                )}
+              </div>
+              <div>
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-900 mb-1">
+                  Last Name
+                </label>
+                <input
+                  {...register('lastName')}
+                  type="text"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Doe"
+                />
+                {errors.lastName && (
+                  <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>
+                )}
+              </div>
+            </div>
+          )}
+
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-900 mb-1">
-              Work email
+              {mode === 'register' ? 'Email Address' : 'Work email'}
             </label>
             <input
               {...register('email')}
@@ -142,6 +280,27 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             )}
           </div>
 
+          {mode === 'register' && (
+            <div>
+              <label htmlFor="industry" className="block text-sm font-medium text-gray-900 mb-1">
+                Industry (Optional)
+              </label>
+              <select
+                {...register('industry')}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="">Select your industry</option>
+                <option value="web-development">Web Development</option>
+                <option value="graphic-design">Graphic Design</option>
+                <option value="content-writing">Content Writing</option>
+                <option value="marketing">Marketing</option>
+                <option value="consulting">Consulting</option>
+                <option value="photography">Photography</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          )}
+
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-900 mb-1">
               Password
@@ -150,9 +309,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
               <input
                 {...register('password')}
                 type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
-                placeholder="••••••••••"
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent pr-10"
+                placeholder={mode === 'register' ? 'Minimum 8 characters' : '••••••••••'}
               />
               <button
                 type="button"
@@ -187,15 +346,34 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             disabled={isSubmitting}
             className="w-full py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? 'Signing in...' : 'Continue with email'}
+            {isSubmitting
+              ? (mode === 'login' ? 'Signing in...' : 'Creating account...')
+              : (mode === 'login' ? 'Continue with email' : 'Create account')}
           </button>
+
+          {mode === 'login' && (
+            <div className="text-center">
+              <button
+                type="button"
+                className="text-sm text-gray-600 hover:text-gray-800"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
 
           <div className="text-center">
             <button
               type="button"
-              className="text-sm text-gray-600 hover:text-gray-800"
+              onClick={() => {
+                setMode(mode === 'login' ? 'register' : 'login');
+                setSubmitError(null);
+              }}
+              className="text-sm font-medium text-green-600 hover:text-green-700"
             >
-              Forgot password?
+              {mode === 'login'
+                ? "Don't have an account? Sign up"
+                : 'Already have an account? Sign in'}
             </button>
           </div>
         </form>

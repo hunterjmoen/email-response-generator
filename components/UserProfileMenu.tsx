@@ -26,11 +26,22 @@ export function UserProfileMenu() {
 
   const handleLogout = async () => {
     try {
+      console.log('[UserProfileMenu] Starting logout...');
+
+      // Sign out from Supabase (clears cookies)
       await supabase.auth.signOut();
+
+      // Clear auth state from Zustand store
       clearAuth();
-      router.push('/');
+
+      console.log('[UserProfileMenu] Logout complete, redirecting to home...');
+
+      // Use window.location for full page reload to ensure all state is cleared
+      window.location.href = '/';
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error('[UserProfileMenu] Error logging out:', error);
+      // Even if there's an error, try to redirect to clear the session
+      window.location.href = '/';
     }
   };
 
@@ -91,7 +102,7 @@ export function UserProfileMenu() {
             </Link>
 
             <Link
-              href="/dashboard/profile"
+              href="/settings/profile"
               className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
               onClick={() => setIsOpen(false)}
             >
@@ -102,7 +113,7 @@ export function UserProfileMenu() {
             </Link>
 
             <Link
-              href="/dashboard/settings"
+              href="/settings/profile"
               className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
               onClick={() => setIsOpen(false)}
             >

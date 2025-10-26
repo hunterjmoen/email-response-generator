@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { User, AuthSession } from '@freelance-flow/shared';
 import { supabase } from '../utils/supabase';
 
@@ -14,45 +15,48 @@ interface AuthActions {
   clearAuth: () => void;
   setLoading: (loading: boolean) => void;
   initialize: () => Promise<void>;
+  refreshSubscription: () => Promise<void>;
 }
 
 type AuthStore = AuthState & AuthActions;
 
-export const useAuthStore = create<AuthStore>((set, get) => ({
-  // State
-  user: null,
-  session: null,
-  isLoading: true,
-  isAuthenticated: false,
-
-  // Actions
-  setAuth: (user, session) => {
-    set({
-      user,
-      session: {
-        user,
-        token: session?.access_token || '',
-        expiresAt: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : new Date().toISOString(),
-      },
-      isAuthenticated: true,
-      isLoading: false,
-    });
-  },
-
-  clearAuth: () => {
-    set({
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set, get) => ({
+      // State
       user: null,
       session: null,
-      isAuthenticated: false,
       isLoading: false,
-    });
-  },
+      isAuthenticated: false,
 
-  setLoading: (loading) => {
-    set({ isLoading: loading });
-  },
+      // Actions
+      setAuth: (user, session) => {
+        set({
+          user,
+          session: {
+            user,
+            token: session?.access_token || '',
+            expiresAt: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : new Date().toISOString(),
+          },
+          isAuthenticated: true,
+          isLoading: false,
+        });
+      },
 
-  initialize: async () => {
+      clearAuth: () => {
+        set({
+          user: null,
+          session: null,
+          isAuthenticated: false,
+          isLoading: false,
+        });
+      },
+
+      setLoading: (loading) => {
+        set({ isLoading: loading });
+      },
+
+      initialize: async () => {
     try {
       console.log('[Auth] Initializing auth state from cookies...');
 
@@ -71,10 +75,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return;
       }
 
-      // Fetch user profile data
+      // Fetch user profile data - optimized to avoid slow JOIN
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('*, subscriptions(*)')
+        .select('*')
         .eq('id', session.user.id)
         .single();
 
@@ -84,6 +88,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return;
       }
 
+      // Fetch subscription separately for better performance
+      const { data: subscriptionData } = await supabase
+        .from('subscriptions')
+        .select('tier, status, usage_count, monthly_limit, usage_reset_date')
+        .eq('user_id', session.user.id)
+        .single();
+
       const user: User = {
         id: userData.id,
         email: userData.email,
@@ -92,10 +103,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         industry: userData.industry,
         communicationStyle: userData.communication_style,
         subscription: {
-          tier: userData.subscriptions?.tier || 'free',
-          status: userData.subscriptions?.status || 'active',
-          usageCount: userData.subscriptions?.usage_count || 0,
-          billingCycle: userData.subscriptions?.usage_reset_date || undefined,
+          tier: subscriptionData?.tier || 'free',
+          status: subscriptionData?.status || 'active',
+          usageCount: subscriptionData?.usage_count || 0,
+          monthlyLimit: subscriptionData?.monthly_limit || 10,
+          billingCycle: subscriptionData?.usage_reset_date || undefined,
         },
         preferences: userData.preferences,
         createdAt: userData.created_at,
@@ -109,15 +121,77 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       get().clearAuth();
     }
   },
-}));
+
+      refreshSubscription: async () => {
+        const { user } = get();
+        if (!user) return;
+
+        try {
+          console.log('[Auth] Refreshing subscription data...');
+
+          // Fetch updated subscription data
+          const { data: subscriptionData, error } = await supabase
+            .from('subscriptions')
+            .select('tier, status, usage_count, monthly_limit, usage_reset_date')
+            .eq('user_id', user.id)
+            .single();
+
+          if (error || !subscriptionData) {
+            console.error('Error fetching subscription data:', error);
+            return;
+          }
+
+          // Update user object with fresh subscription data
+          const updatedUser: User = {
+            ...user,
+            subscription: {
+              tier: subscriptionData.tier,
+              status: subscriptionData.status,
+              usageCount: subscriptionData.usage_count,
+              monthlyLimit: subscriptionData.monthly_limit,
+              billingCycle: subscriptionData.usage_reset_date || undefined,
+            },
+          };
+
+          console.log('[Auth] Subscription refreshed. Usage:', subscriptionData.usage_count);
+          set({ user: updatedUser });
+        } catch (error) {
+          console.error('[Auth] Error refreshing subscription:', error);
+        }
+      },
+    }),
+    {
+      name: 'auth-storage', // unique name for localStorage
+      storage: createJSONStorage(() => localStorage),
+      // Only persist user, session, and isAuthenticated - not loading state
+      partialize: (state) => ({
+        user: state.user,
+        session: state.session,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    }
+  )
+);
+
+// Initialize auth state immediately when store is created
+useAuthStore.getState().initialize();
 
 // Listen to auth state changes
 supabase.auth.onAuthStateChange(async (event, session) => {
-  const { initialize, clearAuth } = useAuthStore.getState();
-  
+  const { initialize, clearAuth, user } = useAuthStore.getState();
+
+  console.log('[Auth] onAuthStateChange event:', event, 'has session:', !!session, 'has user in store:', !!user);
+
   if (event === 'SIGNED_OUT' || !session) {
     clearAuth();
   } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-    await initialize();
+    // Only re-initialize if we don't already have user data in the store
+    // This prevents duplicate initialization when login manually sets the session
+    if (!user) {
+      console.log('[Auth] No user in store, initializing...');
+      await initialize();
+    } else {
+      console.log('[Auth] User already in store, skipping initialization');
+    }
   }
 });

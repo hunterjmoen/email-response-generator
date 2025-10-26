@@ -39,11 +39,14 @@ export const authRouter = router({
       const userAgent = ctx.req?.headers['user-agent'] || 'unknown';
       try {
         // Create user with Supabase Auth
-        const { data: authData, error: authError } = await supabaseAdmin.auth.signUp({
+        // Using admin API to auto-confirm the email for better UX
+        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email: input.email,
           password: input.password,
-          options: {
-            emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+          email_confirm: true, // Auto-confirm email
+          user_metadata: {
+            first_name: input.firstName,
+            last_name: input.lastName,
           },
         });
 
@@ -70,14 +73,18 @@ export const authRouter = router({
         }
 
         // Store additional user profile data
+        // Use upsert to handle cases where auth user exists but profile doesn't
         const { data: userData, error: userError } = await supabaseAdmin
           .from('users')
-          .insert({
+          .upsert({
             id: authData.user.id,
             email: input.email,
             first_name: input.firstName,
             last_name: input.lastName,
             industry: input.industry,
+          }, {
+            onConflict: 'id',
+            ignoreDuplicates: false
           })
           .select()
           .single();
@@ -91,7 +98,7 @@ export const authRouter = router({
             userAgent,
             success: false,
             userId: authData.user.id,
-            failureReason: 'Failed to create user profile',
+            failureReason: `Failed to create user profile: ${userError.message}`,
           });
 
           // Note: Auth user is already created, so we should handle this gracefully
@@ -99,6 +106,26 @@ export const authRouter = router({
             code: 'INTERNAL_SERVER_ERROR',
             message: 'Failed to create user profile',
           });
+        }
+
+        // Create initial free subscription for the new user
+        // Use upsert to handle cases where subscription already exists
+        const { error: subscriptionError } = await supabaseAdmin
+          .from('subscriptions')
+          .upsert({
+            user_id: authData.user.id,
+            tier: 'free',
+            status: 'active',
+            monthly_limit: 10,
+            usage_count: 0,
+          }, {
+            onConflict: 'user_id',
+            ignoreDuplicates: false
+          });
+
+        if (subscriptionError) {
+          console.error('Error creating subscription:', subscriptionError);
+          // Don't fail registration if subscription creation fails, just log it
         }
 
         const user: User = {
@@ -112,6 +139,7 @@ export const authRouter = router({
             tier: 'free',
             status: 'active',
             usageCount: 0,
+            monthlyLimit: 10,
           },
           preferences: userData.preferences,
           createdAt: userData.created_at,
@@ -127,10 +155,26 @@ export const authRouter = router({
           userId: user.id,
         });
 
+        // Now sign in the user to get a session since admin.createUser doesn't return one
+        const { data: signInData, error: signInError } = await supabaseAdmin.auth.signInWithPassword({
+          email: input.email,
+          password: input.password,
+        });
+
+        if (signInError || !signInData.session) {
+          console.error('Error signing in after registration:', signInError);
+          // Still return success but without session - user can login manually
+          return {
+            user,
+            session: null,
+            message: 'Registration successful. Please log in to continue.',
+          };
+        }
+
         return {
           user,
-          session: authData.session,
-          message: 'Registration successful. Please check your email to verify your account.',
+          session: signInData.session,
+          message: 'Registration successful!',
         };
       } catch (error) {
         console.error('Registration error:', error);
@@ -196,10 +240,10 @@ export const authRouter = router({
           });
         }
 
-        // Fetch user profile data
+        // Fetch user profile data - optimized to fetch separately to avoid slow JOIN
         const { data: userData, error: userError } = await supabaseAdmin
           .from('users')
-          .select('*, subscriptions(*)')
+          .select('*')
           .eq('id', data.user.id)
           .single();
 
@@ -219,6 +263,13 @@ export const authRouter = router({
           });
         }
 
+        // Fetch subscription separately for better performance
+        const { data: subscriptionData } = await supabaseAdmin
+          .from('subscriptions')
+          .select('tier, status, usage_count, monthly_limit, usage_reset_date')
+          .eq('user_id', data.user.id)
+          .single();
+
         const user: User = {
           id: userData.id,
           email: userData.email,
@@ -227,10 +278,11 @@ export const authRouter = router({
           industry: userData.industry,
           communicationStyle: userData.communication_style,
           subscription: {
-            tier: userData.subscriptions?.tier || 'free',
-            status: userData.subscriptions?.status || 'active',
-            usageCount: userData.subscriptions?.usage_count || 0,
-            billingCycle: userData.subscriptions?.usage_reset_date || undefined,
+            tier: subscriptionData?.tier || 'free',
+            status: subscriptionData?.status || 'active',
+            usageCount: subscriptionData?.usage_count || 0,
+            monthlyLimit: subscriptionData?.monthly_limit || 10,
+            billingCycle: subscriptionData?.usage_reset_date || undefined,
           },
           preferences: userData.preferences,
           createdAt: userData.created_at,

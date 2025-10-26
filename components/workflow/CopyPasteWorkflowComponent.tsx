@@ -8,12 +8,16 @@ import { useAuthStore } from '../../stores/auth';
 import { trpc } from '../../utils/trpc';
 import { type ValidatedMessageInput } from '@freelance-flow/shared';
 import { UserProfileMenu } from '../UserProfileMenu';
-import { supabase } from '../../utils/supabase';
+import { DashboardSidebar } from '../navigation/DashboardSidebar';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 
 export function CopyPasteWorkflowComponent() {
   const router = useRouter();
   const [promptInput, setPromptInput] = useState('');
-  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [workflowStep, setWorkflowStep] = useState<'input' | 'context' | 'results'>('input');
+  const [draftMessage, setDraftMessage] = useState('');
+  const { user, isAuthenticated, isLoading: authLoading, refreshSubscription } = useAuthStore();
   const {
     currentInput,
     currentResponse,
@@ -32,10 +36,12 @@ export function CopyPasteWorkflowComponent() {
   const responseOptions = useCurrentResponseOptions();
 
   const generateMutation = trpc.responses.generate.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setCurrentResponse(data.response);
       addToHistory(data.response);
       setLoading(false);
+      // Refresh subscription data to update usage count
+      await refreshSubscription();
     },
     onError: (error) => {
       setError(error.message);
@@ -57,6 +63,7 @@ export function CopyPasteWorkflowComponent() {
         return;
       }
 
+      setWorkflowStep('results');
       setCurrentInput(input);
       setLoading(true);
 
@@ -124,6 +131,16 @@ export function CopyPasteWorkflowComponent() {
     [currentResponse, setSelectedResponseIndex, feedbackMutation]
   );
 
+  const handleStartNew = useCallback(() => {
+    setCurrentInput(null);
+    setCurrentResponse(null);
+    setSelectedResponseIndex(null);
+    setError(null);
+    setPromptInput('');
+    setDraftMessage('');
+    setWorkflowStep('input');
+  }, [setCurrentInput, setCurrentResponse, setSelectedResponseIndex, setError]);
+
   const handlePromptSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!promptInput.trim()) return;
@@ -134,91 +151,47 @@ export function CopyPasteWorkflowComponent() {
       return;
     }
 
-    handleInputSubmit({
-      originalMessage: promptInput,
-      context: {
-        relationshipStage: 'established',
-        projectPhase: 'active',
-        urgency: 'standard',
-        messageType: 'update',
-      },
-    });
+    // Move to context step instead of generating immediately
+    setDraftMessage(promptInput);
+    setWorkflowStep('context');
   };
 
   const handleSuggestionClick = (suggestion: string) => {
     setPromptInput(suggestion);
   };
 
-  const showInitialView = !currentResponse && !isLoading;
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onCopy: () => {
+      if (selectedResponseIndex !== null && responseOptions[selectedResponseIndex]) {
+        handleCopy(responseOptions[selectedResponseIndex].content, selectedResponseIndex);
+      }
+    },
+    onNew: handleStartNew,
+    onSubmit: () => {
+      if (promptInput.trim() && isAuthenticated) {
+        handlePromptSubmit(new Event('submit') as any);
+      }
+    },
+    onNext: () => {
+      if (responseOptions.length > 0) {
+        const nextIndex = selectedResponseIndex === null ? 0 :
+          (selectedResponseIndex + 1) % responseOptions.length;
+        setSelectedResponseIndex(nextIndex);
+      }
+    },
+    onPrevious: () => {
+      if (responseOptions.length > 0) {
+        const prevIndex = selectedResponseIndex === null ? responseOptions.length - 1 :
+          (selectedResponseIndex - 1 + responseOptions.length) % responseOptions.length;
+        setSelectedResponseIndex(prevIndex);
+      }
+    },
+  });
 
   return (
     <div className="flex h-screen bg-white">
-      <aside className="w-64 border-r border-gray-200 flex flex-col">
-        <div className="p-4 border-b border-gray-200">
-          <Link href="/" className="flex items-center gap-2 text-gray-900 hover:text-gray-700">
-            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-              <span className="text-green-600 font-bold text-sm">FL</span>
-            </div>
-            <span className="text-xl font-semibold">FreelanceFlow</span>
-          </Link>
-        </div>
-
-        <nav className="flex-1 p-4">
-          <ul className="space-y-1">
-            <li>
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-                Response Generator
-              </button>
-            </li>
-            <li>
-              <Link href="/dashboard/index" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-                History
-              </Link>
-            </li>
-            <li>
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-                Templates
-              </button>
-            </li>
-            <li>
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-                Settings
-              </button>
-            </li>
-          </ul>
-        </nav>
-
-        <div className="p-4 border-t border-gray-200">
-          {user && (
-            <div className="flex items-center gap-2 mb-2 px-3 py-2">
-              <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-semibold text-xs">
-                {user.firstName && user.lastName
-                  ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
-                  : user.email[0].toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {user.firstName && user.lastName
-                    ? `${user.firstName} ${user.lastName}`
-                    : user.email}
-                </p>
-                <p className="text-xs text-gray-600 capitalize">
-                  {user.subscription?.tier || 'free'} plan
-                </p>
-              </div>
-            </div>
-          )}
-          <button
-            onClick={async () => {
-              await supabase.auth.signOut();
-              router.push('/');
-            }}
-            className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg"
-          >
-            Log out
-          </button>
-        </div>
-      </aside>
+      <DashboardSidebar user={user} />
 
       <main className="flex-1 flex flex-col">
         <header className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
@@ -242,7 +215,7 @@ export function CopyPasteWorkflowComponent() {
           </div>
         </header>
 
-        {showInitialView ? (
+        {workflowStep === 'input' && (
           <div className="flex-1 flex flex-col items-center justify-center px-4 pb-32">
             <h2 className="text-3xl font-semibold text-gray-900 mb-8">What can I help with?</h2>
             {!isAuthenticated && (
@@ -259,9 +232,13 @@ export function CopyPasteWorkflowComponent() {
                   value={promptInput}
                   onChange={(e) => setPromptInput(e.target.value)}
                   placeholder="Paste your client's message here..."
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-3 pr-12 pb-8 border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   rows={3}
+                  maxLength={2000}
                 />
+                <div className="absolute left-4 bottom-3 text-xs text-gray-500">
+                  {promptInput.length}/2000 characters
+                </div>
                 <button
                   type="submit"
                   disabled={!promptInput.trim() || !isAuthenticated}
@@ -305,7 +282,49 @@ export function CopyPasteWorkflowComponent() {
               ↓ Scroll to explore
             </div>
           </div>
-        ) : (
+        )}
+
+        {workflowStep === 'context' && (
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+              <div className="mb-6">
+                <button
+                  onClick={() => {
+                    setWorkflowStep('input');
+                    setPromptInput(draftMessage);
+                  }}
+                  className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back to message
+                </button>
+              </div>
+
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="text-sm font-medium text-blue-800 mb-2">Review Your Message</h3>
+                <p className="text-sm text-blue-700 italic">"{draftMessage}"</p>
+              </div>
+
+              <MessageInputForm
+                onSubmit={handleInputSubmit}
+                isLoading={false}
+                defaultValues={{
+                  originalMessage: draftMessage,
+                  context: {
+                    urgency: 'standard',
+                    messageType: 'update',
+                    relationshipStage: 'established',
+                    projectPhase: 'active',
+                  }
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {workflowStep === 'results' && (
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
               {error && (
@@ -331,14 +350,23 @@ export function CopyPasteWorkflowComponent() {
               )}
 
               <div className="space-y-8">
-                <MessageInputForm
-                  onSubmit={handleInputSubmit}
-                  isLoading={isLoading}
-                  defaultValues={currentInput || undefined}
-                />
-
                 {(responseOptions.length > 0 || isLoading) && (
                   <div>
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-xl font-semibold text-gray-900">AI Response Options</h2>
+                      {!isLoading && (
+                        <button
+                          onClick={handleStartNew}
+                          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                        >
+                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          New Response
+                        </button>
+                      )}
+                    </div>
+
                     <ResponseDisplay
                       responses={responseOptions}
                       onCopy={handleCopy}
@@ -346,6 +374,7 @@ export function CopyPasteWorkflowComponent() {
                       onSelect={handleSelect}
                       selectedIndex={selectedResponseIndex || undefined}
                       isLoading={isLoading}
+                      historyId={currentResponse?.historyId}
                     />
                   </div>
                 )}
@@ -370,11 +399,56 @@ export function CopyPasteWorkflowComponent() {
           </div>
         )}
 
-        <footer className="border-t border-gray-200 py-4 px-6 text-center">
-          <div className="flex items-center justify-center gap-8 text-xs text-gray-500">
-            <span>curated by <span className="font-semibold">FreelanceFlow</span></span>
-          </div>
-        </footer>
+        {/* Keyboard Shortcuts Help Button */}
+        <div className="fixed bottom-6 left-6 z-50">
+          <button
+            onClick={() => setShowKeyboardHelp(!showKeyboardHelp)}
+            className="p-3 bg-white rounded-full shadow-lg border border-gray-200 hover:bg-gray-50 transition-all"
+            title="Keyboard shortcuts"
+          >
+            <svg className="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            </svg>
+          </button>
+
+          {showKeyboardHelp && (
+            <div className="absolute bottom-full left-0 mb-2 p-4 bg-white rounded-lg shadow-xl border border-gray-200 w-72">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="font-semibold text-gray-900">Keyboard Shortcuts</h4>
+                <button
+                  onClick={() => setShowKeyboardHelp(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <dl className="space-y-2.5 text-sm">
+                <div className="flex justify-between items-center">
+                  <dt className="text-gray-600">Copy response</dt>
+                  <dd className="font-mono text-xs bg-gray-100 px-2 py-1 rounded border border-gray-300">⌘ C</dd>
+                </div>
+                <div className="flex justify-between items-center">
+                  <dt className="text-gray-600">New response</dt>
+                  <dd className="font-mono text-xs bg-gray-100 px-2 py-1 rounded border border-gray-300">⌘ N</dd>
+                </div>
+                <div className="flex justify-between items-center">
+                  <dt className="text-gray-600">Submit form</dt>
+                  <dd className="font-mono text-xs bg-gray-100 px-2 py-1 rounded border border-gray-300">⌘ ↵</dd>
+                </div>
+                <div className="flex justify-between items-center">
+                  <dt className="text-gray-600">Next option</dt>
+                  <dd className="font-mono text-xs bg-gray-100 px-2 py-1 rounded border border-gray-300">→</dd>
+                </div>
+                <div className="flex justify-between items-center">
+                  <dt className="text-gray-600">Previous option</dt>
+                  <dd className="font-mono text-xs bg-gray-100 px-2 py-1 rounded border border-gray-300">←</dd>
+                </div>
+              </dl>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );

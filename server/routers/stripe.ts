@@ -18,9 +18,29 @@ export const stripeRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
+        // Get or create Stripe customer for this user
+        let customerId: string | undefined;
+
+        // Check if user already has a Stripe customer ID in the database
+        const { data: existingSubscription } = await ctx.supabase
+          .from('subscriptions')
+          .select('stripe_customer_id')
+          .eq('user_id', ctx.user.id)
+          .single();
+
+        if (existingSubscription?.stripe_customer_id) {
+          customerId = existingSubscription.stripe_customer_id;
+          console.log('Using existing Stripe customer for payment:', customerId);
+        }
+
+        // Generate idempotency key to prevent duplicate charges
+        const idempotencyKey = `payment_${ctx.user.id}_${input.priceId}_${Date.now()}`;
+
         const session = await stripe.checkout.sessions.create({
           mode: 'payment',
           payment_method_types: ['card'],
+          customer: customerId,
+          customer_email: customerId ? undefined : ctx.user.email,
           line_items: [
             {
               price: input.priceId,
@@ -29,11 +49,12 @@ export const stripeRouter = router({
           ],
           success_url: input.successUrl,
           cancel_url: input.cancelUrl,
-          customer_email: ctx.user.email,
           metadata: {
             userId: ctx.user.id,
             ...input.metadata,
           },
+        }, {
+          idempotencyKey,
         });
 
         return {
@@ -64,9 +85,39 @@ export const stripeRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
+        // Get or create Stripe customer for this user
+        let customerId: string;
+
+        // Check if user already has a Stripe customer ID in the database
+        const { data: existingSubscription } = await ctx.supabase
+          .from('subscriptions')
+          .select('stripe_customer_id')
+          .eq('user_id', ctx.user.id)
+          .single();
+
+        if (existingSubscription?.stripe_customer_id) {
+          customerId = existingSubscription.stripe_customer_id;
+          console.log('Using existing Stripe customer:', customerId);
+        } else {
+          // Create new Stripe customer
+          const customer = await stripe.customers.create({
+            email: ctx.user.email,
+            metadata: {
+              userId: ctx.user.id,
+            },
+            name: `${ctx.user.firstName} ${ctx.user.lastName}`.trim() || undefined,
+          });
+          customerId = customer.id;
+          console.log('Created new Stripe customer:', customerId);
+        }
+
+        // Generate idempotency key to prevent duplicate sessions
+        const idempotencyKey = `subscription_${ctx.user.id}_${input.priceId}_${Date.now()}`;
+
         const session = await stripe.checkout.sessions.create({
           mode: 'subscription',
           payment_method_types: ['card'],
+          customer: customerId,
           line_items: [
             {
               price: input.priceId,
@@ -75,7 +126,6 @@ export const stripeRouter = router({
           ],
           success_url: input.successUrl,
           cancel_url: input.cancelUrl,
-          customer_email: ctx.user.email,
           billing_address_collection: 'auto',
           allow_promotion_codes: true,
           payment_method_collection: 'always',
@@ -96,6 +146,8 @@ export const stripeRouter = router({
             email: ctx.user.email,
             ...input.metadata,
           },
+        }, {
+          idempotencyKey,
         });
 
         return {
@@ -241,4 +293,80 @@ export const stripeRouter = router({
       });
     }
   }),
+
+  /**
+   * TEMPORARY: Verify and activate subscription after checkout
+   * This is only for local testing when webhooks aren't configured.
+   * Remove this in production once Stripe webhooks are properly set up.
+   */
+  verifyCheckoutSession: protectedProcedure
+    .input(
+      z.object({
+        sessionId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        console.log('[TEMP] Verifying checkout session:', input.sessionId);
+
+        // Retrieve the checkout session from Stripe
+        const session = await stripe.checkout.sessions.retrieve(input.sessionId, {
+          expand: ['subscription', 'customer'],
+        });
+
+        // Verify the session belongs to this user
+        if (session.metadata?.userId !== ctx.user.id) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'This checkout session does not belong to you',
+          });
+        }
+
+        // Verify payment was successful
+        if (session.payment_status !== 'paid') {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Payment not completed',
+          });
+        }
+
+        // Update subscription in database
+        const { error } = await ctx.supabase
+          .from('subscriptions')
+          .update({
+            stripe_customer_id: session.customer as string,
+            stripe_subscription_id: session.subscription as string,
+            tier: 'premium',
+            status: 'active',
+            monthly_limit: 999999, // Unlimited for premium
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', ctx.user.id);
+
+        if (error) {
+          console.error('[TEMP] Error updating subscription:', error);
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to activate subscription',
+          });
+        }
+
+        console.log('[TEMP] Successfully activated premium subscription for user:', ctx.user.id);
+
+        return {
+          success: true,
+          tier: 'premium',
+          status: 'active',
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        console.error('[TEMP] Failed to verify checkout session:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to verify checkout session',
+        });
+      }
+    }),
 });

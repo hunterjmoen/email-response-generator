@@ -41,6 +41,20 @@ export const responsesRouter = router({
       const { user } = ctx;
 
       try {
+        // Fetch full user profile including style_profile
+        const { data: userProfile, error: userError } = await supabaseAdmin
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (userError || !userProfile) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'User profile not found',
+          });
+        }
+
         // Check user's usage limits
         const { data: subscription } = await supabaseAdmin
           .from('subscriptions')
@@ -62,10 +76,17 @@ export const responsesRouter = router({
           });
         }
 
-        // Generate AI responses
+        // Add user's name to context for signature
+        const enrichedContext = {
+          ...context,
+          userName: userProfile.first_name,
+        };
+
+        // Generate AI responses with style profile
         const aiResponses = await AIResponseService.generateResponses(
           originalMessage,
-          context
+          enrichedContext,
+          userProfile.style_profile
         );
 
         // Estimate cost
@@ -77,7 +98,7 @@ export const responsesRouter = router({
           .insert({
             user_id: user.id,
             original_message: originalMessage,
-            context: context,
+            context: enrichedContext,
             generated_options: aiResponses,
             template_used: templateId || null,
             refinement_instructions: refinementInstructions || null,
@@ -108,7 +129,7 @@ export const responsesRouter = router({
           id: responseHistory.id,
           options: aiResponses,
           originalMessage,
-          context,
+          context: enrichedContext,
           historyId: responseHistory.id,
           model: responseHistory.openai_model,
           generatedAt: responseHistory.created_at,
@@ -237,6 +258,20 @@ export const responsesRouter = router({
       const { user } = ctx;
 
       try {
+        // Fetch full user profile including style_profile
+        const { data: userProfile, error: userError } = await supabaseAdmin
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (userError || !userProfile) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'User profile not found',
+          });
+        }
+
         // Get the original response history
         const { data: original, error: fetchError } = await supabaseAdmin
           .from('response_history')
@@ -266,12 +301,19 @@ export const responsesRouter = router({
           });
         }
 
-        // Generate refined responses
+        // Add user's name to context for signature
+        const enrichedContext = {
+          ...original.context,
+          userName: userProfile.first_name,
+        };
+
+        // Generate refined responses with style profile
         const refinedResponses = await AIResponseService.regenerateWithRefinement(
           original.original_message,
-          original.context,
+          enrichedContext,
           original.generated_options,
-          refinementInstructions
+          refinementInstructions,
+          userProfile.style_profile
         );
 
         // Update the response history with refined responses

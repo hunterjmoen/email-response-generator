@@ -13,6 +13,7 @@ export interface User {
     tier: 'free' | 'premium';
     status: 'active' | 'cancelled' | 'expired';
     usageCount: number;
+    monthlyLimit: number;
     billingCycle?: string;
   };
   preferences: {
@@ -29,6 +30,8 @@ export interface ResponseContext {
   urgency: 'immediate' | 'standard' | 'non_urgent';
   messageType: 'update' | 'question' | 'concern' | 'deliverable' | 'payment' | 'scope_change';
   customNotes?: string;
+  clientName?: string;
+  userName?: string;
 }
 
 export interface AuthSession {

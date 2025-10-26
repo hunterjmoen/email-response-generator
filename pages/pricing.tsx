@@ -4,12 +4,21 @@ import { LoginModal } from '../components/auth/LoginModal';
 import { UserProfileMenu } from '../components/UserProfileMenu';
 import { trpc } from '../utils/trpc';
 import { useAuthStore } from '../stores/auth';
+import { supabase } from '../utils/supabase';
 
 export default function Pricing() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isAnnual, setIsAnnual] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
+
+  // Prevent hydration mismatch by only rendering auth UI on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // No longer needed - Zustand persist middleware handles state persistence
 
   const monthlyPrice = 19;
   const annualPrice = Math.round(monthlyPrice * 12 * 0.8); // 20% discount
@@ -31,6 +40,8 @@ export default function Pricing() {
 
     setLoading(true);
     try {
+      // Session is now persisted via Zustand middleware and Supabase cookies
+      // No manual backup needed
       const priceId = isAnnual ? ANNUAL_PRICE_ID : MONTHLY_PRICE_ID;
       const baseUrl = window.location.origin;
 
@@ -61,9 +72,10 @@ export default function Pricing() {
         setIsAnnual(wasAnnual);
         setLoading(true);
 
-        // Trigger checkout immediately - cookies persist through redirect
+        // Trigger checkout immediately
         (async () => {
           try {
+            // Session is now persisted via Zustand middleware and Supabase cookies
             const priceId = wasAnnual ? ANNUAL_PRICE_ID : MONTHLY_PRICE_ID;
             const baseUrl = window.location.origin;
 
@@ -90,7 +102,7 @@ export default function Pricing() {
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -105,7 +117,7 @@ export default function Pricing() {
               <Link href="/pricing" className="text-gray-900 font-medium">Pricing</Link>
             </nav>
             <div className="flex items-center gap-4">
-              {!authLoading && (
+              {isMounted && !authLoading && (
                 <>
                   {isAuthenticated ? (
                     <UserProfileMenu />

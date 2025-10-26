@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { type ValidatedMessageInput, type ResponseContext } from '@freelance-flow/shared';
+import { trpc } from '../../utils/trpc';
 
 interface ContextSelectorProps {
   onChange?: (context: ResponseContext) => void;
@@ -7,13 +9,49 @@ interface ContextSelectorProps {
 
 export function ContextSelector({ onChange }: ContextSelectorProps) {
   const { register, watch, setValue } = useFormContext<ValidatedMessageInput>();
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
   const currentContext = watch('context');
+
+  // Fetch clients and projects
+  const { data: clients } = trpc.clients.list.useQuery();
+  const { data: projects } = trpc.projects.listByClient.useQuery(
+    { clientId: selectedClientId },
+    { enabled: !!selectedClientId }
+  );
 
   const handleFieldChange = (field: keyof ResponseContext, value: string) => {
     const newContext = { ...currentContext, [field]: value };
     setValue(`context.${field}`, value);
     onChange?.(newContext);
+  };
+
+  // Handle client selection
+  const handleClientChange = (clientId: string) => {
+    setSelectedClientId(clientId);
+    setSelectedProjectId(''); // Reset project when client changes
+
+    // Auto-populate relationship stage and client name from client
+    const selectedClient = clients?.find((c) => c.id === clientId);
+    if (selectedClient) {
+      handleFieldChange('relationshipStage', selectedClient.relationshipStage);
+      handleFieldChange('clientName', selectedClient.name);
+    } else {
+      // Clear client name if no client is selected
+      handleFieldChange('clientName', '');
+    }
+  };
+
+  // Handle project selection
+  const handleProjectChange = (projectId: string) => {
+    setSelectedProjectId(projectId);
+
+    // Auto-populate project phase from project
+    const selectedProject = projects?.find((p) => p.id === projectId);
+    if (selectedProject) {
+      handleFieldChange('projectPhase', selectedProject.status);
+    }
   };
 
   const urgencyOptions = [
@@ -53,6 +91,50 @@ export function ContextSelector({ onChange }: ContextSelectorProps) {
       <h3 className="text-lg font-medium text-gray-900 mb-4">Response Context</h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Client Selection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Client (Optional)
+          </label>
+          <select
+            value={selectedClientId}
+            onChange={(e) => handleClientChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Select a client...</option>
+            {clients?.map((client) => (
+              <option key={client.id} value={client.id}>
+                {client.name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-500">
+            Selecting a client will auto-populate relationship stage
+          </p>
+        </div>
+
+        {/* Project Selection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Project (Optional)
+          </label>
+          <select
+            value={selectedProjectId}
+            onChange={(e) => handleProjectChange(e.target.value)}
+            disabled={!selectedClientId}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          >
+            <option value="">Select a project...</option>
+            {projects?.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-500">
+            Selecting a project will auto-populate project phase
+          </p>
+        </div>
         {/* Urgency */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">

@@ -115,6 +115,8 @@ export const AUTH_RATE_LIMITS = {
   PASSWORD_RESET: { limit: 3, windowMs: 60 * 60 * 1000 },
   // General auth endpoints: 100 per hour per IP
   GENERAL: { limit: 100, windowMs: 60 * 60 * 1000 },
+  // History endpoints: 200 per hour per IP
+  HISTORY: { limit: 200, windowMs: 60 * 60 * 1000 },
 } as const;
 
 export default rateLimiter;
