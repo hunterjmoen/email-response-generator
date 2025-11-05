@@ -49,18 +49,18 @@ export function ContextSelector({ onChange }: ContextSelectorProps) {
   ];
 
   return (
-    <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">Response Context</h3>
+    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-4">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Response Context</h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Urgency */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Urgency Level
           </label>
           <select
             {...register('context.urgency')}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             onChange={(e) => handleFieldChange('urgency', e.target.value as any)}
           >
             {urgencyOptions.map((option) => (
@@ -74,12 +74,12 @@ export function ContextSelector({ onChange }: ContextSelectorProps) {
 
         {/* Message Type */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Message Type
           </label>
           <select
             {...register('context.messageType')}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             onChange={(e) => handleFieldChange('messageType', e.target.value as any)}
           >
             {messageTypeOptions.map((option) => (
@@ -92,12 +92,12 @@ export function ContextSelector({ onChange }: ContextSelectorProps) {
 
         {/* Relationship Stage */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Client Relationship
           </label>
           <select
             {...register('context.relationshipStage')}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             onChange={(e) => handleFieldChange('relationshipStage', e.target.value as any)}
           >
             {relationshipStageOptions.map((option) => (
@@ -110,12 +110,12 @@ export function ContextSelector({ onChange }: ContextSelectorProps) {
 
         {/* Project Phase */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Project Phase
           </label>
           <select
             {...register('context.projectPhase')}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             onChange={(e) => handleFieldChange('projectPhase', e.target.value as any)}
           >
             {projectPhaseOptions.map((option) => (
@@ -128,13 +128,13 @@ export function ContextSelector({ onChange }: ContextSelectorProps) {
 
         {/* Custom Notes */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Additional Context (Optional)
           </label>
           <textarea
             {...register('context.customNotes')}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Any specific context or requirements for the response..."
           />
         </div>

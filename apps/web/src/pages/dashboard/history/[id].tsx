@@ -86,21 +86,21 @@ export default function HistoryDetailPage() {
   const getContextBadgeColor = (type: string, value: string) => {
     const colors = {
       urgency: {
-        immediate: 'bg-red-100 text-red-800',
-        standard: 'bg-blue-100 text-blue-800',
-        non_urgent: 'bg-green-100 text-green-800',
+        immediate: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300',
+        standard: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300',
+        non_urgent: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300',
       },
       messageType: {
-        update: 'bg-blue-100 text-blue-800',
-        question: 'bg-yellow-100 text-yellow-800',
-        concern: 'bg-red-100 text-red-800',
-        deliverable: 'bg-green-100 text-green-800',
-        payment: 'bg-purple-100 text-purple-800',
-        scope_change: 'bg-orange-100 text-orange-800',
+        update: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300',
+        question: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300',
+        concern: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300',
+        deliverable: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300',
+        payment: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300',
+        scope_change: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300',
       },
     };
 
-    return colors[type as keyof typeof colors]?.[value as keyof any] || 'bg-gray-100 text-gray-800';
+    return colors[type as keyof typeof colors]?.[value as keyof any] || 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
   };
 
   const renderStars = (rating?: number) => {
@@ -117,7 +117,7 @@ export default function HistoryDetailPage() {
             />
           );
         })}
-        <span className="ml-2 text-sm text-gray-600">({rating}/5)</span>
+        <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">({rating}/5)</span>
       </div>
     );
   };
@@ -125,15 +125,15 @@ export default function HistoryDetailPage() {
   if (isLoading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
           <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-              <div className="bg-white rounded-lg p-6">
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-6"></div>
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6">
                 <div className="space-y-4">
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                  <div className="h-32 bg-gray-200 rounded"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                  <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
                 </div>
               </div>
             </div>
@@ -146,18 +146,18 @@ export default function HistoryDetailPage() {
   if (isError || !historyItem) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
           <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
                 Response Not Found
               </h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
                 {error?.message || 'The response history item you requested could not be found.'}
               </p>
               <button
                 onClick={handleBackToHistory}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600"
               >
                 Back to History
               </button>
@@ -170,29 +170,29 @@ export default function HistoryDetailPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Header */}
-        <div className="bg-white shadow">
+        <div className="bg-white dark:bg-gray-800 shadow">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-6">
               <div className="flex items-center space-x-4">
                 <button
                   onClick={handleBackToHistory}
-                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+                  className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 >
                   <ChevronLeftIcon className="h-5 w-5" />
                   <span>Back to History</span>
                 </button>
-                <div className="h-6 border-l border-gray-300"></div>
-                <h1 className="text-2xl font-bold text-gray-900">Response Details</h1>
+                <div className="h-6 border-l border-gray-300 dark:border-gray-600"></div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Response Details</h1>
               </div>
               <div className="flex items-center space-x-4">
-                <span className="text-gray-700">
+                <span className="text-gray-700 dark:text-gray-300">
                   Welcome, {user?.firstName} {user?.lastName}
                 </span>
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   Sign Out
                 </button>
@@ -205,13 +205,13 @@ export default function HistoryDetailPage() {
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           {/* Copy feedback notification */}
           {copyFeedback && (
-            <div className="mb-4 bg-green-50 border border-green-200 rounded-md p-4">
+            <div className="mb-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-md p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <CheckIcon className="h-5 w-5 text-green-400" />
+                  <CheckIcon className="h-5 w-5 text-green-400 dark:text-green-500" />
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-green-800">
+                  <p className="text-sm font-medium text-green-800 dark:text-green-300">
                     {copyFeedback}
                   </p>
                 </div>
@@ -220,14 +220,14 @@ export default function HistoryDetailPage() {
           )}
 
           {/* Item metadata */}
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                 <CalendarIcon className="h-4 w-4" />
                 <span>{formatDate(historyItem.createdAt)}</span>
                 {historyItem.updatedAt !== historyItem.createdAt && (
                   <>
-                    <span className="text-gray-300">•</span>
+                    <span className="text-gray-300 dark:text-gray-600">•</span>
                     <span>Updated {formatDate(historyItem.updatedAt)}</span>
                   </>
                 )}
@@ -238,7 +238,7 @@ export default function HistoryDetailPage() {
                 <button
                   onClick={handleDelete}
                   disabled={deleteHistoryMutation.isLoading}
-                  className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors disabled:opacity-50"
+                  className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors disabled:opacity-50"
                 >
                   <TrashIcon className="h-4 w-4" />
                   <span>Delete</span>
@@ -248,7 +248,7 @@ export default function HistoryDetailPage() {
 
             {/* Context information */}
             <div className="mb-4">
-              <h3 className="text-sm font-medium text-gray-900 mb-2">Context</h3>
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Context</h3>
               <div className="flex flex-wrap gap-2">
                 {historyItem.context.urgency && (
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
@@ -265,12 +265,12 @@ export default function HistoryDetailPage() {
                   </span>
                 )}
                 {historyItem.context.projectPhase && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
                     {historyItem.context.projectPhase.replace('_', ' ')}
                   </span>
                 )}
                 {historyItem.context.relationshipStage && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
                     {historyItem.context.relationshipStage.replace('_', ' ')}
                   </span>
                 )}
@@ -279,9 +279,9 @@ export default function HistoryDetailPage() {
 
             {/* Original message */}
             <div className="mb-4">
-              <h3 className="text-sm font-medium text-gray-900 mb-2">Original Message</h3>
-              <div className="bg-gray-50 rounded-md p-4">
-                <p className="text-sm text-gray-900 whitespace-pre-wrap">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Original Message</h3>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-md p-4">
+                <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                   {historyItem.originalMessage}
                 </p>
               </div>
@@ -290,24 +290,24 @@ export default function HistoryDetailPage() {
             {/* Metadata */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <div>
-                <span className="text-gray-500">Model:</span>
+                <span className="text-gray-500 dark:text-gray-400">Model:</span>
                 <span className="ml-2 font-medium">{historyItem.openaiModel}</span>
               </div>
               {historyItem.confidenceScore && (
                 <div>
-                  <span className="text-gray-500">Confidence:</span>
+                  <span className="text-gray-500 dark:text-gray-400">Confidence:</span>
                   <span className="ml-2 font-medium">{Math.round(historyItem.confidenceScore * 100)}%</span>
                 </div>
               )}
               {historyItem.generationCostCents && (
                 <div>
-                  <span className="text-gray-500">Cost:</span>
+                  <span className="text-gray-500 dark:text-gray-400">Cost:</span>
                   <span className="ml-2 font-medium">${(historyItem.generationCostCents / 100).toFixed(2)}</span>
                 </div>
               )}
               {historyItem.refinementCount > 0 && (
                 <div>
-                  <span className="text-gray-500">Refinements:</span>
+                  <span className="text-gray-500 dark:text-gray-400">Refinements:</span>
                   <span className="ml-2 font-medium">{historyItem.refinementCount}</span>
                 </div>
               )}
@@ -316,9 +316,9 @@ export default function HistoryDetailPage() {
             {/* User feedback */}
             {historyItem.userFeedback && historyItem.userFeedback !== 'DELETED' && (
               <div className="mt-4">
-                <h3 className="text-sm font-medium text-gray-900 mb-2">Your Feedback</h3>
-                <div className="bg-blue-50 rounded-md p-4">
-                  <p className="text-sm text-blue-900">
+                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Your Feedback</h3>
+                <div className="bg-blue-50 dark:bg-blue-900/30 rounded-md p-4">
+                  <p className="text-sm text-blue-900 dark:text-blue-300">
                     {historyItem.userFeedback}
                   </p>
                 </div>
@@ -327,8 +327,8 @@ export default function HistoryDetailPage() {
           </div>
 
           {/* AI Responses */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-6">
               AI Response Options ({historyItem.generatedOptions.length})
             </h3>
 
@@ -338,29 +338,29 @@ export default function HistoryDetailPage() {
                   key={index}
                   className={`border rounded-lg p-6 ${
                     historyItem.selectedResponse === index
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                      : 'border-gray-200 dark:border-gray-700'
                   }`}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         Option {index + 1}
                         {historyItem.selectedResponse === index && (
-                          <span className="ml-2 text-xs bg-blue-600 text-white px-2 py-1 rounded-full">
+                          <span className="ml-2 text-xs bg-blue-600 dark:bg-blue-500 text-white px-2 py-1 rounded-full">
                             Selected
                           </span>
                         )}
                       </span>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
                         {response.tone}
                       </span>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
                         {response.length}
                       </span>
                       <div className="flex items-center space-x-1">
-                        <span className="text-xs text-gray-500">Confidence:</span>
-                        <span className="text-xs font-medium text-gray-900">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Confidence:</span>
+                        <span className="text-xs font-medium text-gray-900 dark:text-gray-100">
                           {Math.round(response.confidence * 100)}%
                         </span>
                       </div>
@@ -368,7 +368,7 @@ export default function HistoryDetailPage() {
 
                     <button
                       onClick={() => handleCopy(response.content)}
-                      className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-md hover:bg-green-200 transition-colors"
+                      className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 rounded-md hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
                     >
                       <ClipboardIcon className="h-3 w-3" />
                       <span>Copy</span>
@@ -376,15 +376,15 @@ export default function HistoryDetailPage() {
                   </div>
 
                   <div className="prose prose-sm max-w-none mb-4">
-                    <div className="whitespace-pre-wrap text-gray-900">
+                    <div className="whitespace-pre-wrap text-gray-900 dark:text-gray-100">
                       {response.content}
                     </div>
                   </div>
 
                   {response.reasoning && (
-                    <div className="p-3 bg-gray-50 rounded-md">
-                      <span className="text-xs font-medium text-gray-700">AI Reasoning: </span>
-                      <span className="text-xs text-gray-600">{response.reasoning}</span>
+                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">AI Reasoning: </span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">{response.reasoning}</span>
                     </div>
                   )}
                 </div>

@@ -180,20 +180,20 @@ export function ResponseHistoryList({
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-white rounded-lg border border-gray-200 p-6">
+          <div key={i} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="animate-pulse">
               <div className="flex items-center justify-between mb-4">
-                <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                <div className="h-4 bg-gray-200 rounded w-16"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
               </div>
               <div className="space-y-2">
-                <div className="h-3 bg-gray-200 rounded"></div>
-                <div className="h-3 bg-gray-200 rounded w-5/6"></div>
-                <div className="h-3 bg-gray-200 rounded w-4/6"></div>
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/6"></div>
               </div>
               <div className="mt-4 flex space-x-2">
-                <div className="h-8 bg-gray-200 rounded w-20"></div>
-                <div className="h-8 bg-gray-200 rounded w-16"></div>
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
               </div>
             </div>
           </div>
@@ -205,12 +205,12 @@ export function ResponseHistoryList({
   if (isError) {
     return (
       <div className="text-center py-12">
-        <div className="text-red-600 mb-4">
+        <div className="text-red-600 dark:text-red-400 mb-4">
           Failed to load history: {error?.message || 'Unknown error'}
         </div>
         <button
           onClick={() => refetch()}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600"
         >
           Try Again
         </button>
@@ -220,16 +220,16 @@ export function ResponseHistoryList({
 
   if (allItems.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
+      <div className="text-center py-12 text-gray-500 dark:text-gray-400">
         <div className="mb-4">
           {filters && (filters.keywords || filters.dateFrom || filters.dateTo || filters.context) ? (
             <div>
-              <p className="text-lg font-medium text-gray-900 mb-2">No results found</p>
+              <p className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No results found</p>
               <p>Try adjusting your search filters or keywords.</p>
             </div>
           ) : (
             <div>
-              <p className="text-lg font-medium text-gray-900 mb-2">No response history yet</p>
+              <p className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No response history yet</p>
               <p>Your AI-generated responses will appear here once you start using the tool.</p>
             </div>
           )}
@@ -242,10 +242,10 @@ export function ResponseHistoryList({
     <div className="space-y-4">
       {/* Results summary and bulk actions */}
       <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-600 dark:text-gray-400">
           Showing {allItems.length} of {totalCount} responses
           {selectedItems.size > 0 && (
-            <span className="ml-2 text-blue-600">
+            <span className="ml-2 text-blue-600 dark:text-blue-400">
               ({selectedItems.size} selected)
             </span>
           )}
@@ -256,7 +256,7 @@ export function ResponseHistoryList({
             <>
               <button
                 onClick={selectedItems.size === allItems.length ? handleDeselectAll : handleSelectAll}
-                className="text-sm text-gray-600 hover:text-gray-800"
+                className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
               >
                 {selectedItems.size === allItems.length ? 'Deselect All' : 'Select All'}
               </button>
@@ -294,8 +294,8 @@ export function ResponseHistoryList({
       {/* Load more indicator */}
       {isFetchingNextPage && (
         <div className="text-center py-4">
-          <div className="inline-flex items-center space-x-2 text-gray-600">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="inline-flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 dark:border-blue-500"></div>
             <span>Loading more...</span>
           </div>
         </div>
@@ -303,7 +303,7 @@ export function ResponseHistoryList({
 
       {/* End of results indicator */}
       {!hasNextPage && allItems.length > 0 && (
-        <div className="text-center py-4 text-gray-500 text-sm">
+        <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
           You've reached the end of your history
         </div>
       )}

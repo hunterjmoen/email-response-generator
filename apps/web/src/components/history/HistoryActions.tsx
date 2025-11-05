@@ -49,10 +49,10 @@ export function HistoryActions({
   return (
     <>
       {/* Bulk actions bar */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <span className="text-sm font-medium text-blue-900">
+            <span className="text-sm font-medium text-blue-900 dark:text-blue-200">
               {selectedCount} item{selectedCount !== 1 ? 's' : ''} selected
             </span>
 
@@ -60,7 +60,7 @@ export function HistoryActions({
               <button
                 onClick={handleExport}
                 disabled={isExporting || selectedCount === 0}
-                className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 rounded-md hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ArrowDownTrayIcon className="h-4 w-4" />
                 <span>{isExporting ? 'Exporting...' : 'Export'}</span>
@@ -69,7 +69,7 @@ export function HistoryActions({
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={isDeleting || selectedCount === 0}
-                className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <TrashIcon className="h-4 w-4" />
                 <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
@@ -79,7 +79,7 @@ export function HistoryActions({
 
           <button
             onClick={onCancel}
-            className="flex items-center space-x-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800"
+            className="flex items-center space-x-1 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
           >
             <XMarkIcon className="h-4 w-4" />
             <span>Cancel</span>
@@ -89,26 +89,26 @@ export function HistoryActions({
 
       {/* Delete confirmation modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-gray-600 dark:bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
             <div className="mt-3">
               <div className="flex items-center mb-4">
-                <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                  <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
+                <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30">
+                  <ExclamationTriangleIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
                 </div>
               </div>
 
               <div className="text-center">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-2">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mb-2">
                   Delete Selected Items
                 </h3>
-                <p className="text-sm text-gray-500 mb-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                   Are you sure you want to delete {selectedCount} selected item{selectedCount !== 1 ? 's' : ''}?
                   This action cannot be undone.
                 </p>
 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
-                  <div className="text-sm text-yellow-800">
+                <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-md p-3 mb-4">
+                  <div className="text-sm text-yellow-800 dark:text-yellow-300">
                     <strong>Note:</strong> Items will be soft-deleted (marked as deleted) by default.
                     You can choose permanent deletion if needed.
                   </div>
@@ -119,7 +119,7 @@ export function HistoryActions({
                 <button
                   onClick={() => handleDelete(false)}
                   disabled={isDeleting}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50"
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 dark:bg-orange-500 hover:bg-orange-700 dark:hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50"
                 >
                   {isDeleting ? 'Deleting...' : 'Soft Delete (Recommended)'}
                 </button>
@@ -127,7 +127,7 @@ export function HistoryActions({
                 <button
                   onClick={() => handleDelete(true)}
                   disabled={isDeleting}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
                 >
                   {isDeleting ? 'Deleting...' : 'Permanent Delete'}
                 </button>
@@ -135,7 +135,7 @@ export function HistoryActions({
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
                   disabled={isDeleting}
-                  className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  className="w-full flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 >
                   Cancel
                 </button>

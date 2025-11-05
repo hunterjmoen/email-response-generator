@@ -68,25 +68,25 @@ export function ResponseHistoryItem({
   const getContextBadgeColor = (type: string, value: string) => {
     const colors = {
       urgency: {
-        immediate: 'bg-red-100 text-red-800',
-        standard: 'bg-blue-100 text-blue-800',
-        non_urgent: 'bg-green-100 text-green-800',
+        immediate: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300',
+        standard: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300',
+        non_urgent: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300',
       },
       messageType: {
-        update: 'bg-blue-100 text-blue-800',
-        question: 'bg-yellow-100 text-yellow-800',
-        concern: 'bg-red-100 text-red-800',
-        deliverable: 'bg-green-100 text-green-800',
-        payment: 'bg-purple-100 text-purple-800',
-        scope_change: 'bg-orange-100 text-orange-800',
+        update: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300',
+        question: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300',
+        concern: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300',
+        deliverable: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300',
+        payment: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300',
+        scope_change: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300',
       },
     };
 
     const typeColors = colors[type as keyof typeof colors];
     if (typeColors && typeof typeColors === 'object') {
-      return (typeColors as Record<string, string>)[value] || 'bg-gray-100 text-gray-800';
+      return (typeColors as Record<string, string>)[value] || 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
     }
-    return 'bg-gray-100 text-gray-800';
+    return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
   };
 
   const renderStars = (rating?: number) => {
@@ -99,7 +99,7 @@ export function ResponseHistoryItem({
           return (
             <Icon
               key={star}
-              className={`h-3 w-3 ${rating >= star ? 'text-yellow-400' : 'text-gray-300'}`}
+              className={`h-3 w-3 ${rating >= star ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
             />
           );
         })}
@@ -113,8 +113,8 @@ export function ResponseHistoryItem({
   };
 
   return (
-    <div className={`bg-white rounded-lg border transition-all ${
-      isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-300'
+    <div className={`bg-white dark:bg-gray-800 rounded-lg border transition-all ${
+      isSelected ? 'border-blue-500 dark:border-blue-400 ring-2 ring-blue-200 dark:ring-blue-800' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
     }`}>
       <div className="p-4">
         {/* Header */}
@@ -125,10 +125,10 @@ export function ResponseHistoryItem({
                 type="checkbox"
                 checked={isSelected}
                 onChange={handleToggleSelect}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
               />
             )}
-            <div className="flex items-center space-x-2 text-sm text-gray-500">
+            <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
               <CalendarIcon className="h-4 w-4" />
               <span>{formatDate(item.createdAt)}</span>
             </div>
@@ -136,7 +136,7 @@ export function ResponseHistoryItem({
 
           <div className="flex items-center space-x-2">
             {item.userRating && renderStars(item.userRating)}
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
               {item.generatedOptions.length} option{item.generatedOptions.length !== 1 ? 's' : ''}
             </span>
           </div>
@@ -159,7 +159,7 @@ export function ResponseHistoryItem({
             </span>
           )}
           {item.context.projectPhase && (
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
               {item.context.projectPhase.replace('_', ' ')}
             </span>
           )}
@@ -167,14 +167,14 @@ export function ResponseHistoryItem({
 
         {/* Original message */}
         <div className="mb-3">
-          <div className="text-sm text-gray-600 mb-1">Original Message:</div>
-          <div className="text-sm text-gray-900">
+          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Original Message:</div>
+          <div className="text-sm text-gray-900 dark:text-gray-100">
             {item.snippet ? (
               <div
                 dangerouslySetInnerHTML={{
                   __html: item.snippet.replace(
                     new RegExp(`(${item.snippet.match(/\.\.\.(.*?)\.\.\./)?.[1] || ''})`, 'gi'),
-                    '<mark class="bg-yellow-200">$1</mark>'
+                    '<mark class="bg-yellow-200 dark:bg-yellow-900/30">$1</mark>'
                   )
                 }}
               />
@@ -184,7 +184,7 @@ export function ResponseHistoryItem({
                 {item.originalMessage.length > 120 && (
                   <button
                     onClick={() => setExpanded(!expanded)}
-                    className="ml-2 text-blue-600 hover:text-blue-800 text-xs"
+                    className="ml-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-xs"
                   >
                     {expanded ? 'Show less' : 'Show more'}
                   </button>
@@ -196,9 +196,9 @@ export function ResponseHistoryItem({
 
         {/* Selected response preview */}
         {item.selectedResponse !== undefined && item.generatedOptions[item.selectedResponse] && (
-          <div className="mb-3 p-3 bg-blue-50 rounded-md">
-            <div className="text-xs font-medium text-blue-700 mb-1">Selected Response:</div>
-            <div className="text-sm text-blue-900">
+          <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-md">
+            <div className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">Selected Response:</div>
+            <div className="text-sm text-blue-900 dark:text-blue-200">
               {truncateText(item.generatedOptions[item.selectedResponse].content, 100)}
             </div>
           </div>
@@ -206,11 +206,11 @@ export function ResponseHistoryItem({
 
         {/* Actions */}
         {showActions && (
-          <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+          <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => onView(item.id)}
-                className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
               >
                 <EyeIcon className="h-3 w-3" />
                 <span>View Details</span>
@@ -219,7 +219,7 @@ export function ResponseHistoryItem({
               <button
                 onClick={handleCopy}
                 disabled={!item.generatedOptions.length}
-                className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-md hover:bg-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 rounded-md hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {copied ? (
                   <>
@@ -237,7 +237,7 @@ export function ResponseHistoryItem({
 
             <button
               onClick={() => onDelete(item.id)}
-              className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors"
+              className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
             >
               <TrashIcon className="h-3 w-3" />
               <span>Delete</span>

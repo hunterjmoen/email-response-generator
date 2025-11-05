@@ -46,10 +46,10 @@ export function MessageInputForm({ onSubmit, isLoading = false, defaultValues }:
 
   return (
     <FormProvider {...methods}>
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div>
-          <label htmlFor="originalMessage" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="originalMessage" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Client Message
           </label>
           <div className="relative">
@@ -58,7 +58,7 @@ export function MessageInputForm({ onSubmit, isLoading = false, defaultValues }:
               id="originalMessage"
               rows={6}
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical ${
-                errors.originalMessage ? 'border-red-300' : 'border-gray-300'
+                errors.originalMessage ? 'border-red-300 dark:border-red-800' : 'border-gray-300 dark:border-gray-600'
               }`}
               placeholder="Paste your client's message here..."
               onChange={handleMessageChange}
@@ -71,7 +71,7 @@ export function MessageInputForm({ onSubmit, isLoading = false, defaultValues }:
           {errors.originalMessage && (
             <p className="mt-1 text-sm text-red-600">{errors.originalMessage.message}</p>
           )}
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             Minimum {MESSAGE_VALIDATION.minLength} characters required for quality response generation
           </p>
         </div>
@@ -84,7 +84,7 @@ export function MessageInputForm({ onSubmit, isLoading = false, defaultValues }:
               disabled={isLoading || !isValid}
               className={`px-6 py-2 rounded-md text-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                 isLoading || !isValid
-                  ? 'bg-gray-300 cursor-not-allowed'
+                  ? 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed'
                   : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
               }`}
             >

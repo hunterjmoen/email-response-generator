@@ -106,19 +106,19 @@ export function HistorySearch({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-6">
       {/* Main search bar */}
       <div className="flex items-center space-x-3 mb-4">
         <div className="flex-1 relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
           </div>
           <input
             type="text"
             placeholder="Search your response history..."
             value={filters.keywords || ''}
             onChange={(e) => handleKeywordChange(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400 dark:text-gray-100 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             disabled={isLoading}
           />
         </div>
@@ -127,8 +127,8 @@ export function HistorySearch({
           onClick={() => setShowAdvanced(!showAdvanced)}
           className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
             showAdvanced || hasActiveFilters()
-              ? 'bg-blue-100 text-blue-700'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
           }`}
         >
           <FunnelIcon className="h-4 w-4" />
@@ -143,7 +143,7 @@ export function HistorySearch({
         {hasActiveFilters() && (
           <button
             onClick={handleClearAll}
-            className="flex items-center space-x-1 px-3 py-2 text-sm text-gray-500 hover:text-gray-700"
+            className="flex items-center space-x-1 px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
           >
             <XMarkIcon className="h-4 w-4" />
             <span>Clear</span>
@@ -153,11 +153,11 @@ export function HistorySearch({
 
       {/* Advanced filters */}
       {showAdvanced && (
-        <div className="border-t border-gray-100 pt-4 space-y-4">
+        <div className="border-t border-gray-100 dark:border-gray-700 pt-4 space-y-4">
           {/* Date filters */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 <CalendarIcon className="inline h-4 w-4 mr-1" />
                 From Date
               </label>
@@ -165,11 +165,11 @@ export function HistorySearch({
                 type="date"
                 value={filters.dateFrom?.split('T')[0] || ''}
                 onChange={(e) => handleDateFromChange(e.target.value ? `${e.target.value}T00:00:00.000Z` : '')}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 <CalendarIcon className="inline h-4 w-4 mr-1" />
                 To Date
               </label>
@@ -177,7 +177,7 @@ export function HistorySearch({
                 type="date"
                 value={filters.dateTo?.split('T')[0] || ''}
                 onChange={(e) => handleDateToChange(e.target.value ? `${e.target.value}T23:59:59.999Z` : '')}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
@@ -185,13 +185,13 @@ export function HistorySearch({
           {/* Context filters */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Urgency
               </label>
               <select
                 value={filters.context?.urgency || ''}
                 onChange={(e) => handleContextChange('urgency', e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All</option>
                 <option value="immediate">Immediate</option>
@@ -201,13 +201,13 @@ export function HistorySearch({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Message Type
               </label>
               <select
                 value={filters.context?.messageType || ''}
                 onChange={(e) => handleContextChange('messageType', e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All</option>
                 <option value="update">Update</option>
@@ -220,13 +220,13 @@ export function HistorySearch({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Relationship Stage
               </label>
               <select
                 value={filters.context?.relationshipStage || ''}
                 onChange={(e) => handleContextChange('relationshipStage', e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All</option>
                 <option value="new">New</option>
@@ -237,13 +237,13 @@ export function HistorySearch({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Project Phase
               </label>
               <select
                 value={filters.context?.projectPhase || ''}
                 onChange={(e) => handleContextChange('projectPhase', e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All</option>
                 <option value="discovery">Discovery</option>

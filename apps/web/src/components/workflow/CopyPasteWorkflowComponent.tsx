@@ -118,30 +118,30 @@ export function CopyPasteWorkflowComponent() {
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
           AI Response Generator
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-gray-400">
           Paste your client's message and get professional response options instantly.
         </p>
       </div>
 
       {/* Error Display */}
       {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+        <div className="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-md p-4">
           <div className="flex">
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">
+              <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
                 Generation Error
               </h3>
-              <div className="mt-2 text-sm text-red-700">
+              <div className="mt-2 text-sm text-red-700 dark:text-red-400">
                 <p>{error}</p>
               </div>
               <div className="mt-4">
                 <button
                   type="button"
                   onClick={() => setError(null)}
-                  className="text-sm font-medium text-red-800 underline hover:text-red-700"
+                  className="text-sm font-medium text-red-800 dark:text-red-300 underline hover:text-red-700 dark:hover:text-red-200"
                 >
                   Dismiss
                 </button>
@@ -175,13 +175,13 @@ export function CopyPasteWorkflowComponent() {
 
         {/* Success Message */}
         {currentResponse && selectedResponseIndex !== null && (
-          <div className="bg-green-50 border border-green-200 rounded-md p-4">
+          <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-md p-4">
             <div className="flex">
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-green-800">
+                <h3 className="text-sm font-medium text-green-800 dark:text-green-300">
                   Response Ready!
                 </h3>
-                <div className="mt-2 text-sm text-green-700">
+                <div className="mt-2 text-sm text-green-700 dark:text-green-400">
                   <p>
                     Your selected response has been copied to the clipboard and is ready to use.
                     You can now paste it into your email or messaging platform.
@@ -193,21 +193,21 @@ export function CopyPasteWorkflowComponent() {
         )}
 
         {/* Workflow Progress Indicator */}
-        <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-gray-900 mb-3">Progress</h3>
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Progress</h3>
           <div className="flex items-center space-x-4">
-            <div className={`flex items-center space-x-2 ${currentInput ? 'text-green-600' : 'text-gray-400'}`}>
-              <div className={`h-3 w-3 rounded-full ${currentInput ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+            <div className={`flex items-center space-x-2 ${currentInput ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
+              <div className={`h-3 w-3 rounded-full ${currentInput ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
               <span className="text-sm">Message Input</span>
             </div>
-            <div className="flex-1 border-t border-gray-300"></div>
-            <div className={`flex items-center space-x-2 ${currentResponse ? 'text-green-600' : 'text-gray-400'}`}>
-              <div className={`h-3 w-3 rounded-full ${currentResponse ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+            <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
+            <div className={`flex items-center space-x-2 ${currentResponse ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
+              <div className={`h-3 w-3 rounded-full ${currentResponse ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
               <span className="text-sm">AI Generation</span>
             </div>
-            <div className="flex-1 border-t border-gray-300"></div>
-            <div className={`flex items-center space-x-2 ${selectedResponseIndex !== null ? 'text-green-600' : 'text-gray-400'}`}>
-              <div className={`h-3 w-3 rounded-full ${selectedResponseIndex !== null ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+            <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
+            <div className={`flex items-center space-x-2 ${selectedResponseIndex !== null ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
+              <div className={`h-3 w-3 rounded-full ${selectedResponseIndex !== null ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
               <span className="text-sm">Selection & Copy</span>
             </div>
           </div>

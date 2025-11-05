@@ -73,29 +73,29 @@ export default function HistoryPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Header */}
-        <div className="bg-white shadow">
+        <div className="bg-white dark:bg-gray-800 shadow">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-6">
               <div className="flex items-center space-x-4">
                 <button
                   onClick={navigateToDashboard}
-                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+                  className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 >
                   <ChevronLeftIcon className="h-5 w-5" />
                   <span>Back to Dashboard</span>
                 </button>
-                <div className="h-6 border-l border-gray-300"></div>
-                <h1 className="text-2xl font-bold text-gray-900">Response History</h1>
+                <div className="h-6 border-l border-gray-300 dark:border-gray-600"></div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Response History</h1>
               </div>
               <div className="flex items-center space-x-4">
-                <span className="text-gray-700">
+                <span className="text-gray-700 dark:text-gray-300">
                   Welcome, {user?.firstName} {user?.lastName}
                 </span>
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   Sign Out
                 </button>
@@ -105,17 +105,17 @@ export default function HistoryPage() {
         </div>
 
         {/* Navigation breadcrumb */}
-        <div className="bg-gray-100 border-b border-gray-200">
+        <div className="bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <nav className="flex py-3 text-sm">
               <button
                 onClick={navigateToDashboard}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
               >
                 Dashboard
               </button>
-              <span className="text-gray-400 mx-2">/</span>
-              <span className="text-gray-900 font-medium">Response History</span>
+              <span className="text-gray-400 dark:text-gray-500 mx-2">/</span>
+              <span className="text-gray-900 dark:text-gray-100 font-medium">Response History</span>
             </nav>
           </div>
         </div>
@@ -126,17 +126,17 @@ export default function HistoryPage() {
           <div className="mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-lg leading-6 font-medium text-gray-900">
+                <h2 className="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
                   Your AI Response History
                 </h2>
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                   View, search, and manage all your AI-generated responses
                 </p>
               </div>
               <div className="mt-4 sm:mt-0">
                 <button
                   onClick={navigateToGenerate}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   <DocumentTextIcon className="h-4 w-4 mr-2" />
                   Generate New Response
@@ -146,18 +146,18 @@ export default function HistoryPage() {
 
             {/* Quick stats */}
             <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
-              <div className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
                 <div className="p-5">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
-                      <DocumentTextIcon className="h-6 w-6 text-gray-400" />
+                      <DocumentTextIcon className="h-6 w-6 text-gray-400 dark:text-gray-500" />
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                           Total Responses
                         </dt>
-                        <dd className="text-lg font-medium text-gray-900">
+                        <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
                           {subscriptionData?.length || 0}
                         </dd>
                       </dl>
@@ -166,18 +166,18 @@ export default function HistoryPage() {
                 </div>
               </div>
 
-              <div className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
                 <div className="p-5">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
-                      <ClockIcon className="h-6 w-6 text-gray-400" />
+                      <ClockIcon className="h-6 w-6 text-gray-400 dark:text-gray-500" />
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                           This Month
                         </dt>
-                        <dd className="text-lg font-medium text-gray-900">
+                        <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
                           {user?.subscription?.usage_count || 0}
                         </dd>
                       </dl>
@@ -186,18 +186,18 @@ export default function HistoryPage() {
                 </div>
               </div>
 
-              <div className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
                 <div className="p-5">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
-                      <DocumentTextIcon className="h-6 w-6 text-gray-400" />
+                      <DocumentTextIcon className="h-6 w-6 text-gray-400 dark:text-gray-500" />
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                           Plan Limit
                         </dt>
-                        <dd className="text-lg font-medium text-gray-900">
+                        <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
                           {user?.subscription?.monthly_limit || 0}
                         </dd>
                       </dl>
@@ -210,15 +210,15 @@ export default function HistoryPage() {
 
           {/* Copy feedback notification */}
           {copyFeedback && (
-            <div className="mb-4 bg-green-50 border border-green-200 rounded-md p-4">
+            <div className="mb-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-md p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                  <svg className="h-5 w-5 text-green-400 dark:text-green-500" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-green-800">
+                  <p className="text-sm font-medium text-green-800 dark:text-green-300">
                     {copyFeedback}
                   </p>
                 </div>
