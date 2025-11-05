@@ -27,7 +27,7 @@ export default function Pricing() {
 
   // Premium Tier Pricing
   const premiumMonthlyPrice = 19;
-  const premiumAnnualPrice = Math.round(premiumMonthlyPrice * 12 * 0.8); // 20% discount = $182
+  const premiumAnnualPrice = 180; // $180 billed annually
   const premiumAnnualMonthlyPrice = Math.round(premiumAnnualPrice / 12);
 
   // Replace these with your actual Stripe Price IDs from your Stripe Dashboard

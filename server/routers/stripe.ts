@@ -96,8 +96,30 @@ export const stripeRouter = router({
           .single();
 
         if (existingSubscription?.stripe_customer_id) {
-          customerId = existingSubscription.stripe_customer_id;
-          console.log('Using existing Stripe customer:', customerId);
+          // Verify the customer exists in Stripe before using it
+          try {
+            await stripe.customers.retrieve(existingSubscription.stripe_customer_id);
+            customerId = existingSubscription.stripe_customer_id;
+            console.log('Using existing Stripe customer:', customerId);
+          } catch (error) {
+            // Customer doesn't exist in Stripe, create a new one
+            console.log('Existing customer ID invalid, creating new customer');
+            const customer = await stripe.customers.create({
+              email: ctx.user.email,
+              metadata: {
+                userId: ctx.user.id,
+              },
+              name: `${ctx.user.firstName} ${ctx.user.lastName}`.trim() || undefined,
+            });
+            customerId = customer.id;
+            console.log('Created new Stripe customer:', customerId);
+
+            // Update the database with the new customer ID
+            await ctx.supabase
+              .from('subscriptions')
+              .update({ stripe_customer_id: customerId })
+              .eq('user_id', ctx.user.id);
+          }
         } else {
           // Create new Stripe customer
           const customer = await stripe.customers.create({
@@ -331,10 +353,13 @@ export const stripeRouter = router({
         }
 
         // Determine tier from subscription
-        const subscription = await stripe.subscriptions.retrieve(
-          session.subscription as string
-        );
-        
+        // Extract subscription ID - session.subscription is already expanded as an object
+        const subscriptionId = typeof session.subscription === 'string'
+          ? session.subscription
+          : (session.subscription as any).id;
+
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
         const priceId = subscription.items.data[0]?.price.id;
         let tier: 'free' | 'professional' | 'premium' = 'premium';
         let monthlyLimit = 999999;
