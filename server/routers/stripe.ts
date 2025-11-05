@@ -330,15 +330,32 @@ export const stripeRouter = router({
           });
         }
 
+        // Determine tier from subscription
+        const subscription = await stripe.subscriptions.retrieve(
+          session.subscription as string
+        );
+        
+        const priceId = subscription.items.data[0]?.price.id;
+        let tier: 'free' | 'professional' | 'premium' = 'premium';
+        let monthlyLimit = 999999;
+
+        const professionalMonthlyPriceId = process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID;
+        const professionalAnnualPriceId = process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID;
+
+        if (priceId === professionalMonthlyPriceId || priceId === professionalAnnualPriceId) {
+          tier = 'professional';
+          monthlyLimit = 75;
+        }
+
         // Update subscription in database
         const { error } = await ctx.supabase
           .from('subscriptions')
           .update({
             stripe_customer_id: session.customer as string,
             stripe_subscription_id: session.subscription as string,
-            tier: 'premium',
+            tier,
             status: 'active',
-            monthly_limit: 999999, // Unlimited for premium
+            monthly_limit: monthlyLimit,
             updated_at: new Date().toISOString(),
           })
           .eq('user_id', ctx.user.id);
@@ -351,11 +368,11 @@ export const stripeRouter = router({
           });
         }
 
-        console.log('[TEMP] Successfully activated premium subscription for user:', ctx.user.id);
+        console.log(`[TEMP] Successfully activated ${tier} subscription for user:`, ctx.user.id);
 
         return {
           success: true,
-          tier: 'premium',
+          tier,
           status: 'active',
         };
       } catch (error) {

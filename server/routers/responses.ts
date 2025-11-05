@@ -82,11 +82,12 @@ export const responsesRouter = router({
           userName: userProfile.first_name,
         };
 
-        // Generate AI responses with style profile
+        // Generate AI responses with style profile (Premium-only feature)
+        const styleProfile = subscription.tier === 'premium' ? userProfile.style_profile : undefined;
         const aiResponses = await AIResponseService.generateResponses(
           originalMessage,
           enrichedContext,
-          userProfile.style_profile
+          styleProfile
         );
 
         // Estimate cost
@@ -290,7 +291,7 @@ export const responsesRouter = router({
         // Check usage limits
         const { data: subscription } = await supabaseAdmin
           .from('subscriptions')
-          .select('usage_count, monthly_limit')
+          .select('usage_count, monthly_limit, tier')
           .eq('user_id', user.id)
           .single();
 
@@ -307,13 +308,14 @@ export const responsesRouter = router({
           userName: userProfile.first_name,
         };
 
-        // Generate refined responses with style profile
+        // Generate refined responses with style profile (Premium-only feature)
+        const styleProfile = subscription.tier === 'premium' ? userProfile.style_profile : undefined;
         const refinedResponses = await AIResponseService.regenerateWithRefinement(
           original.original_message,
           enrichedContext,
           original.generated_options,
           refinementInstructions,
-          userProfile.style_profile
+          styleProfile
         );
 
         // Update the response history with refined responses

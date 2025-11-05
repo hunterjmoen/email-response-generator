@@ -133,7 +133,7 @@ export function DashboardSidebar({ user, isCollapsed = false }: DashboardSidebar
             <UsageIndicator
               usageCount={user.subscription.usageCount || 0}
               monthlyLimit={user.subscription.monthlyLimit || 10}
-              tier={user.subscription.tier as 'free' | 'premium'}
+              tier={user.subscription.tier as 'free' | 'professional' | 'premium'}
             />
           </div>
         )}

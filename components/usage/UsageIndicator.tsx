@@ -4,7 +4,7 @@ import Link from 'next/link';
 interface UsageIndicatorProps {
   usageCount: number;
   monthlyLimit: number;
-  tier: 'free' | 'premium';
+  tier: 'free' | 'professional' | 'premium';
   compact?: boolean;
 }
 
@@ -105,7 +105,7 @@ export function UsageIndicator({
                     Monthly limit reached
                   </p>
                   <p className="text-xs text-red-700 mt-1">
-                    Upgrade to Premium for unlimited responses
+                    {tier === 'free' ? 'Upgrade to Professional or Premium for more responses' : 'Upgrade to Premium for unlimited responses'}
                   </p>
                 </div>
               </div>

@@ -86,6 +86,13 @@ build/
 dist/
 *.tsbuildinfo
 
+# Playwright MCP screenshots and test artifacts
+.playwright-mcp/
+
+# Test files with credentials (should use .env instead)
+test-*.js
+debug-*.sql
+
 # IDE files
 .vscode/
 .idea/

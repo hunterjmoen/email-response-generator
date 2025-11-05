@@ -10,7 +10,7 @@ export interface User {
     length: 'brief' | 'standard' | 'detailed';
   };
   subscription: {
-    tier: 'free' | 'premium';
+    tier: 'free' | 'professional' | 'premium';
     status: 'active' | 'cancelled' | 'expired';
     usageCount: number;
     billingCycle?: string;

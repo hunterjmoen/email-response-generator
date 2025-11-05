@@ -25,6 +25,33 @@ export const config = {
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
+// Helper function to determine tier from subscription
+function getTierFromSubscription(subscription: Stripe.Subscription): {
+  tier: 'free' | 'professional' | 'premium';
+  monthlyLimit: number;
+} {
+  const priceId = subscription.items.data[0]?.price.id;
+  
+  const professionalMonthlyPriceId = process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID;
+  const professionalAnnualPriceId = process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID;
+  const premiumMonthlyPriceId = process.env.NEXT_PUBLIC_STRIPE_PREMIUM_MONTHLY_PRICE_ID;
+  const premiumAnnualPriceId = process.env.NEXT_PUBLIC_STRIPE_PREMIUM_ANNUAL_PRICE_ID;
+
+  // Check if it's a professional tier subscription
+  if (priceId === professionalMonthlyPriceId || priceId === professionalAnnualPriceId) {
+    return { tier: 'professional', monthlyLimit: 75 };
+  }
+
+  // Check if it's a premium tier subscription
+  if (priceId === premiumMonthlyPriceId || priceId === premiumAnnualPriceId) {
+    return { tier: 'premium', monthlyLimit: 999999 };
+  }
+
+  // Default to premium for backward compatibility with existing subscriptions
+  console.warn(`Unknown price ID: ${priceId}, defaulting to premium tier`);
+  return { tier: 'premium', monthlyLimit: 999999 };
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -113,15 +140,22 @@ async function handleCheckoutSessionCompleted(
   }
 
   try {
+    // Fetch subscription to get price information
+    const subscription = await stripe.subscriptions.retrieve(
+      session.subscription as string
+    );
+
+    const { tier, monthlyLimit } = getTierFromSubscription(subscription);
+
     // Update subscription in database
     const { error } = await supabaseAdmin
       .from('subscriptions')
       .update({
         stripe_customer_id: session.customer as string,
         stripe_subscription_id: session.subscription as string,
-        tier: 'premium',
+        tier,
         status: 'active',
-        monthly_limit: 999999, // Unlimited for premium
+        monthly_limit: monthlyLimit,
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId);
@@ -131,7 +165,7 @@ async function handleCheckoutSessionCompleted(
       throw error;
     }
 
-    console.log(`Successfully updated subscription for user ${userId}`);
+    console.log(`Successfully updated subscription for user ${userId} to ${tier} tier`);
   } catch (error) {
     console.error('Failed to update subscription in database:', error);
     throw error;
@@ -148,13 +182,15 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   }
 
   try {
+    const { tier, monthlyLimit } = getTierFromSubscription(subscription);
+
     const { error } = await supabaseAdmin
       .from('subscriptions')
       .update({
         stripe_subscription_id: subscription.id,
         status: subscription.status,
-        tier: 'premium',
-        monthly_limit: 999999,
+        tier,
+        monthly_limit: monthlyLimit,
         usage_reset_date: new Date(subscription.current_period_end * 1000).toISOString(),
         updated_at: new Date().toISOString(),
       })
@@ -165,7 +201,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
       throw error;
     }
 
-    console.log(`Subscription created for user ${userId}`);
+    console.log(`Subscription created for user ${userId} with ${tier} tier`);
   } catch (error) {
     console.error('Failed to create subscription in database:', error);
     throw error;

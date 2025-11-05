@@ -20,36 +20,72 @@ export default function Pricing() {
 
   // No longer needed - Zustand persist middleware handles state persistence
 
-  const monthlyPrice = 19;
-  const annualPrice = Math.round(monthlyPrice * 12 * 0.8); // 20% discount
-  const annualMonthlyPrice = Math.round(annualPrice / 12);
+  // Professional Tier Pricing
+  const professionalMonthlyPrice = 10;
+  const professionalAnnualPrice = Math.round(professionalMonthlyPrice * 12 * 0.8); // 20% discount = $96
+  const professionalAnnualMonthlyPrice = Math.round(professionalAnnualPrice / 12);
+
+  // Premium Tier Pricing
+  const premiumMonthlyPrice = 19;
+  const premiumAnnualPrice = Math.round(premiumMonthlyPrice * 12 * 0.8); // 20% discount = $182
+  const premiumAnnualMonthlyPrice = Math.round(premiumAnnualPrice / 12);
 
   // Replace these with your actual Stripe Price IDs from your Stripe Dashboard
-  const MONTHLY_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID || 'price_monthly';
-  const ANNUAL_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_ANNUAL_PRICE_ID || 'price_annual';
+  const PROFESSIONAL_MONTHLY_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID || 'price_professional_monthly';
+  const PROFESSIONAL_ANNUAL_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID || 'price_professional_annual';
+  const PREMIUM_MONTHLY_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PREMIUM_MONTHLY_PRICE_ID || 'price_premium_monthly';
+  const PREMIUM_ANNUAL_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PREMIUM_ANNUAL_PRICE_ID || 'price_premium_annual';
 
   const createSubscriptionSession = trpc.stripe.createSubscriptionSession.useMutation();
 
-  const handlePremiumClick = async () => {
+  const handleProfessionalClick = async () => {
     if (!user) {
       // Store the billing period preference before login
-      localStorage.setItem('pendingCheckout', isAnnual ? 'annual' : 'monthly');
+      localStorage.setItem('pendingCheckout', isAnnual ? 'professional-annual' : 'professional-monthly');
       setIsLoginModalOpen(true);
       return;
     }
 
     setLoading(true);
     try {
-      // Session is now persisted via Zustand middleware and Supabase cookies
-      // No manual backup needed
-      const priceId = isAnnual ? ANNUAL_PRICE_ID : MONTHLY_PRICE_ID;
+      const priceId = isAnnual ? PROFESSIONAL_ANNUAL_PRICE_ID : PROFESSIONAL_MONTHLY_PRICE_ID;
       const baseUrl = window.location.origin;
 
       const result = await createSubscriptionSession.mutateAsync({
         priceId,
         successUrl: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${baseUrl}/pricing`,
-        trialPeriodDays: 14, // Optional: offer a 14-day trial
+        trialPeriodDays: 14,
+      });
+
+      if (result.url) {
+        window.location.href = result.url;
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('Failed to start checkout. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const handlePremiumClick = async () => {
+    if (!user) {
+      // Store the billing period preference before login
+      localStorage.setItem('pendingCheckout', isAnnual ? 'premium-annual' : 'premium-monthly');
+      setIsLoginModalOpen(true);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const priceId = isAnnual ? PREMIUM_ANNUAL_PRICE_ID : PREMIUM_MONTHLY_PRICE_ID;
+      const baseUrl = window.location.origin;
+
+      const result = await createSubscriptionSession.mutateAsync({
+        priceId,
+        successUrl: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${baseUrl}/pricing`,
+        trialPeriodDays: 14,
       });
 
       if (result.url) {
@@ -68,15 +104,38 @@ export default function Pricing() {
       const pendingCheckout = localStorage.getItem('pendingCheckout');
       if (pendingCheckout) {
         localStorage.removeItem('pendingCheckout');
-        const wasAnnual = pendingCheckout === 'annual';
-        setIsAnnual(wasAnnual);
         setLoading(true);
 
         // Trigger checkout immediately
         (async () => {
           try {
-            // Session is now persisted via Zustand middleware and Supabase cookies
-            const priceId = wasAnnual ? ANNUAL_PRICE_ID : MONTHLY_PRICE_ID;
+            let priceId: string;
+            
+            // Determine the correct price ID based on the stored checkout type
+            switch (pendingCheckout) {
+              case 'professional-monthly':
+                priceId = PROFESSIONAL_MONTHLY_PRICE_ID;
+                setIsAnnual(false);
+                break;
+              case 'professional-annual':
+                priceId = PROFESSIONAL_ANNUAL_PRICE_ID;
+                setIsAnnual(true);
+                break;
+              case 'premium-monthly':
+              case 'monthly': // Backward compatibility
+                priceId = PREMIUM_MONTHLY_PRICE_ID;
+                setIsAnnual(false);
+                break;
+              case 'premium-annual':
+              case 'annual': // Backward compatibility
+                priceId = PREMIUM_ANNUAL_PRICE_ID;
+                setIsAnnual(true);
+                break;
+              default:
+                priceId = PREMIUM_MONTHLY_PRICE_ID;
+                setIsAnnual(false);
+            }
+
             const baseUrl = window.location.origin;
 
             const result = await createSubscriptionSession.mutateAsync({
@@ -181,7 +240,7 @@ export default function Pricing() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 max-w-7xl mx-auto">
             {/* Free Tier */}
             <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 hover:border-gray-300 transition-colors">
               <div className="mb-6">
@@ -246,7 +305,7 @@ export default function Pricing() {
               </div>
             </div>
 
-            {/* Premium Tier */}
+            {/* Professional Tier */}
             <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border-2 border-green-600 p-8 relative">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                 <span className="bg-green-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
@@ -255,20 +314,102 @@ export default function Pricing() {
               </div>
 
               <div className="mb-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Premium</h3>
-                <p className="text-gray-600">For busy freelancers</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Professional</h3>
+                <p className="text-gray-600">For active freelancers</p>
               </div>
 
               <div className="mb-6">
                 <div className="flex items-baseline gap-2">
                   <span className="text-5xl font-bold text-gray-900">
-                    ${isAnnual ? annualMonthlyPrice : monthlyPrice}
+                    ${isAnnual ? professionalAnnualMonthlyPrice : professionalMonthlyPrice}
                   </span>
                   <span className="text-gray-600">/month</span>
                 </div>
                 {isAnnual && (
                   <p className="text-sm text-green-700 mt-2">
-                    ${annualPrice} billed annually
+                    ${professionalAnnualPrice} billed annually
+                  </p>
+                )}
+              </div>
+
+              <button
+                onClick={handleProfessionalClick}
+                disabled={loading}
+                className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold mb-8 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Processing...' : user ? 'Start Free Trial' : 'Sign Up for Professional'}
+              </button>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <p className="font-medium text-gray-900">75 responses per month</p>
+                    <p className="text-sm text-gray-600">Perfect for regular use</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <p className="font-medium text-gray-900">All Free features</p>
+                    <p className="text-sm text-gray-600">AI generation & context selection</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <p className="font-medium text-gray-900">Full Client Management</p>
+                    <p className="text-sm text-gray-600">Organize projects & clients</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <p className="font-medium text-gray-900">Unlimited Response History</p>
+                    <p className="text-sm text-gray-600">Access all past responses</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <p className="font-medium text-gray-900">Priority Support</p>
+                    <p className="text-sm text-gray-600">Get help when you need it</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Premium Tier */}
+            <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 hover:border-gray-300 transition-colors">
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Premium</h3>
+                <p className="text-gray-600">For power users</p>
+              </div>
+
+              <div className="mb-6">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-5xl font-bold text-gray-900">
+                    ${isAnnual ? premiumAnnualMonthlyPrice : premiumMonthlyPrice}
+                  </span>
+                  <span className="text-gray-600">/month</span>
+                </div>
+                {isAnnual && (
+                  <p className="text-sm text-green-700 mt-2">
+                    ${premiumAnnualPrice} billed annually
                   </p>
                 )}
               </div>
@@ -276,7 +417,7 @@ export default function Pricing() {
               <button
                 onClick={handlePremiumClick}
                 disabled={loading}
-                className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold mb-8 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="w-full bg-gray-900 text-white px-6 py-3 rounded-lg hover:bg-gray-800 font-semibold mb-8 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {loading ? 'Processing...' : user ? 'Start Free Trial' : 'Sign Up for Premium'}
               </button>
@@ -288,7 +429,7 @@ export default function Pricing() {
                   </svg>
                   <div>
                     <p className="font-medium text-gray-900">Unlimited responses</p>
-                    <p className="text-sm text-gray-600">No monthly limits</p>
+                    <p className="text-sm text-gray-600">No monthly limits whatsoever</p>
                   </div>
                 </div>
 
@@ -297,8 +438,8 @@ export default function Pricing() {
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                   <div>
-                    <p className="font-medium text-gray-900">AI Response Generation</p>
-                    <p className="text-sm text-gray-600">Full access to all features</p>
+                    <p className="font-medium text-gray-900">All Professional features</p>
+                    <p className="text-sm text-gray-600">Plus exclusive extras</p>
                   </div>
                 </div>
 
@@ -307,8 +448,8 @@ export default function Pricing() {
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                   <div>
-                    <p className="font-medium text-gray-900">All Context Options</p>
-                    <p className="text-sm text-gray-600">Professional, friendly, direct & more</p>
+                    <p className="font-medium text-gray-900">🌟 AI Style Learning</p>
+                    <p className="text-sm text-gray-600">AI learns your unique voice</p>
                   </div>
                 </div>
 
@@ -317,8 +458,8 @@ export default function Pricing() {
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                   <div>
-                    <p className="font-medium text-gray-900">Copy-Paste Workflow</p>
-                    <p className="text-sm text-gray-600">Works everywhere</p>
+                    <p className="font-medium text-gray-900">Advanced Analytics</p>
+                    <p className="text-sm text-gray-600">Usage insights & trends</p>
                   </div>
                 </div>
 
@@ -328,7 +469,17 @@ export default function Pricing() {
                   </svg>
                   <div>
                     <p className="font-medium text-gray-900">Priority Support</p>
-                    <p className="text-sm text-gray-600">Get help when you need it</p>
+                    <p className="text-sm text-gray-600">Fastest response times</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <p className="font-medium text-gray-900">Early Access</p>
+                    <p className="text-sm text-gray-600">New features first</p>
                   </div>
                 </div>
               </div>
@@ -347,28 +498,28 @@ export default function Pricing() {
           <div className="space-y-6">
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <h3 className="text-lg font-bold text-gray-900 mb-2">
-                Can I try Premium before committing?
+                Which plan is right for me?
               </h3>
               <p className="text-gray-600">
-                Yes! Start with our Free plan to experience the core value. When you're ready to upgrade, you'll get immediate access to all Premium features including unlimited responses and advanced personalization.
+                <strong>Free</strong> is perfect for trying out the platform. <strong>Professional</strong> ($10/mo) is ideal if you need 2-3 responses per day and want full client management. <strong>Premium</strong> ($19/mo) is best for power users who want unlimited responses plus exclusive AI Style Learning that adapts to your unique voice.
               </p>
             </div>
 
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <h3 className="text-lg font-bold text-gray-900 mb-2">
-                What happens if I exceed 10 responses on the Free plan?
+                What happens if I exceed my monthly limit?
               </h3>
               <p className="text-gray-600">
-                You'll be prompted to upgrade to Premium. Your account remains active—you can still access your history and templates, but you'll need to upgrade to generate new responses.
+                You'll be prompted to upgrade to the next tier. Your account remains active—you can still access your history and client data, but you'll need to upgrade to generate new responses. Free users can upgrade to Professional (75 responses) or Premium (unlimited).
               </p>
             </div>
 
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <h3 className="text-lg font-bold text-gray-900 mb-2">
-                Can I cancel anytime?
+                Can I switch between plans?
               </h3>
               <p className="text-gray-600">
-                Absolutely. Cancel your Premium subscription anytime from your account settings. You'll retain Premium access until the end of your billing period, then automatically switch to the Free plan.
+                Yes! You can upgrade or downgrade anytime from your account settings. Upgrades take effect immediately. Downgrades apply at the end of your current billing period. You can move between Free, Professional, and Premium as your needs change.
               </p>
             </div>
 
@@ -377,7 +528,16 @@ export default function Pricing() {
                 How does the annual discount work?
               </h3>
               <p className="text-gray-600">
-                Pay annually and save 20% compared to monthly billing. That's ${annualPrice}/year instead of ${monthlyPrice * 12}/year—saving you ${(monthlyPrice * 12) - annualPrice} annually while getting all Premium features.
+                Pay annually and save 20% on both Professional and Premium plans. Professional: ${professionalAnnualPrice}/year (${professionalAnnualMonthlyPrice}/mo) instead of ${professionalMonthlyPrice * 12}/year. Premium: ${premiumAnnualPrice}/year (${premiumAnnualMonthlyPrice}/mo) instead of ${premiumMonthlyPrice * 12}/year.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                What is AI Style Learning?
+              </h3>
+              <p className="text-gray-600">
+                Exclusive to Premium, AI Style Learning analyzes your communication patterns and adapts future responses to match your unique voice, tone, and phrasing. The AI learns from your feedback and generates responses that sound authentically like you.
               </p>
             </div>
 

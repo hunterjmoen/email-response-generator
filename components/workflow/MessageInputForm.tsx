@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { MessageInputSchema, type ValidatedMessageInput, MESSAGE_VALIDATION } from '@freelance-flow/shared';
@@ -25,13 +25,25 @@ export function MessageInputForm({ onSubmit, isLoading = false, defaultValues }:
       },
       ...defaultValues,
     },
-    mode: 'onChange',
+    mode: 'all', // Validate on change, blur, and submit
+    shouldUnregister: false, // Keep field values when fields are unmounted (collapsed)
+    reValidateMode: 'onChange', // Re-validate on every change
   });
 
-  const { register, handleSubmit, formState: { errors, isValid }, watch } = methods;
+  const { register, handleSubmit, formState: { errors, isValid }, watch, trigger, setValue } = methods;
 
   // Watch the message field to update character count
   const messageValue = watch('originalMessage');
+
+  // Trigger validation on mount to ensure all fields (including hidden context fields) are validated
+  useEffect(() => {
+    // Trigger validation after a brief delay to ensure fields are registered
+    const timeoutId = setTimeout(() => {
+      trigger();
+    }, 150);
+
+    return () => clearTimeout(timeoutId);
+  }, [trigger]);
 
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setCharCount(e.target.value.length);
@@ -54,14 +66,15 @@ export function MessageInputForm({ onSubmit, isLoading = false, defaultValues }:
           </label>
           <div className="relative">
             <textarea
-              {...register('originalMessage')}
+              {...register('originalMessage', {
+                onChange: handleMessageChange
+              })}
               id="originalMessage"
               rows={6}
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical ${
                 errors.originalMessage ? 'border-red-300' : 'border-gray-300'
               }`}
               placeholder="Paste your client's message here..."
-              onChange={handleMessageChange}
               disabled={isLoading}
             />
             <div className={`absolute bottom-2 right-2 text-xs ${getCharCountColor()}`}>

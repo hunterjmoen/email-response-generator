@@ -24,7 +24,6 @@ export function ResponseDisplay({
   isLoading = false,
   historyId,
 }: ResponseDisplayProps) {
-  const [activeTab, setActiveTab] = useState(0);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [ratings, setRatings] = useState<Record<number, number>>({});
   const [expandedReasoning, setExpandedReasoning] = useState<Record<number, boolean>>({});
@@ -136,15 +135,48 @@ export function ResponseDisplay({
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6 max-w-4xl mx-auto">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-              <div className="space-y-2">
-                <div className="h-3 bg-gray-200 rounded"></div>
-                <div className="h-3 bg-gray-200 rounded w-5/6"></div>
-                <div className="h-3 bg-gray-200 rounded w-4/6"></div>
+          <div key={i} className="flex items-start gap-3">
+            {/* AI Avatar skeleton */}
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center text-white font-bold shadow-md opacity-50">
+                AI
+              </div>
+            </div>
+
+            {/* Message Bubble skeleton */}
+            <div className="flex-1 space-y-2">
+              <div className="animate-pulse space-y-2">
+                {/* Header skeleton */}
+                <div className="flex items-center gap-2">
+                  <div className="h-4 bg-gray-200 rounded w-24"></div>
+                  <div className="h-4 bg-gray-200 rounded-full w-16"></div>
+                  <div className="h-4 bg-gray-200 rounded-full w-20"></div>
+                </div>
+
+                {/* Message bubble skeleton */}
+                <div className="bg-gray-100 rounded-2xl rounded-tl-sm px-5 py-4 space-y-2">
+                  <div className="h-3 bg-gray-200 rounded"></div>
+                  <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+                  <div className="h-3 bg-gray-200 rounded w-4/6"></div>
+                  <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+                  <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                </div>
+
+                {/* Action buttons skeleton */}
+                <div className="flex items-center gap-3 ml-2">
+                  <div className="h-9 bg-gray-200 rounded-lg w-24"></div>
+                </div>
+              </div>
+
+              {/* Generating indicator */}
+              <div className="flex items-center gap-2 text-sm text-gray-500 ml-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Generating option {i}...</span>
               </div>
             </div>
           </div>
@@ -153,137 +185,142 @@ export function ResponseDisplay({
     );
   }
 
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.8) return 'bg-green-500';
-    if (confidence >= 0.6) return 'bg-yellow-500';
-    return 'bg-orange-500';
-  };
-
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      {/* Tab Headers */}
-      <div className="border-b border-gray-200">
-        <div className="flex">
-          {responses.map((response, index) => (
-            <button
-              key={index}
-              onClick={() => setActiveTab(index)}
-              className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === index
-                  ? 'border-green-600 text-green-600 bg-green-50'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex items-center gap-2">
-                  <span>Option {index + 1}</span>
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${getToneColor(response.tone)}`}>
-                    {response.tone}
-                  </span>
-                </div>
-                {/* Confidence Score Visualization */}
-                <div className="flex items-center gap-2 w-full">
-                  <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${getConfidenceColor(response.confidence)} transition-all`}
-                      style={{ width: `${Math.round(response.confidence * 100)}%` }}
-                    />
-                  </div>
-                  <span className="text-xs text-gray-600 font-medium">
-                    {Math.round(response.confidence * 100)}%
-                  </span>
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className="space-y-6">
+      {/* Chat-like conversation layout */}
+      <div className="space-y-6 max-w-4xl mx-auto">
+        {responses.map((response, index) => {
+          const isSelected = selectedIndex === index;
+          const isCopied = copiedIndex === index;
 
-      {/* Tab Content */}
-      <div className="p-6">
-        {responses.map((response, index) => (
-          <div
-            key={index}
-            className={activeTab === index ? 'block' : 'hidden'}
-          >
-            {/* Response content and actions */}
-            <div className="space-y-4">
-              {/* Tags */}
-              <div className="flex items-center gap-2">
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${getLengthColor(response.length)}`}>
-                  {response.length}
-                </span>
-                {response.tone && (
-                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${getToneColor(response.tone)}`}>
-                    {response.tone}
-                  </span>
-                )}
-              </div>
-
-              {/* Response text */}
-              <div className="prose prose-sm max-w-none">
-                <div className="whitespace-pre-wrap text-gray-900 leading-relaxed">
-                  {response.content}
+          return (
+            <div key={index} className="flex items-start gap-3">
+              {/* AI Avatar */}
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center text-white font-bold shadow-md">
+                  AI
                 </div>
               </div>
 
-              {/* AI Reasoning - collapsible */}
-              {response.reasoning && (
-                <div className="border-t border-gray-200 pt-4">
-                  <button
-                    onClick={() => setExpandedReasoning({
-                      ...expandedReasoning,
-                      [index]: !expandedReasoning[index]
-                    })}
-                    className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
-                  >
-                    <svg
-                      className={`h-4 w-4 transition-transform ${expandedReasoning[index] ? 'rotate-180' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              {/* Message Bubble */}
+              <div className="flex-1 space-y-2">
+                {/* Response Header */}
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm font-semibold text-gray-900">AI Assistant</span>
+                  <span className="text-xs text-gray-500">•</span>
+                  <span className="text-xs text-gray-500">Option {index + 1}</span>
+
+                  {/* Confidence Badge */}
+                  <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                    response.confidence >= 0.8 ? 'bg-green-100 text-green-700' :
+                    response.confidence >= 0.6 ? 'bg-yellow-100 text-yellow-700' : 'bg-orange-100 text-orange-700'
+                  }`}>
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
-                    Why this response?
-                  </button>
-                  {expandedReasoning[index] && (
-                    <div className="mt-3 pl-6 border-l-2 border-green-200">
-                      <p className="text-sm text-gray-600">{response.reasoning}</p>
+                    {Math.round(response.confidence * 100)}%
+                  </div>
+
+                  {/* Style tags */}
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getLengthColor(response.length)}`}>
+                    {response.length}
+                  </span>
+                  {response.tone && (
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getToneColor(response.tone)}`}>
+                      {response.tone}
+                    </span>
+                  )}
+                </div>
+
+                {/* Message Content Bubble */}
+                <div
+                  onClick={() => handleSelect(index)}
+                  className={`group relative rounded-2xl rounded-tl-sm px-5 py-4 cursor-pointer transition-all duration-200 ${
+                    isSelected
+                      ? 'bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-400 shadow-lg'
+                      : 'bg-gray-50 border-2 border-gray-200 hover:border-green-300 hover:shadow-md'
+                  }`}
+                >
+                  {/* Selected Indicator */}
+                  {isSelected && (
+                    <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-1 shadow-lg">
+                      <CheckIcon className="h-3 w-3" />
+                    </div>
+                  )}
+
+                  {/* Response Content */}
+                  <div className="whitespace-pre-wrap text-gray-800 leading-relaxed text-sm">
+                    {response.content}
+                  </div>
+
+                  {/* AI Reasoning - collapsible */}
+                  {response.reasoning && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedReasoning({
+                            ...expandedReasoning,
+                            [index]: !expandedReasoning[index]
+                          });
+                        }}
+                        className="flex items-center gap-2 text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                      >
+                        <svg
+                          className={`h-3 w-3 transition-transform ${expandedReasoning[index] ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                        Why this response?
+                      </button>
+                      {expandedReasoning[index] && (
+                        <div className="mt-2 pl-4 border-l-2 border-green-300">
+                          <p className="text-xs text-gray-600">{response.reasoning}</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              )}
 
-              {/* Actions */}
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                {/* Rating stars */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-600">Rate:</span>
-                  {renderStars(index, ratings[index])}
+                {/* Action Buttons Row */}
+                <div className="flex items-center gap-3 ml-2">
+                  {/* Copy Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopy(response.content, index);
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium text-sm ${
+                      isCopied
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-green-400'
+                    }`}
+                  >
+                    {isCopied ? (
+                      <>
+                        <CheckIcon className="h-4 w-4" />
+                        <span>Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <ClipboardIcon className="h-4 w-4" />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Rating stars */}
+                  <div className="flex items-center gap-1">
+                    {renderStars(index, ratings[index])}
+                  </div>
                 </div>
-
-                {/* Copy button */}
-                <button
-                  onClick={() => handleCopy(response.content, index)}
-                  className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-                >
-                  {copiedIndex === index ? (
-                    <>
-                      <CheckIcon className="h-4 w-4" />
-                      <span>Copied!</span>
-                    </>
-                  ) : (
-                    <>
-                      <ClipboardIcon className="h-4 w-4" />
-                      <span>Copy to Clipboard</span>
-                    </>
-                  )}
-                </button>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {responses.length === 0 && (

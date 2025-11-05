@@ -15,8 +15,7 @@ export function CopyPasteWorkflowComponent() {
   const router = useRouter();
   const [promptInput, setPromptInput] = useState('');
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
-  const [workflowStep, setWorkflowStep] = useState<'input' | 'context' | 'results'>('input');
-  const [draftMessage, setDraftMessage] = useState('');
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const { user, isAuthenticated, isLoading: authLoading, refreshSubscription } = useAuthStore();
   const {
     currentInput,
@@ -63,7 +62,6 @@ export function CopyPasteWorkflowComponent() {
         return;
       }
 
-      setWorkflowStep('results');
       setCurrentInput(input);
       setLoading(true);
 
@@ -137,28 +135,8 @@ export function CopyPasteWorkflowComponent() {
     setSelectedResponseIndex(null);
     setError(null);
     setPromptInput('');
-    setDraftMessage('');
-    setWorkflowStep('input');
+    setShowAdvancedOptions(false);
   }, [setCurrentInput, setCurrentResponse, setSelectedResponseIndex, setError]);
-
-  const handlePromptSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!promptInput.trim()) return;
-
-    if (!isAuthenticated) {
-      setError('Please log in to generate responses');
-      router.push('/auth/login');
-      return;
-    }
-
-    // Move to context step instead of generating immediately
-    setDraftMessage(promptInput);
-    setWorkflowStep('context');
-  };
-
-  const handleSuggestionClick = (suggestion: string) => {
-    setPromptInput(suggestion);
-  };
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -168,11 +146,7 @@ export function CopyPasteWorkflowComponent() {
       }
     },
     onNew: handleStartNew,
-    onSubmit: () => {
-      if (promptInput.trim() && isAuthenticated) {
-        handlePromptSubmit(new Event('submit') as any);
-      }
-    },
+    onSubmit: () => {},
     onNext: () => {
       if (responseOptions.length > 0) {
         const nextIndex = selectedResponseIndex === null ? 0 :
@@ -215,189 +189,141 @@ export function CopyPasteWorkflowComponent() {
           </div>
         </header>
 
-        {workflowStep === 'input' && (
-          <div className="flex-1 flex flex-col items-center justify-center px-4 pb-32">
-            <h2 className="text-3xl font-semibold text-gray-900 mb-8">What can I help with?</h2>
-            {!isAuthenticated && (
-              <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-800">
-                  Please <Link href="/auth/login" className="font-medium underline hover:text-yellow-900">log in</Link> to generate responses.
-                </p>
-              </div>
-            )}
-
-            <form onSubmit={handlePromptSubmit} className="w-full max-w-2xl mb-6">
-              <div className="relative">
-                <textarea
-                  value={promptInput}
-                  onChange={(e) => setPromptInput(e.target.value)}
-                  placeholder="Paste your client's message here..."
-                  className="w-full px-4 py-3 pr-12 pb-8 border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  rows={3}
-                  maxLength={2000}
-                />
-                <div className="absolute left-4 bottom-3 text-xs text-gray-500">
-                  {promptInput.length}/2000 characters
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            {/* Single-page workflow */}
+            {!currentResponse && !isLoading && (
+              <>
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2">Generate AI Response</h2>
+                  <p className="text-gray-600">Paste your client's message and get professional responses instantly</p>
                 </div>
-                <button
-                  type="submit"
-                  disabled={!promptInput.trim() || !isAuthenticated}
-                  className="absolute right-3 bottom-3 p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                  </svg>
-                </button>
-              </div>
-            </form>
 
-            <div className="flex flex-wrap gap-2 justify-center max-w-3xl">
-              <button
-                onClick={() => handleSuggestionClick("Can we extend the deadline by 2 days?")}
-                className="px-4 py-2 text-sm border border-gray-300 rounded-full hover:bg-gray-50"
-              >
-                Deadline Extension
-              </button>
-              <button
-                onClick={() => handleSuggestionClick("Need to discuss scope changes")}
-                className="px-4 py-2 text-sm border border-gray-300 rounded-full hover:bg-gray-50"
-              >
-                Scope Discussion
-              </button>
-              <button
-                onClick={() => handleSuggestionClick("Following up on payment")}
-                className="px-4 py-2 text-sm border border-gray-300 rounded-full hover:bg-gray-50"
-              >
-                Payment Follow-up
-              </button>
-              <button
-                onClick={() => handleSuggestionClick("Weekly project update")}
-                className="px-4 py-2 text-sm border border-gray-300 rounded-full hover:bg-gray-50"
-              >
-                Project Update
-              </button>
-            </div>
-
-            <div className="mt-12 text-center text-xs text-gray-500">
-              ↓ Scroll to explore
-            </div>
-          </div>
-        )}
-
-        {workflowStep === 'context' && (
-          <div className="flex-1 overflow-y-auto">
-            <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-              <div className="mb-6">
-                <button
-                  onClick={() => {
-                    setWorkflowStep('input');
-                    setPromptInput(draftMessage);
-                  }}
-                  className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Back to message
-                </button>
-              </div>
-
-              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h3 className="text-sm font-medium text-blue-800 mb-2">Review Your Message</h3>
-                <p className="text-sm text-blue-700 italic">"{draftMessage}"</p>
-              </div>
-
-              <MessageInputForm
-                onSubmit={handleInputSubmit}
-                isLoading={false}
-                defaultValues={{
-                  originalMessage: draftMessage,
-                  context: {
-                    urgency: 'standard',
-                    messageType: 'update',
-                    relationshipStage: 'established',
-                    projectPhase: 'active',
-                  }
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {workflowStep === 'results' && (
-          <div className="flex-1 overflow-y-auto">
-            <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-              {error && (
-                <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex">
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-red-800">Generation Error</h3>
-                      <div className="mt-2 text-sm text-red-700">
-                        <p>{error}</p>
-                      </div>
-                      <div className="mt-4">
-                        <button
-                          type="button"
-                          onClick={() => setError(null)}
-                          className="text-sm font-medium text-red-800 underline hover:text-red-700"
-                        >
-                          Dismiss
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-8">
-                {(responseOptions.length > 0 || isLoading) && (
-                  <div>
-                    <div className="flex justify-between items-center mb-6">
-                      <h2 className="text-xl font-semibold text-gray-900">AI Response Options</h2>
-                      {!isLoading && (
-                        <button
-                          onClick={handleStartNew}
-                          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
-                        >
-                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                          New Response
-                        </button>
-                      )}
-                    </div>
-
-                    <ResponseDisplay
-                      responses={responseOptions}
-                      onCopy={handleCopy}
-                      onRate={handleRate}
-                      onSelect={handleSelect}
-                      selectedIndex={selectedResponseIndex || undefined}
-                      isLoading={isLoading}
-                      historyId={currentResponse?.historyId}
-                    />
+                {!isAuthenticated && (
+                  <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      Please <Link href="/auth/login" className="font-medium underline hover:text-yellow-900">log in</Link> to generate responses.
+                    </p>
                   </div>
                 )}
 
-                {currentResponse && selectedResponseIndex !== null && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="flex">
-                      <div className="ml-3">
-                        <h3 className="text-sm font-medium text-green-800">Response Ready!</h3>
-                        <div className="mt-2 text-sm text-green-700">
-                          <p>
-                            Your selected response has been copied to the clipboard and is ready to use.
-                            You can now paste it into your email or messaging platform.
-                          </p>
+                {/* Integrated form with collapsible advanced options */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                  <MessageInputForm
+                    onSubmit={handleInputSubmit}
+                    isLoading={isLoading}
+                    defaultValues={{
+                      originalMessage: '',
+                      context: {
+                        urgency: 'standard',
+                        messageType: 'update',
+                        relationshipStage: 'established',
+                        projectPhase: 'active',
+                      }
+                    }}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Error display */}
+            {error && (
+              <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-sm font-medium text-red-800">Generation Error</h3>
+                    <div className="mt-2 text-sm text-red-700">
+                      <p>{error}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setError(null)}
+                    className="text-red-400 hover:text-red-600"
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Results section */}
+            {(responseOptions.length > 0 || isLoading) && (
+              <div className="space-y-6">
+                {/* Chat-like header with New Response button */}
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Conversation</h2>
+                    <p className="text-sm text-gray-600 mt-1">Choose the response that fits your style</p>
+                  </div>
+                  {!isLoading && (
+                    <button
+                      onClick={handleStartNew}
+                      className="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-green-400 transition-colors flex items-center gap-2 font-medium shadow-sm"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      New Conversation
+                    </button>
+                  )}
+                </div>
+
+                {/* Client Message Display - Incoming message style */}
+                {currentInput && (
+                  <div className="max-w-4xl mx-auto">
+                    <div className="flex items-start gap-3">
+                      {/* Client Avatar */}
+                      <div className="flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center text-white font-bold shadow-md">
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      </div>
+
+                      {/* Client Message Bubble */}
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-semibold text-gray-900">Client</span>
+                          <span className="text-xs text-gray-500">•</span>
+                          <span className="text-xs text-gray-500">Just now</span>
+                        </div>
+
+                        <div className="bg-white border-2 border-gray-200 rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm">
+                          <div className="whitespace-pre-wrap text-gray-800 leading-relaxed text-sm">
+                            {currentInput.originalMessage}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
+
+                {/* Divider with "AI Suggestions" label */}
+                {currentInput && !isLoading && (
+                  <div className="max-w-4xl mx-auto flex items-center gap-3 py-4">
+                    <div className="flex-1 h-px bg-gray-200"></div>
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">AI Suggestions</span>
+                    <div className="flex-1 h-px bg-gray-200"></div>
+                  </div>
+                )}
+
+                <ResponseDisplay
+                  responses={responseOptions}
+                  onCopy={handleCopy}
+                  onRate={handleRate}
+                  onSelect={handleSelect}
+                  selectedIndex={selectedResponseIndex || undefined}
+                  isLoading={isLoading}
+                  historyId={currentResponse?.historyId}
+                />
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Keyboard Shortcuts Help Button */}
         <div className="fixed bottom-6 left-6 z-50">

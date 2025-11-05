@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { type ValidatedMessageInput, type ResponseContext } from '@freelance-flow/shared';
 import { trpc } from '../../utils/trpc';
@@ -11,6 +11,7 @@ export function ContextSelector({ onChange }: ContextSelectorProps) {
   const { register, watch, setValue } = useFormContext<ValidatedMessageInput>();
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const currentContext = watch('context');
 
@@ -87,10 +88,30 @@ export function ContextSelector({ onChange }: ContextSelectorProps) {
   ];
 
   return (
-    <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">Response Context</h3>
+    <div className="border-t border-gray-200 pt-4 mt-4">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between py-2 text-left hover:bg-gray-50 rounded-lg px-3 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <svg
+            className={`h-5 w-5 text-gray-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          <h3 className="text-sm font-semibold text-gray-900">Advanced Options</h3>
+        </div>
+        <span className="text-xs text-gray-500">
+          {isExpanded ? 'Hide' : 'Show'} context settings
+        </span>
+      </button>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className={`bg-gray-50 rounded-lg p-4 mt-3 space-y-4 ${isExpanded ? '' : 'hidden'}`}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Client Selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -222,5 +243,6 @@ export function ContextSelector({ onChange }: ContextSelectorProps) {
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 }
