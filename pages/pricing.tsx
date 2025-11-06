@@ -11,7 +11,9 @@ export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const createPortalSession = trpc.stripe.createPortalSession.useMutation();
 
   // Prevent hydration mismatch by only rendering auth UI on client
   useEffect(() => {
@@ -37,6 +39,62 @@ export default function Pricing() {
   const PREMIUM_ANNUAL_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PREMIUM_ANNUAL_PRICE_ID || 'price_premium_annual';
 
   const createSubscriptionSession = trpc.stripe.createSubscriptionSession.useMutation();
+
+  // Helper function to get usage percentage
+  const getUsagePercentage = () => {
+    if (!user?.subscription) return 0;
+    const { usageCount, monthlyLimit } = user.subscription;
+    return Math.round((usageCount / monthlyLimit) * 100);
+  };
+
+  // Helper function to get usage color
+  const getUsageColor = () => {
+    const percentage = getUsagePercentage();
+    if (percentage < 70) return 'bg-green-500';
+    if (percentage < 90) return 'bg-amber-500';
+    return 'bg-red-500';
+  };
+
+  // Helper function to check if user has a subscription
+  const hasSubscription = () => {
+    return user?.subscription && user.subscription.tier !== 'free' && user.subscription.status === 'active';
+  };
+
+  // Helper function to check if user can upgrade from current tier
+  const canUpgradeToTier = (tier: 'professional' | 'premium') => {
+    if (!hasSubscription()) return true;
+    const currentTier = user?.subscription?.tier;
+    if (tier === 'professional') return currentTier === 'free';
+    if (tier === 'premium') return currentTier !== 'premium';
+    return false;
+  };
+
+  // Helper function to check if tier is current
+  const isCurrentTier = (tier: 'free' | 'professional' | 'premium') => {
+    return user?.subscription?.tier === tier && user.subscription.status === 'active';
+  };
+
+  // Handle opening billing portal
+  const handleManageSubscription = async () => {
+    if (!user) return;
+
+    setPortalLoading(true);
+    try {
+      const baseUrl = window.location.origin;
+      const result = await createPortalSession.mutateAsync({
+        customerId: user.id,
+        returnUrl: `${baseUrl}/pricing`,
+      });
+
+      if (result.url) {
+        window.location.href = result.url;
+      }
+    } catch (error) {
+      console.error('Failed to open billing portal:', error);
+      alert('Failed to open billing portal. Please try again.');
+      setPortalLoading(false);
+    }
+  };
 
   const handleProfessionalClick = async () => {
     if (!user) {
@@ -242,7 +300,18 @@ export default function Pricing() {
 
           <div className="grid md:grid-cols-3 gap-6 max-w-7xl mx-auto">
             {/* Free Tier */}
-            <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 hover:border-gray-300 transition-colors">
+            <div className={`rounded-2xl border-2 p-8 transition-all ${
+              isCurrentTier('free')
+                ? 'bg-green-50 border-green-600 ring-2 ring-green-200'
+                : 'bg-white border-gray-200 hover:border-gray-300'
+            }`}>
+              {isCurrentTier('free') && (
+                <div className="mb-4">
+                  <span className="inline-block bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                    YOUR CURRENT PLAN
+                  </span>
+                </div>
+              )}
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Free</h3>
                 <p className="text-gray-600">Perfect for getting started</p>
@@ -306,11 +375,21 @@ export default function Pricing() {
             </div>
 
             {/* Professional Tier */}
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border-2 border-green-600 p-8 relative">
+            <div className={`rounded-2xl border-2 p-8 relative transition-all ${
+              isCurrentTier('professional')
+                ? 'bg-green-50 border-green-600 ring-2 ring-green-200'
+                : 'bg-gradient-to-br from-green-50 to-green-100 border-green-600'
+            }`}>
               <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <span className="bg-green-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
-                  MOST POPULAR
-                </span>
+                {isCurrentTier('professional') ? (
+                  <span className="bg-green-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                    YOUR CURRENT PLAN
+                  </span>
+                ) : (
+                  <span className="bg-green-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                    MOST POPULAR
+                  </span>
+                )}
               </div>
 
               <div className="mb-6">
@@ -332,13 +411,40 @@ export default function Pricing() {
                 )}
               </div>
 
-              <button
-                onClick={handleProfessionalClick}
-                disabled={loading}
-                className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold mb-8 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Processing...' : user ? 'Start Free Trial' : 'Sign Up for Professional'}
-              </button>
+              {isCurrentTier('professional') ? (
+                <>
+                  <button
+                    onClick={handleManageSubscription}
+                    disabled={portalLoading}
+                    className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold mb-4 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {portalLoading ? 'Opening...' : 'Manage Subscription'}
+                  </button>
+
+                  {/* Usage Statistics */}
+                  <div className="bg-white rounded-lg p-4 mb-8">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-gray-700">Usage This Month</span>
+                      <span className="text-sm font-bold text-gray-900">{user?.subscription?.usageCount || 0} / {user?.subscription?.monthlyLimit || 75}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all ${getUsageColor()}`}
+                        style={{ width: `${Math.min(getUsagePercentage(), 100)}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-2">{getUsagePercentage()}% of monthly limit used</p>
+                  </div>
+                </>
+              ) : (
+                <button
+                  onClick={handleProfessionalClick}
+                  disabled={loading || (hasSubscription() && !canUpgradeToTier('professional'))}
+                  className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold mb-8 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Processing...' : user ? 'Start Free Trial' : 'Sign Up for Professional'}
+                </button>
+              )}
 
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
@@ -394,7 +500,18 @@ export default function Pricing() {
             </div>
 
             {/* Premium Tier */}
-            <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 hover:border-gray-300 transition-colors">
+            <div className={`rounded-2xl border-2 p-8 transition-all ${
+              isCurrentTier('premium')
+                ? 'bg-gray-50 border-gray-900 ring-2 ring-gray-200'
+                : 'bg-white border-gray-200 hover:border-gray-300'
+            }`}>
+              {isCurrentTier('premium') && (
+                <div className="mb-4">
+                  <span className="inline-block bg-gray-900 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                    YOUR CURRENT PLAN
+                  </span>
+                </div>
+              )}
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Premium</h3>
                 <p className="text-gray-600">For power users</p>
@@ -414,13 +531,34 @@ export default function Pricing() {
                 )}
               </div>
 
-              <button
-                onClick={handlePremiumClick}
-                disabled={loading}
-                className="w-full bg-gray-900 text-white px-6 py-3 rounded-lg hover:bg-gray-800 font-semibold mb-8 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Processing...' : user ? 'Start Free Trial' : 'Sign Up for Premium'}
-              </button>
+              {isCurrentTier('premium') ? (
+                <>
+                  <button
+                    onClick={handleManageSubscription}
+                    disabled={portalLoading}
+                    className="w-full bg-gray-900 text-white px-6 py-3 rounded-lg hover:bg-gray-800 font-semibold mb-4 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {portalLoading ? 'Opening...' : 'Manage Subscription'}
+                  </button>
+
+                  {/* Usage Statistics */}
+                  <div className="bg-white rounded-lg p-4 mb-8">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-gray-700">Status</span>
+                      <span className="text-sm font-bold text-green-600">Unlimited Responses</span>
+                    </div>
+                    <p className="text-xs text-gray-600">No monthly limits. Enjoy unlimited access to all premium features.</p>
+                  </div>
+                </>
+              ) : (
+                <button
+                  onClick={handlePremiumClick}
+                  disabled={loading || (isCurrentTier('premium'))}
+                  className="w-full bg-gray-900 text-white px-6 py-3 rounded-lg hover:bg-gray-800 font-semibold mb-8 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Processing...' : user ? 'Start Free Trial' : 'Sign Up for Premium'}
+                </button>
+              )}
 
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
