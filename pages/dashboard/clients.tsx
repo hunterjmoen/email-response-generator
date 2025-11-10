@@ -68,14 +68,14 @@ export default function ClientsPage() {
         <div className="p-6">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Clients</h2>
-              <p className="text-gray-600 mt-1">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Clients</h2>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
                 Manage your client relationships and projects
               </p>
             </div>
             <button
               onClick={() => setIsFormOpen(true)}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium text-sm flex items-center gap-2"
+              className="bg-green-600 dark:bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-medium text-sm flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -86,7 +86,7 @@ export default function ClientsPage() {
 
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 dark:border-green-500"></div>
             </div>
           ) : (
             <ClientList

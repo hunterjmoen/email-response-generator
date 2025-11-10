@@ -128,8 +128,8 @@ export default function ProfileSettings() {
       <SettingsLayout>
         <div className="p-6 flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading profile...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 dark:border-green-500 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading profile...</p>
           </div>
         </div>
       </SettingsLayout>
@@ -166,7 +166,7 @@ export default function ProfileSettings() {
             <input
               {...register('firstName')}
               type="text"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-shadow"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-shadow dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
               placeholder="Enter your first name"
             />
           </SettingsField>
@@ -179,7 +179,7 @@ export default function ProfileSettings() {
             <input
               {...register('lastName')}
               type="text"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-shadow"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-shadow dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
               placeholder="Enter your last name"
             />
           </SettingsField>
@@ -193,7 +193,7 @@ export default function ProfileSettings() {
               {...register('email')}
               type="email"
               disabled
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed"
             />
           </SettingsField>
 
@@ -204,7 +204,7 @@ export default function ProfileSettings() {
           >
             <select
               {...register('industry')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-shadow"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-shadow dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="">Select an industry</option>
               <option value="web-development">Web Development</option>
@@ -227,14 +227,14 @@ export default function ProfileSettings() {
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-1">Account Created</p>
-              <p className="text-sm text-gray-900">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Created</p>
+              <p className="text-sm text-gray-900 dark:text-gray-100">
                 {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : 'N/A'}
               </p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-1">Last Updated</p>
-              <p className="text-sm text-gray-900">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Updated</p>
+              <p className="text-sm text-gray-900 dark:text-gray-100">
                 {profile?.updatedAt ? new Date(profile.updatedAt).toLocaleDateString() : 'N/A'}
               </p>
             </div>
@@ -242,10 +242,10 @@ export default function ProfileSettings() {
         </SettingsSection>
 
         {/* Save Button */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <div>
             {hasUnsavedChanges && (
-              <p className="text-sm text-amber-600 flex items-center gap-2">
+              <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
@@ -258,14 +258,14 @@ export default function ProfileSettings() {
               type="button"
               onClick={() => reset()}
               disabled={!hasUnsavedChanges || isSaving}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!hasUnsavedChanges || isSaving}
-              className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              className="px-4 py-2 text-sm font-medium text-white bg-green-600 dark:bg-green-500 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               {isSaving ? (
                 <>

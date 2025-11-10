@@ -69,7 +69,7 @@ export function ClientForm({ clientId, onClose, onSubmit }: ClientFormProps) {
   if (isLoading && clientId) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-8">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
         </div>
       </div>
@@ -78,15 +78,15 @@ export function ClientForm({ clientId, onClose, onSubmit }: ClientFormProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {clientId ? 'Edit Client' : 'Add New Client'}
             </h3>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-500"
+              className="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -100,24 +100,24 @@ export function ClientForm({ clientId, onClose, onSubmit }: ClientFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             {/* Left Column */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Name <span className="text-red-500">*</span>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Name <span className="text-red-500 dark:text-red-400">*</span>
               </label>
               <input
                 type="text"
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  errors.name ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-100 ${
+                  errors.name ? 'border-red-500 dark:border-red-400' : 'border-gray-300 dark:border-gray-600'
                 }`}
                 placeholder="Client name"
               />
-              {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+              {errors.name && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name}</p>}
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Email
               </label>
               <input
@@ -125,16 +125,16 @@ export function ClientForm({ clientId, onClose, onSubmit }: ClientFormProps) {
                 id="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  errors.email ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-100 ${
+                  errors.email ? 'border-red-500 dark:border-red-400' : 'border-gray-300 dark:border-gray-600'
                 }`}
                 placeholder="client@example.com"
               />
-              {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+              {errors.email && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email}</p>}
             </div>
 
             <div>
-              <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="company" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Company
               </label>
               <input
@@ -142,13 +142,13 @@ export function ClientForm({ clientId, onClose, onSubmit }: ClientFormProps) {
                 id="company"
                 value={formData.company}
                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-100"
                 placeholder="Company name"
               />
             </div>
 
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Phone
               </label>
               <input
@@ -156,13 +156,13 @@ export function ClientForm({ clientId, onClose, onSubmit }: ClientFormProps) {
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-100"
                 placeholder="+1 (555) 123-4567"
               />
             </div>
 
             <div>
-              <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="website" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Website
               </label>
               <input
@@ -170,23 +170,23 @@ export function ClientForm({ clientId, onClose, onSubmit }: ClientFormProps) {
                 id="website"
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  errors.website ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-100 ${
+                  errors.website ? 'border-red-500 dark:border-red-400' : 'border-gray-300 dark:border-gray-600'
                 }`}
                 placeholder="https://example.com"
               />
-              {errors.website && <p className="mt-1 text-sm text-red-600">{errors.website}</p>}
+              {errors.website && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.website}</p>}
             </div>
 
             <div>
-              <label htmlFor="relationshipStage" className="block text-sm font-medium text-gray-700 mb-1">
-                Relationship Stage <span className="text-red-500">*</span>
+              <label htmlFor="relationshipStage" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Relationship Stage <span className="text-red-500 dark:text-red-400">*</span>
               </label>
               <select
                 id="relationshipStage"
                 value={formData.relationshipStage}
                 onChange={(e) => setFormData({ ...formData, relationshipStage: e.target.value as any })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-100"
               >
                 <option value="new">{RELATIONSHIP_STAGE_LABELS.new}</option>
                 <option value="established">{RELATIONSHIP_STAGE_LABELS.established}</option>
@@ -198,7 +198,7 @@ export function ClientForm({ clientId, onClose, onSubmit }: ClientFormProps) {
 
           {/* Full-width notes field */}
           <div className="mb-4">
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Notes
             </label>
             <textarea
@@ -206,7 +206,7 @@ export function ClientForm({ clientId, onClose, onSubmit }: ClientFormProps) {
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-100"
               placeholder="Additional notes about this client..."
             />
           </div>
@@ -215,14 +215,14 @@ export function ClientForm({ clientId, onClose, onSubmit }: ClientFormProps) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+              className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              className="px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 disabled:opacity-50"
             >
               {isSubmitting ? 'Saving...' : clientId ? 'Update Client' : 'Create Client'}
             </button>

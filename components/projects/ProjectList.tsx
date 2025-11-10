@@ -10,9 +10,9 @@ interface ProjectListProps {
 export function ProjectList({ projects, onEdit, onDelete }: ProjectListProps) {
   if (projects.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-12 text-center">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
         <svg
-          className="mx-auto h-12 w-12 text-gray-400"
+          className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -24,74 +24,74 @@ export function ProjectList({ projects, onEdit, onDelete }: ProjectListProps) {
             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
           />
         </svg>
-        <h3 className="mt-2 text-lg font-medium text-gray-900">No projects yet</h3>
-        <p className="mt-1 text-gray-500">Get started by creating a new project.</p>
+        <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-gray-100">No projects yet</h3>
+        <p className="mt-1 text-gray-500 dark:text-gray-400">Get started by creating a new project.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead className="bg-gray-50 dark:bg-gray-900">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Name
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Status
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Budget
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Deadline
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Actions
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           {projects.map((project) => (
-            <tr key={project.id} className="hover:bg-gray-50">
+            <tr key={project.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
               <td className="px-6 py-4">
-                <div className="text-sm font-medium text-gray-900">{project.name}</div>
+                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{project.name}</div>
                 {project.description && (
-                  <div className="text-sm text-gray-500 mt-1 line-clamp-2">{project.description}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{project.description}</div>
                 )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                   project.status === 'discovery'
-                    ? 'bg-blue-100 text-blue-800'
+                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300'
                     : project.status === 'active'
-                    ? 'bg-green-100 text-green-800'
+                    ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300'
                     : project.status === 'completion'
-                    ? 'bg-purple-100 text-purple-800'
+                    ? 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300'
                     : project.status === 'maintenance'
-                    ? 'bg-gray-100 text-gray-800'
-                    : 'bg-yellow-100 text-yellow-800'
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                    : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300'
                 }`}>
                   {project.status}
                 </span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                 {project.budget ? `$${project.budget.toLocaleString()}` : '—'}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                 {project.deadline ? format(new Date(project.deadline), 'MMM d, yyyy') : '—'}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <button
                   onClick={() => onEdit(project.id)}
-                  className="text-green-600 hover:text-green-700 mr-4"
+                  className="text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 mr-4"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => onDelete(project.id)}
-                  className="text-red-600 hover:text-red-700"
+                  className="text-red-600 dark:text-red-500 hover:text-red-700 dark:hover:text-red-400"
                 >
                   Delete
                 </button>

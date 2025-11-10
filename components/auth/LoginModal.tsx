@@ -206,10 +206,10 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-8">
+      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-8">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+          className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -217,13 +217,13 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
         </button>
 
         <div className="flex flex-col items-center mb-6">
-          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
-            <span className="text-green-600 font-bold text-xl">FL</span>
+          <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
+            <span className="text-green-600 dark:text-green-400 font-bold text-xl">FL</span>
           </div>
-          <h2 className="text-2xl font-semibold text-gray-900">
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
             {mode === 'login' ? 'Welcome Back' : 'Create Your Account'}
           </h2>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             {mode === 'login'
               ? 'Sign in to continue to FreelanceFlow'
               : 'Join FreelanceFlow and streamline your client communications'}
@@ -234,60 +234,60 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
           {mode === 'register' && (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-900 mb-1">
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                   First Name
                 </label>
                 <input
                   {...register('firstName')}
                   type="text"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-gray-100"
                   placeholder="John"
                 />
                 {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.firstName.message}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.firstName.message}</p>
                 )}
               </div>
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-900 mb-1">
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                   Last Name
                 </label>
                 <input
                   {...register('lastName')}
                   type="text"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-gray-100"
                   placeholder="Doe"
                 />
                 {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.lastName.message}</p>
                 )}
               </div>
             </div>
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-900 mb-1">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
               {mode === 'register' ? 'Email Address' : 'Work email'}
             </label>
             <input
               {...register('email')}
               type="email"
               autoComplete="email"
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-gray-100"
               placeholder="alexsmith@content-mobbin.com"
             />
             {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
             )}
           </div>
 
           {mode === 'register' && (
             <div>
-              <label htmlFor="industry" className="block text-sm font-medium text-gray-900 mb-1">
+              <label htmlFor="industry" className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                 Industry (Optional)
               </label>
               <select
                 {...register('industry')}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-gray-100"
               >
                 <option value="">Select your industry</option>
                 <option value="web-development">Web Development</option>
@@ -302,7 +302,7 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
           )}
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-900 mb-1">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
               Password
             </label>
             <div className="relative">
@@ -310,13 +310,13 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
                 {...register('password')}
                 type={showPassword ? 'text' : 'password'}
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent pr-10"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent pr-10 text-gray-900 dark:text-gray-100"
                 placeholder={mode === 'register' ? 'Minimum 8 characters' : '••••••••••'}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
               >
                 {showPassword ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -331,13 +331,13 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
               </button>
             </div>
             {errors.password && (
-              <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
             )}
           </div>
 
           {submitError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-sm text-red-600">{submitError}</p>
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+              <p className="text-sm text-red-600 dark:text-red-400">{submitError}</p>
             </div>
           )}
 
@@ -355,7 +355,7 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
             <div className="text-center">
               <button
                 type="button"
-                className="text-sm text-gray-600 hover:text-gray-800"
+                className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
               >
                 Forgot password?
               </button>
@@ -369,7 +369,7 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
                 setMode(mode === 'login' ? 'register' : 'login');
                 setSubmitError(null);
               }}
-              className="text-sm font-medium text-green-600 hover:text-green-700"
+              className="text-sm font-medium text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
             >
               {mode === 'login'
                 ? "Don't have an account? Sign up"
@@ -380,17 +380,17 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
 
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300" />
+            <div className="w-full border-t border-gray-300 dark:border-gray-600" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">or</span>
+            <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">or</span>
           </div>
         </div>
 
         <div className="space-y-3">
           <button
             onClick={() => handleSocialLogin('google')}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -410,29 +410,29 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            <span className="text-gray-700 font-medium">Continue with Google</span>
+            <span className="text-gray-700 dark:text-gray-300 font-medium">Continue with Google</span>
           </button>
 
           <button
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+            <svg className="w-5 h-5 text-gray-700 dark:text-gray-300" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
             </svg>
-            <span className="text-gray-700 font-medium">Continue with SAML SSO</span>
+            <span className="text-gray-700 dark:text-gray-300 font-medium">Continue with SAML SSO</span>
           </button>
         </div>
 
-        <div className="mt-6 text-center text-xs text-gray-500">
+        <div className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
           By signing up to the FreelanceFlow platform you understand and agree with our{' '}
-          <a href="#" className="text-green-600 hover:underline">Customer Terms of Service</a>
+          <a href="#" className="text-green-600 dark:text-green-400 hover:underline">Customer Terms of Service</a>
           {' and '}
-          <a href="#" className="text-green-600 hover:underline">Privacy Policy</a>
+          <a href="#" className="text-green-600 dark:text-green-400 hover:underline">Privacy Policy</a>
         </div>
 
-        <div className="mt-4 text-center text-xs text-gray-500">
+        <div className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400">
           Having trouble? Contact us at{' '}
-          <a href="mailto:support@freelanceflow.io" className="text-green-600 hover:underline">
+          <a href="mailto:support@freelanceflow.io" className="text-green-600 dark:text-green-400 hover:underline">
             support@freelanceflow.io
           </a>
         </div>

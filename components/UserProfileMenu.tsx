@@ -78,12 +78,12 @@ export function UserProfileMenu() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-          <div className="px-4 py-3 border-b border-gray-200">
-            <p className="font-semibold text-gray-900">{getUserName()}</p>
-            <p className="text-sm text-gray-600 truncate">{user?.email}</p>
+        <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+            <p className="font-semibold text-gray-900 dark:text-gray-100">{getUserName()}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{user?.email}</p>
             {user?.subscription && (
-              <span className="inline-block mt-2 px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">
+              <span className="inline-block mt-2 px-2 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-semibold rounded">
                 {user.subscription.tier.charAt(0).toUpperCase() + user.subscription.tier.slice(1)} Plan
               </span>
             )}
@@ -92,7 +92,7 @@ export function UserProfileMenu() {
           <div className="py-2">
             <Link
               href="/dashboard/generate"
-              className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,7 +103,7 @@ export function UserProfileMenu() {
 
             <Link
               href="/settings/profile"
-              className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,7 +114,7 @@ export function UserProfileMenu() {
 
             <Link
               href="/settings/profile"
-              className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -126,7 +126,7 @@ export function UserProfileMenu() {
 
             <Link
               href="/pricing"
-              className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,10 +136,10 @@ export function UserProfileMenu() {
             </Link>
           </div>
 
-          <div className="border-t border-gray-200 pt-2">
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 transition-colors w-full"
+              className="flex items-center gap-3 px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
