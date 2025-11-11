@@ -6,6 +6,7 @@ interface KeyboardShortcutHandlers {
   onSubmit?: () => void;
   onNext?: () => void;
   onPrevious?: () => void;
+  onRegenerate?: () => void;
 }
 
 export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers) {
@@ -27,6 +28,12 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
         handlers.onSubmit?.();
+      }
+
+      // Cmd/Ctrl + R to regenerate
+      if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
+        e.preventDefault();
+        handlers.onRegenerate?.();
       }
 
       // Arrow keys for navigation (only when not in input)
