@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 
 interface UsageIndicatorProps {
@@ -14,9 +14,19 @@ export function UsageIndicator({
   tier,
   compact = false
 }: UsageIndicatorProps) {
+  const [isPulsing, setIsPulsing] = useState(false);
+
   const isUnlimited = tier === 'premium' || monthlyLimit >= 999999;
   const percentage = isUnlimited ? 0 : Math.min((usageCount / monthlyLimit) * 100, 100);
   const remaining = isUnlimited ? Infinity : Math.max(monthlyLimit - usageCount, 0);
+
+  // Calculate days until reset (assumes monthly reset)
+  const daysUntilReset = useMemo(() => {
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const diff = nextMonth.getTime() - now.getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  }, []);
 
   // Warning thresholds
   const isWarning = percentage >= 70 && percentage < 90;
@@ -38,6 +48,15 @@ export function UsageIndicator({
     return 'bg-green-500';
   }, [isExceeded, isCritical, isWarning]);
 
+  // Pulse animation when critical or exceeded
+  useEffect(() => {
+    if (isCritical || isExceeded) {
+      setIsPulsing(true);
+    } else {
+      setIsPulsing(false);
+    }
+  }, [isCritical, isExceeded]);
+
   if (compact) {
     return (
       <div className="text-xs">
@@ -58,26 +77,50 @@ export function UsageIndicator({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-      <div className="flex items-start justify-between mb-2">
+    <div className={`bg-gradient-to-br ${
+      isExceeded ? 'from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-900/30 border-red-300 dark:border-red-800' :
+      isCritical ? 'from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-900/30 border-orange-300 dark:border-orange-800' :
+      isWarning ? 'from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-900/30 border-yellow-300 dark:border-yellow-800' :
+      'from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-gray-200 dark:border-gray-700'
+    } border-2 rounded-xl p-4 transition-all duration-300 ${isPulsing ? 'animate-pulse' : ''}`}>
+
+      {/* Premium Badge */}
+      {isUnlimited && (
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-bold rounded-full mb-3">
+          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+          PREMIUM
+        </div>
+      )}
+
+      <div className="flex items-start justify-between mb-3">
         <div>
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-            {isUnlimited ? 'Usage' : 'Monthly Usage'}
+          <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+            Monthly Usage
           </h3>
           {isUnlimited ? (
-            <p className="text-xl font-semibold text-green-600 dark:text-green-400 mt-1">
-              Unlimited
-            </p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                ∞
+              </p>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Unlimited</span>
+            </div>
           ) : (
-            <p className={`text-xl font-semibold mt-1 ${statusColor}`}>
-              {usageCount} / {monthlyLimit}
-            </p>
+            <div className="flex items-baseline gap-1.5">
+              <p className={`text-2xl font-bold ${statusColor} dark:${statusColor.replace('600', '400')}`}>
+                {usageCount}
+              </p>
+              <span className="text-sm text-gray-500 dark:text-gray-400">/ {monthlyLimit}</span>
+            </div>
           )}
         </div>
         {!isUnlimited && (
           <div className="text-right">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Remaining</p>
-            <p className={`text-lg font-semibold ${statusColor}`}>
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+              Left
+            </p>
+            <p className={`text-2xl font-bold ${statusColor} dark:${statusColor.replace('600', '400')}`}>
               {remaining}
             </p>
           </div>
@@ -158,9 +201,28 @@ export function UsageIndicator({
           )}
 
           {!isWarning && !isCritical && !isExceeded && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Resets monthly • <Link href="/pricing" className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium">Upgrade for unlimited</Link>
-            </p>
+            <div className="space-y-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
+                <span>Resets in {daysUntilReset} {daysUntilReset === 1 ? 'day' : 'days'}</span>
+                <span>{tier === 'free' ? 'Free Plan' : tier === 'professional' ? 'Pro Plan' : ''}</span>
+              </p>
+              {tier === 'free' && percentage >= 50 && (
+                <Link
+                  href="/pricing"
+                  className="block w-full text-center bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-xs font-semibold py-2.5 px-3 rounded-lg transition-all shadow-sm hover:shadow-md"
+                >
+                  ⚡ Upgrade to Pro - 75 responses/mo
+                </Link>
+              )}
+              {tier === 'professional' && percentage >= 50 && (
+                <Link
+                  href="/pricing"
+                  className="block w-full text-center bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-semibold py-2.5 px-3 rounded-lg transition-all shadow-sm hover:shadow-md"
+                >
+                  ✨ Go Premium - Unlimited
+                </Link>
+              )}
+            </div>
           )}
         </>
       )}

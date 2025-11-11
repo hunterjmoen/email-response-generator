@@ -1,8 +1,11 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { MessageInputForm } from './MessageInputForm';
 import { ResponseDisplay } from './ResponseDisplay';
+import { StreamingResponseDisplay } from './StreamingResponseDisplay';
+import { TemplateSelector } from './TemplateSelector';
+import { QuickActions } from './QuickActions';
 import { useResponseGenerationStore, useCurrentResponseOptions } from '../../stores/response-generation';
 import { useAuthStore } from '../../stores/auth';
 import { trpc } from '../../utils/trpc';
@@ -10,12 +13,15 @@ import { type ValidatedMessageInput } from '@freelance-flow/shared';
 import { UserProfileMenu } from '../UserProfileMenu';
 import { DashboardSidebar } from '../navigation/DashboardSidebar';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
+import { useStreamingResponse, convertStreamingToAIResponse } from '../../hooks/useStreamingResponse';
 
 export function CopyPasteWorkflowComponent() {
   const router = useRouter();
   const [promptInput, setPromptInput] = useState('');
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [useStreaming, setUseStreaming] = useState(true); // Enable streaming by default
   const { user, isAuthenticated, isLoading: authLoading, refreshSubscription } = useAuthStore();
   const {
     currentInput,
@@ -33,6 +39,17 @@ export function CopyPasteWorkflowComponent() {
   } = useResponseGenerationStore();
 
   const responseOptions = useCurrentResponseOptions();
+
+  // Streaming hook
+  const {
+    responses: streamingResponses,
+    isStreaming,
+    error: streamingError,
+    historyId: streamingHistoryId,
+    generateResponses: generateStreamingResponses,
+    cancelStream,
+    resetResponses,
+  } = useStreamingResponse();
 
   const generateMutation = trpc.responses.generate.useMutation({
     onSuccess: async (data) => {
@@ -63,16 +80,41 @@ export function CopyPasteWorkflowComponent() {
       }
 
       setCurrentInput(input);
-      setLoading(true);
 
-      try {
-        await generateMutation.mutateAsync(input);
-      } catch (error) {
-        console.error('Generation failed:', error);
+      if (useStreaming) {
+        // Use streaming approach
+        setError(null);
+        try {
+          await generateStreamingResponses(
+            input.originalMessage,
+            input.context,
+            input.refinementInstructions,
+            streamingResponses.length > 0 ? streamingResponses : undefined
+          );
+          // Refresh subscription after streaming completes
+          await refreshSubscription();
+        } catch (error) {
+          console.error('Streaming generation failed:', error);
+        }
+      } else {
+        // Use traditional approach
+        setLoading(true);
+        try {
+          await generateMutation.mutateAsync(input);
+        } catch (error) {
+          console.error('Generation failed:', error);
+        }
       }
     },
-    [generateMutation, setCurrentInput, setLoading, isAuthenticated, setError, router]
+    [generateMutation, generateStreamingResponses, setCurrentInput, setLoading, isAuthenticated, setError, router, useStreaming, refreshSubscription]
   );
+
+  // Sync streaming error with global error state
+  useEffect(() => {
+    if (streamingError) {
+      setError(streamingError);
+    }
+  }, [streamingError, setError]);
 
   const handleCopy = useCallback(
     (content: string, index: number) => {
@@ -136,28 +178,57 @@ export function CopyPasteWorkflowComponent() {
     setError(null);
     setPromptInput('');
     setShowAdvancedOptions(false);
-  }, [setCurrentInput, setCurrentResponse, setSelectedResponseIndex, setError]);
+    setShowTemplates(false);
+    resetResponses(); // Clear streaming responses and localStorage
+  }, [setCurrentInput, setCurrentResponse, setSelectedResponseIndex, setError, resetResponses]);
+
+  const handleTemplateSelect = useCallback((input: ValidatedMessageInput) => {
+    setShowTemplates(false);
+    handleInputSubmit(input);
+  }, [handleInputSubmit]);
+
+  const handleRegenerate = useCallback(() => {
+    if (currentInput) {
+      handleInputSubmit(currentInput);
+    }
+  }, [currentInput, handleInputSubmit]);
+
+  const handleEditAndRegenerate = useCallback((instruction: string) => {
+    if (currentInput) {
+      // Add refinement instruction to the input
+      const enhancedInput = {
+        ...currentInput,
+        refinementInstructions: instruction,
+      };
+      handleInputSubmit(enhancedInput);
+    }
+  }, [currentInput, handleInputSubmit]);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
     onCopy: () => {
       if (selectedResponseIndex !== null && responseOptions[selectedResponseIndex]) {
         handleCopy(responseOptions[selectedResponseIndex].content, selectedResponseIndex);
+      } else if (selectedResponseIndex !== null && streamingResponses[selectedResponseIndex]) {
+        handleCopy(streamingResponses[selectedResponseIndex].content, selectedResponseIndex);
       }
     },
     onNew: handleStartNew,
+    onRegenerate: handleRegenerate,
     onSubmit: () => {},
     onNext: () => {
-      if (responseOptions.length > 0) {
+      const responses = useStreaming ? streamingResponses : responseOptions;
+      if (responses.length > 0) {
         const nextIndex = selectedResponseIndex === null ? 0 :
-          (selectedResponseIndex + 1) % responseOptions.length;
+          (selectedResponseIndex + 1) % responses.length;
         setSelectedResponseIndex(nextIndex);
       }
     },
     onPrevious: () => {
-      if (responseOptions.length > 0) {
-        const prevIndex = selectedResponseIndex === null ? responseOptions.length - 1 :
-          (selectedResponseIndex - 1 + responseOptions.length) % responseOptions.length;
+      const responses = useStreaming ? streamingResponses : responseOptions;
+      if (responses.length > 0) {
+        const prevIndex = selectedResponseIndex === null ? responses.length - 1 :
+          (selectedResponseIndex - 1 + responses.length) % responses.length;
         setSelectedResponseIndex(prevIndex);
       }
     },
@@ -192,11 +263,20 @@ export function CopyPasteWorkflowComponent() {
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             {/* Single-page workflow */}
-            {!currentResponse && !isLoading && (
+            {!currentResponse && !isLoading && !isStreaming && streamingResponses.length === 0 && (
               <>
                 <div className="text-center mb-8">
                   <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Generate AI Response</h2>
                   <p className="text-gray-600 dark:text-gray-400">Paste your client's message and get professional responses instantly</p>
+                  <button
+                    onClick={() => setShowTemplates(!showTemplates)}
+                    className="mt-4 inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    {showTemplates ? 'Hide Templates' : 'Use Quick Template'}
+                  </button>
                 </div>
 
                 {!isAuthenticated && (
@@ -207,22 +287,35 @@ export function CopyPasteWorkflowComponent() {
                   </div>
                 )}
 
+                {/* Template Selector */}
+                {showTemplates && (
+                  <div className="mb-6">
+                    <TemplateSelector
+                      onSelectTemplate={handleTemplateSelect}
+                      onClose={() => setShowTemplates(false)}
+                      compact={true}
+                    />
+                  </div>
+                )}
+
                 {/* Integrated form with collapsible advanced options */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-                  <MessageInputForm
-                    onSubmit={handleInputSubmit}
-                    isLoading={isLoading}
-                    defaultValues={{
-                      originalMessage: '',
-                      context: {
-                        urgency: 'standard',
-                        messageType: 'update',
-                        relationshipStage: 'established',
-                        projectPhase: 'active',
-                      }
-                    }}
-                  />
-                </div>
+                {!showTemplates && (
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+                    <MessageInputForm
+                      onSubmit={handleInputSubmit}
+                      isLoading={isLoading}
+                      defaultValues={{
+                        originalMessage: '',
+                        context: {
+                          urgency: 'standard',
+                          messageType: 'update',
+                          relationshipStage: 'established',
+                          projectPhase: 'active',
+                        }
+                      }}
+                    />
+                  </div>
+                )}
               </>
             )}
 
@@ -250,7 +343,7 @@ export function CopyPasteWorkflowComponent() {
             )}
 
             {/* Results section */}
-            {(responseOptions.length > 0 || isLoading) && (
+            {(responseOptions.length > 0 || streamingResponses.length > 0 || isLoading || isStreaming) && (
               <div className="space-y-6">
                 {/* Chat-like header with New Response button */}
                 <div className="flex justify-between items-center">
@@ -258,7 +351,7 @@ export function CopyPasteWorkflowComponent() {
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Conversation</h2>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Choose the response that fits your style</p>
                   </div>
-                  {!isLoading && (
+                  {!isLoading && !isStreaming && (
                     <button
                       onClick={handleStartNew}
                       className="px-6 py-3 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-green-400 transition-colors flex items-center gap-2 font-medium shadow-sm"
@@ -267,6 +360,17 @@ export function CopyPasteWorkflowComponent() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
                       New Conversation
+                    </button>
+                  )}
+                  {isStreaming && (
+                    <button
+                      onClick={cancelStream}
+                      className="px-6 py-3 bg-red-100 dark:bg-red-900/30 border-2 border-red-300 dark:border-red-700 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors flex items-center gap-2 font-medium shadow-sm"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Cancel Generation
                     </button>
                   )}
                 </div>
@@ -303,7 +407,7 @@ export function CopyPasteWorkflowComponent() {
                 )}
 
                 {/* Divider with "AI Suggestions" label */}
-                {currentInput && !isLoading && (
+                {currentInput && !isLoading && !isStreaming && (
                   <div className="max-w-4xl mx-auto flex items-center gap-3 py-4">
                     <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
                     <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">AI Suggestions</span>
@@ -311,15 +415,54 @@ export function CopyPasteWorkflowComponent() {
                   </div>
                 )}
 
-                <ResponseDisplay
-                  responses={responseOptions}
-                  onCopy={handleCopy}
-                  onRate={handleRate}
-                  onSelect={handleSelect}
-                  selectedIndex={selectedResponseIndex || undefined}
-                  isLoading={isLoading}
-                  historyId={currentResponse?.historyId}
-                />
+                {/* Use streaming display when streaming */}
+                {useStreaming && (streamingResponses.length > 0 || isStreaming) ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
+                    <div>
+                      <StreamingResponseDisplay
+                        responses={streamingResponses}
+                        onCopy={handleCopy}
+                        onRate={handleRate}
+                        onSelect={handleSelect}
+                        selectedIndex={selectedResponseIndex || undefined}
+                        isStreaming={isStreaming}
+                        historyId={streamingHistoryId || undefined}
+                      />
+                    </div>
+                    {!isStreaming && streamingResponses.length > 0 && (
+                      <div className="lg:sticky lg:top-8 self-start">
+                        <QuickActions
+                          onRegenerate={handleRegenerate}
+                          onEditAndRegenerate={handleEditAndRegenerate}
+                          isLoading={isStreaming}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
+                    <div>
+                      <ResponseDisplay
+                        responses={responseOptions}
+                        onCopy={handleCopy}
+                        onRate={handleRate}
+                        onSelect={handleSelect}
+                        selectedIndex={selectedResponseIndex || undefined}
+                        isLoading={isLoading}
+                        historyId={currentResponse?.historyId}
+                      />
+                    </div>
+                    {!isLoading && responseOptions.length > 0 && (
+                      <div className="lg:sticky lg:top-8 self-start">
+                        <QuickActions
+                          onRegenerate={handleRegenerate}
+                          onEditAndRegenerate={handleEditAndRegenerate}
+                          isLoading={isLoading}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
