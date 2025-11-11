@@ -77,10 +77,10 @@ export function AvatarUpload({ currentAvatarUrl, userName, userEmail, onUpload }
           <img
             src={previewUrl}
             alt="Avatar"
-            className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
+            className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
           />
         ) : (
-          <div className="w-24 h-24 rounded-full bg-green-600 text-white flex items-center justify-center text-2xl font-bold border-2 border-gray-200">
+          <div className="w-24 h-24 rounded-full bg-green-600 text-white flex items-center justify-center text-2xl font-bold border-2 border-gray-200 dark:border-gray-600">
             {getInitials()}
           </div>
         )}
@@ -104,11 +104,11 @@ export function AvatarUpload({ currentAvatarUrl, userName, userEmail, onUpload }
           type="button"
           onClick={handleButtonClick}
           disabled={uploading}
-          className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {uploading ? 'Uploading...' : 'Change Avatar'}
         </button>
-        <p className="mt-2 text-xs text-gray-500">
+        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
           JPG, PNG, GIF or WebP. Max size 5MB.
         </p>
       </div>
