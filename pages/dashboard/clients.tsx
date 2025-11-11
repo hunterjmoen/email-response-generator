@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { ProtectedRoute } from '../../components/auth/ProtectedRoute';
 import { DashboardLayout } from '../../components/layouts/DashboardLayout';
-import { ClientList } from '../../components/clients/ClientList';
+import { EnhancedClientList } from '../../components/clients/EnhancedClientList';
 import { ClientForm } from '../../components/clients/ClientForm';
 import { trpc } from '../../utils/trpc';
 import toast from 'react-hot-toast';
+import { type RelationshipStage } from '../../utils/clientLabels';
 
 export default function ClientsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -12,10 +13,12 @@ export default function ClientsPage() {
 
   const utils = trpc.useContext();
   const { data: clients, isLoading } = trpc.clients.list.useQuery();
+  const { data: allTags } = trpc.clients.getAllTags.useQuery();
 
   const createMutation = trpc.clients.create.useMutation({
     onSuccess: () => {
       utils.clients.list.invalidate();
+      utils.clients.getAllTags.invalidate();
       setIsFormOpen(false);
       toast.success('Client created successfully!');
     },
@@ -27,6 +30,7 @@ export default function ClientsPage() {
   const updateMutation = trpc.clients.update.useMutation({
     onSuccess: () => {
       utils.clients.list.invalidate();
+      utils.clients.getAllTags.invalidate();
       setEditingClient(null);
       setIsFormOpen(false);
       toast.success('Client updated successfully!');
@@ -46,6 +50,37 @@ export default function ClientsPage() {
     },
   });
 
+  const bulkDeleteMutation = trpc.clients.bulkDelete.useMutation({
+    onSuccess: (data) => {
+      utils.clients.list.invalidate();
+      toast.success(`Successfully deleted ${data.count} client(s)`);
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to delete clients');
+    },
+  });
+
+  const bulkUpdateStageMutation = trpc.clients.bulkUpdateStage.useMutation({
+    onSuccess: (data) => {
+      utils.clients.list.invalidate();
+      toast.success(`Updated ${data.count} client(s)`);
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to update clients');
+    },
+  });
+
+  const bulkUpdateTagsMutation = trpc.clients.bulkUpdateTags.useMutation({
+    onSuccess: (data) => {
+      utils.clients.list.invalidate();
+      utils.clients.getAllTags.invalidate();
+      toast.success(`Updated tags for ${data.count} client(s)`);
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to update tags');
+    },
+  });
+
   const handleEdit = (clientId: string) => {
     setEditingClient(clientId);
     setIsFormOpen(true);
@@ -55,6 +90,18 @@ export default function ClientsPage() {
     if (confirm('Are you sure you want to delete this client? All associated projects will also be deleted.')) {
       await deleteMutation.mutateAsync({ id: clientId });
     }
+  };
+
+  const handleBulkDelete = async (ids: string[]) => {
+    await bulkDeleteMutation.mutateAsync({ ids });
+  };
+
+  const handleBulkUpdateStage = async (ids: string[], stage: RelationshipStage) => {
+    await bulkUpdateStageMutation.mutateAsync({ ids, relationshipStage: stage });
+  };
+
+  const handleBulkUpdateTags = async (ids: string[], tags: string[], mode: 'add' | 'remove') => {
+    await bulkUpdateTagsMutation.mutateAsync({ ids, tags, mode });
   };
 
   const handleCloseForm = () => {
@@ -68,8 +115,8 @@ export default function ClientsPage() {
         <div className="p-6">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Clients</h2>
-              <p className="text-gray-600 mt-1">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Clients</h2>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
                 Manage your client relationships and projects
               </p>
             </div>
@@ -89,10 +136,14 @@ export default function ClientsPage() {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
             </div>
           ) : (
-            <ClientList
+            <EnhancedClientList
               clients={clients || []}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onBulkDelete={handleBulkDelete}
+              onBulkUpdateStage={handleBulkUpdateStage}
+              onBulkUpdateTags={handleBulkUpdateTags}
+              allTags={allTags || []}
             />
           )}
 
