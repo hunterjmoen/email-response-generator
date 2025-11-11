@@ -181,7 +181,7 @@ export default function CommunicationSettings() {
         <div className="p-6 flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading preferences...</p>
+            <p className="text-gray-600 dark:text-gray-400">Loading preferences...</p>
           </div>
         </div>
       </SettingsLayout>
@@ -211,8 +211,8 @@ export default function CommunicationSettings() {
                   key={option}
                   className={`relative flex items-center justify-center px-4 py-3 border rounded-lg cursor-pointer transition-all ${
                     styleForm.watch('formality') === option
-                      ? 'border-green-600 bg-green-50 text-green-700 font-medium'
-                      : 'border-gray-300 hover:border-gray-400'
+                      ? 'border-green-600 bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-300 font-medium'
+                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 dark:bg-gray-800 dark:text-gray-300'
                   }`}
                 >
                   <input
@@ -238,8 +238,8 @@ export default function CommunicationSettings() {
                   key={option}
                   className={`relative flex items-center justify-center px-4 py-3 border rounded-lg cursor-pointer transition-all ${
                     styleForm.watch('tone') === option
-                      ? 'border-green-600 bg-green-50 text-green-700 font-medium'
-                      : 'border-gray-300 hover:border-gray-400'
+                      ? 'border-green-600 bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-300 font-medium'
+                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 dark:bg-gray-800 dark:text-gray-300'
                   }`}
                 >
                   <input
@@ -265,8 +265,8 @@ export default function CommunicationSettings() {
                   key={option}
                   className={`relative flex items-center justify-center px-4 py-3 border rounded-lg cursor-pointer transition-all ${
                     styleForm.watch('length') === option
-                      ? 'border-green-600 bg-green-50 text-green-700 font-medium'
-                      : 'border-gray-300 hover:border-gray-400'
+                      ? 'border-green-600 bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-300 font-medium'
+                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 dark:bg-gray-800 dark:text-gray-300'
                   }`}
                 >
                   <input
@@ -282,7 +282,7 @@ export default function CommunicationSettings() {
           </SettingsField>
         </SettingsSection>
 
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 flex justify-end">
           <button
             type="submit"
             disabled={!styleForm.formState.isDirty || isSavingStyle}
@@ -312,7 +312,7 @@ export default function CommunicationSettings() {
           <SettingsField label="Relationship Stage">
             <select
               {...contextForm.register('relationshipStage')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-shadow"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-shadow dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="new">New Client</option>
               <option value="established">Established Relationship</option>
@@ -324,7 +324,7 @@ export default function CommunicationSettings() {
           <SettingsField label="Project Phase">
             <select
               {...contextForm.register('projectPhase')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-shadow"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-shadow dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="discovery">Discovery / Planning</option>
               <option value="active">Active Development</option>
@@ -337,7 +337,7 @@ export default function CommunicationSettings() {
           <SettingsField label="Default Urgency">
             <select
               {...contextForm.register('urgency')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-shadow"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-shadow dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="low">Low Priority</option>
               <option value="standard">Standard</option>
@@ -350,7 +350,7 @@ export default function CommunicationSettings() {
           <SettingsField label="Message Type">
             <select
               {...contextForm.register('messageType')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-shadow"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-shadow dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="update">Project Update</option>
               <option value="question">Question / Clarification</option>
@@ -361,7 +361,7 @@ export default function CommunicationSettings() {
           </SettingsField>
         </SettingsSection>
 
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 flex justify-end">
           <button
             type="submit"
             disabled={!contextForm.formState.isDirty || isSavingContext}
@@ -388,24 +388,24 @@ export default function CommunicationSettings() {
       >
         {learnedStyle ? (
           <div className="space-y-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-              <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg p-4 flex items-start gap-3">
+              <svg className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div>
-                <p className="text-sm font-medium text-green-900">Active Style Profile</p>
-                <p className="text-sm text-green-700 mt-1">{learnedStyle.summary}</p>
+                <p className="text-sm font-medium text-green-900 dark:text-green-100">Active Style Profile</p>
+                <p className="text-sm text-green-700 dark:text-green-300 mt-1">{learnedStyle.summary}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-xs font-semibold text-gray-700 uppercase mb-1">Formality</h4>
-                <p className="text-sm text-gray-900 capitalize">{learnedStyle.formality}</p>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase mb-1">Formality</h4>
+                <p className="text-sm text-gray-900 dark:text-gray-100 capitalize">{learnedStyle.formality}</p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-xs font-semibold text-gray-700 uppercase mb-1">Tone</h4>
-                <p className="text-sm text-gray-900 capitalize">{learnedStyle.tone}</p>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase mb-1">Tone</h4>
+                <p className="text-sm text-gray-900 dark:text-gray-100 capitalize">{learnedStyle.tone}</p>
               </div>
             </div>
 
@@ -419,15 +419,15 @@ export default function CommunicationSettings() {
               </button>
               <button
                 onClick={handleResetStyle}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 text-sm font-medium transition-colors"
               >
                 Reset My Style
               </button>
             </div>
           </div>
         ) : (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-800">
+          <div className="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+            <p className="text-sm text-blue-800 dark:text-blue-300">
               No communication style learned yet. Rate responses highly (4-5 stars) or copy
               responses to help FreelanceFlow learn your style. You need at least 5 high-quality
               responses to generate a style profile.
@@ -442,7 +442,7 @@ export default function CommunicationSettings() {
           </div>
         )}
 
-        <p className="text-xs text-gray-500 mt-4">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
           Style analysis is performed automatically when you rate responses 4-5 stars or copy
           responses. Manual recalculation analyzes your recent high-quality responses.
         </p>
