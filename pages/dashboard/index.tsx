@@ -11,41 +11,39 @@ export default function Dashboard() {
 
   return (
     <ProtectedRoute>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero Stats */}
-        {stats ? (
-          <HeroStats stats={stats} />
-        ) : (
-          <div className="mb-8">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="h-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                ))}
+      <DashboardLayout title="Dashboard">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Hero Stats */}
+          {stats ? (
+            <HeroStats stats={stats} />
+          ) : (
+            <div className="mb-8">
+              <div className="animate-pulse">
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="h-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            <QuickActions />
-            <RecentActivity activities={recentActivity || []} isLoading={activityLoading} />
-          </div>
+          {/* Two Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column - Main Content */}
+            <div className="lg:col-span-2 space-y-6">
+              <QuickActions />
+              <RecentActivity activities={recentActivity || []} isLoading={activityLoading} />
+            </div>
 
-          {/* Right Column - Sidebar */}
-          <div className="space-y-6">
-            <ActiveClientsWidget clients={activeClients || []} isLoading={clientsLoading} />
+            {/* Right Column - Sidebar */}
+            <div className="space-y-6">
+              <ActiveClientsWidget clients={activeClients || []} isLoading={clientsLoading} />
+            </div>
           </div>
         </div>
-      </div>
+      </DashboardLayout>
     </ProtectedRoute>
   );
 }
-
-Dashboard.getLayout = function getLayout(page: React.ReactElement) {
-  return <DashboardLayout>{page}</DashboardLayout>;
-};
