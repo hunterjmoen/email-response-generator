@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { type ResponseContext, type AIResponseOptions } from '@freelance-flow/shared';
-import { useAuthStore } from '../stores/auth';
+import { supabase } from '../utils/supabase';
 
 interface StreamingResponse {
   index: number;
@@ -28,8 +28,6 @@ export function useStreamingResponse(): UseStreamingResponseReturn {
   const [historyId, setHistoryId] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const { session } = useAuthStore();
-
   const cancelStream = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -50,9 +48,12 @@ export function useStreamingResponse(): UseStreamingResponseReturn {
       abortControllerRef.current = new AbortController();
 
       try {
-        const token = session?.access_token;
+        // Get the access token from the session
+        const { data: { session: supabaseSession } } = await supabase.auth.getSession();
+        const token = supabaseSession?.access_token;
+
         if (!token) {
-          throw new Error('Not authenticated');
+          throw new Error('Not authenticated - please log in again');
         }
 
         const response = await fetch('/api/responses/stream', {
@@ -172,7 +173,7 @@ export function useStreamingResponse(): UseStreamingResponseReturn {
         setIsStreaming(false);
       }
     },
-    [session]
+    [] // No dependencies needed - we get session fresh on each call
   );
 
   return {
