@@ -49,12 +49,21 @@ export function useStreamingResponse(): UseStreamingResponseReturn {
 
       try {
         // Get the access token from the session
-        const { data: { session: supabaseSession } } = await supabase.auth.getSession();
+        const { data: { session: supabaseSession }, error: sessionError } = await supabase.auth.getSession();
+
+        console.log('[Streaming Hook] Session check:', {
+          hasSession: !!supabaseSession,
+          hasToken: !!supabaseSession?.access_token,
+          error: sessionError?.message
+        });
+
         const token = supabaseSession?.access_token;
 
         if (!token) {
           throw new Error('Not authenticated - please log in again');
         }
+
+        console.log('[Streaming Hook] Sending request with token length:', token.length);
 
         const response = await fetch('/api/responses/stream', {
           method: 'POST',
@@ -69,9 +78,12 @@ export function useStreamingResponse(): UseStreamingResponseReturn {
           signal: abortControllerRef.current.signal,
         });
 
+        console.log('[Streaming Hook] Response status:', response.status);
+
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to start streaming');
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          console.error('[Streaming Hook] Error response:', errorData);
+          throw new Error(errorData.error || `Failed to start streaming (${response.status})`);
         }
 
         if (!response.body) {

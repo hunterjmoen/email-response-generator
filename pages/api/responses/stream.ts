@@ -3,10 +3,22 @@ import { createClient } from '@supabase/supabase-js';
 import { AIResponseStreamingService } from '../../../services/ai-response-streaming';
 import { z } from 'zod';
 
-// Create server-side Supabase client
+// Create server-side Supabase client for admin operations
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+);
+
+// Create regular Supabase client for JWT verification
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   {
     auth: {
       autoRefreshToken: false,
@@ -35,18 +47,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Verify authentication
+    // Verify authentication using the JWT token
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      console.error('[Stream API] No authorization header');
+      return res.status(401).json({ error: 'Unauthorized - No token provided' });
     }
 
     const token = authHeader.substring(7);
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+    // Use regular supabase client to verify JWT
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
+      console.error('[Stream API] Auth error:', authError?.message);
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
+
+    console.log('[Stream API] User authenticated:', user.id);
 
     // Validate request body
     const validationResult = StreamRequestSchema.safeParse(req.body);
