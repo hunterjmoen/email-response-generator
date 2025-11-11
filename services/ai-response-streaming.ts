@@ -31,10 +31,12 @@ export class AIResponseStreamingService {
   static async* generateResponsesStream(
     originalMessage: string,
     context: ResponseContext,
-    styleProfile?: any
+    styleProfile?: any,
+    refinementInstructions?: string,
+    previousResponses?: string[]
   ): AsyncGenerator<StreamChunk> {
     try {
-      const prompt = this.buildPrompt(originalMessage, context);
+      const prompt = this.buildPrompt(originalMessage, context, refinementInstructions, previousResponses);
 
       // We'll generate 3 responses sequentially with streaming
       // This provides a better UX than waiting for all at once
@@ -110,8 +112,22 @@ export class AIResponseStreamingService {
   /**
    * Build the prompt for streaming generation
    */
-  private static buildPrompt(originalMessage: string, context: ResponseContext): string {
+  private static buildPrompt(originalMessage: string, context: ResponseContext, refinementInstructions?: string, previousResponses?: string[]): string {
     const contextDescription = this.getContextDescription(context);
+
+    let previousResponsesText = '';
+    if (previousResponses && previousResponses.length > 0 && refinementInstructions) {
+      previousResponsesText = `
+
+PREVIOUS RESPONSES THAT NEED REFINEMENT:
+${previousResponses.map((r, i) => `${i + 1}. ${r}`).join('\n\n')}
+
+REFINEMENT INSTRUCTIONS:
+${refinementInstructions}
+
+Please generate NEW responses that incorporate the refinement instructions above. Make sure to apply the requested changes (e.g., if asked to change "3 days" to "5 days", make that specific change).
+`;
+    }
 
     return `
 Please generate a professional response for the following client message:
@@ -121,12 +137,14 @@ CLIENT MESSAGE:
 
 CONTEXT:
 ${contextDescription}
+${previousResponsesText}
 
 Requirements:
 - Be professional and appropriate for the context
 ${context.clientName ? `- Start with "Hello ${context.clientName}," or "Hi ${context.clientName}," depending on the tone` : '- Use an appropriate greeting'}
 ${context.userName ? `- End with an appropriate sign-off using the name "${context.userName}"` : '- End with an appropriate professional sign-off'}
 - Be clear, concise, and solution-oriented
+${refinementInstructions ? `- IMPORTANT: Apply the refinement instructions: ${refinementInstructions}` : ''}
     `.trim();
   }
 

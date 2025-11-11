@@ -84,7 +84,12 @@ export function CopyPasteWorkflowComponent() {
         // Use streaming approach
         setError(null);
         try {
-          await generateStreamingResponses(input.originalMessage, input.context);
+          await generateStreamingResponses(
+            input.originalMessage,
+            input.context,
+            input.refinementInstructions,
+            streamingResponses.length > 0 ? streamingResponses : undefined
+          );
           // Refresh subscription after streaming completes
           await refreshSubscription();
         } catch (error) {

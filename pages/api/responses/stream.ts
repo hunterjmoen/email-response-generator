@@ -39,6 +39,8 @@ const StreamRequestSchema = z.object({
     userName: z.string().optional(),
     customNotes: z.string().optional(),
   }),
+  refinementInstructions: z.string().optional(),
+  previousResponses: z.array(z.string()).optional(),
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -75,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const { originalMessage, context } = validationResult.data;
+    const { originalMessage, context, refinementInstructions, previousResponses } = validationResult.data;
 
     // Check user's usage limits
     const { data: subscription } = await supabaseAdmin
@@ -126,7 +128,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const stream = AIResponseStreamingService.generateResponsesStream(
       originalMessage,
       enrichedContext,
-      styleProfile
+      styleProfile,
+      refinementInstructions,
+      previousResponses
     );
 
     for await (const chunk of stream) {

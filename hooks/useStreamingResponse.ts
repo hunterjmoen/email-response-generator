@@ -17,7 +17,7 @@ interface UseStreamingResponseReturn {
   isStreaming: boolean;
   error: string | null;
   historyId: string | null;
-  generateResponses: (originalMessage: string, context: ResponseContext) => Promise<void>;
+  generateResponses: (originalMessage: string, context: ResponseContext, refinementInstructions?: string, previousResponses?: StreamingResponse[]) => Promise<void>;
   cancelStream: () => void;
 }
 
@@ -37,7 +37,7 @@ export function useStreamingResponse(): UseStreamingResponseReturn {
   }, []);
 
   const generateResponses = useCallback(
-    async (originalMessage: string, context: ResponseContext) => {
+    async (originalMessage: string, context: ResponseContext, refinementInstructions?: string, previousResponses?: StreamingResponse[]) => {
       // Reset state
       setResponses([]);
       setError(null);
@@ -74,6 +74,8 @@ export function useStreamingResponse(): UseStreamingResponseReturn {
           body: JSON.stringify({
             originalMessage,
             context,
+            refinementInstructions,
+            previousResponses: previousResponses?.map(r => r.content),
           }),
           signal: abortControllerRef.current.signal,
         });
