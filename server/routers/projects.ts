@@ -3,6 +3,7 @@ import { router, protectedProcedure } from '../trpc';
 import { projectSchema } from '@freelance-flow/shared';
 import { TRPCError } from '@trpc/server';
 import type { Project } from '@freelance-flow/shared';
+import type { ProjectRow } from '../../types/database';
 
 export const projectRouter = router({
   listByClient: protectedProcedure
@@ -25,14 +26,14 @@ export const projectRouter = router({
         }
 
         // Transform database format to application format
-        const projects: Project[] = (data || []).map(row => ({
+        const projects: Project[] = ((data as ProjectRow[]) || []).map((row: ProjectRow) => ({
           id: row.id,
           userId: row.user_id,
           clientId: row.client_id,
           name: row.name,
-          description: row.description,
+          description: row.description ?? undefined,
           status: row.status as Project['status'],
-          budget: row.budget ? parseFloat(row.budget) : undefined,
+          budget: row.budget ? parseFloat(String(row.budget)) : undefined,
           deadline: row.deadline ? new Date(row.deadline) : undefined,
           createdAt: new Date(row.created_at),
           updatedAt: new Date(row.updated_at),
@@ -69,14 +70,14 @@ export const projectRouter = router({
         }
 
         // Transform database format to application format
-        const projects: Project[] = (data || []).map(row => ({
+        const projects: Project[] = ((data as ProjectRow[]) || []).map((row: ProjectRow) => ({
           id: row.id,
           userId: row.user_id,
           clientId: row.client_id,
           name: row.name,
-          description: row.description,
+          description: row.description ?? undefined,
           status: row.status as Project['status'],
-          budget: row.budget ? parseFloat(row.budget) : undefined,
+          budget: row.budget ? parseFloat(String(row.budget)) : undefined,
           deadline: row.deadline ? new Date(row.deadline) : undefined,
           createdAt: new Date(row.created_at),
           updatedAt: new Date(row.updated_at),
@@ -120,17 +121,18 @@ export const projectRouter = router({
           });
         }
 
+        const row = data as ProjectRow;
         const project: Project = {
-          id: data.id,
-          userId: data.user_id,
-          clientId: data.client_id,
-          name: data.name,
-          description: data.description,
-          status: data.status as Project['status'],
-          budget: data.budget ? parseFloat(data.budget) : undefined,
-          deadline: data.deadline ? new Date(data.deadline) : undefined,
-          createdAt: new Date(data.created_at),
-          updatedAt: new Date(data.updated_at),
+          id: row.id,
+          userId: row.user_id,
+          clientId: row.client_id,
+          name: row.name,
+          description: row.description ?? undefined,
+          status: row.status as Project['status'],
+          budget: row.budget ? parseFloat(String(row.budget)) : undefined,
+          deadline: row.deadline ? new Date(row.deadline) : undefined,
+          createdAt: new Date(row.created_at),
+          updatedAt: new Date(row.updated_at),
         };
 
         return project;
@@ -187,17 +189,18 @@ export const projectRouter = router({
           });
         }
 
+        const row = data as ProjectRow;
         const project: Project = {
-          id: data.id,
-          userId: data.user_id,
-          clientId: data.client_id,
-          name: data.name,
-          description: data.description,
-          status: data.status as Project['status'],
-          budget: data.budget ? parseFloat(data.budget) : undefined,
-          deadline: data.deadline ? new Date(data.deadline) : undefined,
-          createdAt: new Date(data.created_at),
-          updatedAt: new Date(data.updated_at),
+          id: row.id,
+          userId: row.user_id,
+          clientId: row.client_id,
+          name: row.name,
+          description: row.description ?? undefined,
+          status: row.status as Project['status'],
+          budget: row.budget ? parseFloat(String(row.budget)) : undefined,
+          deadline: row.deadline ? new Date(row.deadline) : undefined,
+          createdAt: new Date(row.created_at),
+          updatedAt: new Date(row.updated_at),
         };
 
         return project;
@@ -261,17 +264,18 @@ export const projectRouter = router({
           });
         }
 
+        const row = data as ProjectRow;
         const project: Project = {
-          id: data.id,
-          userId: data.user_id,
-          clientId: data.client_id,
-          name: data.name,
-          description: data.description,
-          status: data.status as Project['status'],
-          budget: data.budget ? parseFloat(data.budget) : undefined,
-          deadline: data.deadline ? new Date(data.deadline) : undefined,
-          createdAt: new Date(data.created_at),
-          updatedAt: new Date(data.updated_at),
+          id: row.id,
+          userId: row.user_id,
+          clientId: row.client_id,
+          name: row.name,
+          description: row.description ?? undefined,
+          status: row.status as Project['status'],
+          budget: row.budget ? parseFloat(String(row.budget)) : undefined,
+          deadline: row.deadline ? new Date(row.deadline) : undefined,
+          createdAt: new Date(row.created_at),
+          updatedAt: new Date(row.updated_at),
         };
 
         return project;

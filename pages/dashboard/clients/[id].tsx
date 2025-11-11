@@ -119,9 +119,9 @@ export default function ClientDetailPage() {
         <DashboardLayout title="Client Not Found">
           <div className="p-6">
             <div className="text-center py-12">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Client Not Found</h2>
-              <p className="text-gray-600 mb-6">The client you're looking for doesn't exist.</p>
-              <Link href="/dashboard/clients" className="text-green-600 hover:text-green-700 font-medium">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Client Not Found</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">The client you're looking for doesn't exist.</p>
+              <Link href="/dashboard/clients" className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium">
                 Return to Clients
               </Link>
             </div>
@@ -139,7 +139,7 @@ export default function ClientDetailPage() {
       <DashboardLayout title={client.name}>
         <div className="p-6">
           <div className="mb-6">
-            <Link href="/dashboard/clients" className="text-green-600 hover:text-green-700 font-medium flex items-center gap-1 mb-4">
+            <Link href="/dashboard/clients" className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium flex items-center gap-1 mb-4">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
@@ -170,25 +170,25 @@ export default function ClientDetailPage() {
               />
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-4">
                   <Avatar name={client.name} size="lg" />
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{client.name}</h2>
-                    {client.company && <p className="text-gray-600 mt-1">{client.company}</p>}
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{client.name}</h2>
+                    {client.company && <p className="text-gray-600 dark:text-gray-400 mt-1">{client.company}</p>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setIsEditingClient(true)}
-                    className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100"
+                    className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     Edit
                   </button>
                   <button
                     onClick={handleDeleteClient}
-                    className="text-red-600 hover:text-red-700 px-3 py-2 rounded-lg hover:bg-red-50"
+                    className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
                     Delete
                   </button>
@@ -211,7 +211,7 @@ export default function ClientDetailPage() {
                           await navigator.clipboard.writeText(client.email);
                           toast.success('Email copied to clipboard!');
                         }}
-                        className="text-gray-500 hover:text-gray-700 p-1 rounded hover:bg-gray-100"
+                        className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
                         title="Copy email"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -236,7 +236,7 @@ export default function ClientDetailPage() {
                           await navigator.clipboard.writeText(client.phone);
                           toast.success('Phone copied to clipboard!');
                         }}
-                        className="text-gray-500 hover:text-gray-700 p-1 rounded hover:bg-gray-100"
+                        className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
                         title="Copy phone"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,7 +255,7 @@ export default function ClientDetailPage() {
                     }
                     label="Website"
                     value={
-                      <a href={client.website} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700 underline">
+                      <a href={client.website} target="_blank" rel="noopener noreferrer" className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 underline">
                         {client.website}
                       </a>
                     }
@@ -265,7 +265,7 @@ export default function ClientDetailPage() {
                           await navigator.clipboard.writeText(client.website);
                           toast.success('Website copied to clipboard!');
                         }}
-                        className="text-gray-500 hover:text-gray-700 p-1 rounded hover:bg-gray-100"
+                        className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
                         title="Copy website"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -292,8 +292,8 @@ export default function ClientDetailPage() {
 
               {client.notes && (
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Notes</label>
-                  <p className="text-gray-900 mt-1 whitespace-pre-wrap">{client.notes}</p>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                  <p className="text-gray-900 dark:text-white mt-1 whitespace-pre-wrap">{client.notes}</p>
                 </div>
               )}
             </div>
@@ -301,7 +301,7 @@ export default function ClientDetailPage() {
 
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Projects</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Projects</h3>
               <button
                 onClick={() => setIsAddingProject(true)}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium text-sm flex items-center gap-2"

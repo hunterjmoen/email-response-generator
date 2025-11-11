@@ -8,6 +8,16 @@ export const clientSchema = z.object({
   website: z.string().url("Invalid URL format").optional().or(z.literal('')),
   notes: z.string().optional(),
   relationshipStage: z.enum(['new', 'established', 'difficult', 'long_term']),
+  tags: z.array(z.string()).optional(),
+  priority: z.enum(['low', 'medium', 'high']).optional(),
+  isArchived: z.boolean().optional(),
+  lastContactDate: z.union([z.string(), z.date()]).transform((val) => {
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  }).optional(),
+  healthScore: z.number().min(0).max(100).optional(),
 });
 
 export const projectSchema = z.object({

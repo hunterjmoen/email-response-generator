@@ -10,6 +10,11 @@ export interface Client {
   website?: string;
   notes?: string;
   relationshipStage: 'new' | 'established' | 'difficult' | 'long_term';
+  tags?: string[];
+  priority?: 'low' | 'medium' | 'high';
+  isArchived?: boolean;
+  lastContactDate?: Date;
+  healthScore?: number;
   createdAt: Date;
   updatedAt: Date;
   projectCount?: number; // Optional - included in list queries
