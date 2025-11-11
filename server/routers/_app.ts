@@ -6,6 +6,7 @@ import { historyRouter } from './history';
 import { clientRouter } from './clients';
 import { projectRouter } from './projects';
 import { settingsRouter } from './settings';
+import { dashboardRouter } from './dashboard';
 
 export const appRouter = router({
   auth: authRouter,
@@ -15,6 +16,7 @@ export const appRouter = router({
   clients: clientRouter,
   projects: projectRouter,
   settings: settingsRouter,
+  dashboard: dashboardRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -70,7 +70,7 @@ export function DashboardSidebar({ user, isCollapsed = false }: DashboardSidebar
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   const navItems = [
-    { href: '/dashboard/generate', icon: HomeIcon, label: 'Home', id: 'home' },
+    { href: '/dashboard', icon: HomeIcon, label: 'Home', id: 'home' },
     { href: '/dashboard/generate', icon: SparklesIcon, label: 'Generate', id: 'generate' },
     { href: '/dashboard/clients', icon: UsersIcon, label: 'Clients', id: 'clients' },
     { href: '/dashboard/history', icon: ClockIcon, label: 'History', id: 'history' },
@@ -79,6 +79,10 @@ export function DashboardSidebar({ user, isCollapsed = false }: DashboardSidebar
   ];
 
   const isActiveRoute = (href: string) => {
+    // Exact match for dashboard home
+    if (href === '/dashboard') {
+      return router.pathname === '/dashboard' || router.pathname === '/dashboard/';
+    }
     return router.pathname.startsWith(href);
   };
 
