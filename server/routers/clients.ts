@@ -3,6 +3,7 @@ import { router, protectedProcedure } from '../trpc';
 import { clientSchema } from '@freelance-flow/shared';
 import { TRPCError } from '@trpc/server';
 import type { Client } from '@freelance-flow/shared';
+import type { ClientRow } from '../../types/database';
 
 export const clientRouter = router({
   list: protectedProcedure
@@ -23,18 +24,18 @@ export const clientRouter = router({
         }
 
         // Transform database format to application format
-        const clients = (data || []).map(row => ({
+        const clients = ((data as ClientRow[]) || []).map((row: ClientRow) => ({
           id: row.id,
           userId: row.user_id,
           name: row.name,
-          email: row.email,
-          company: row.company,
-          phone: row.phone,
-          website: row.website,
-          notes: row.notes,
+          email: row.email ?? undefined,
+          company: row.company ?? undefined,
+          phone: row.phone ?? undefined,
+          website: row.website ?? undefined,
+          notes: row.notes ?? undefined,
           relationshipStage: row.relationship_stage as Client['relationshipStage'],
           tags: row.tags || [],
-          priority: row.priority as Client['priority'],
+          priority: (row.priority as Client['priority']) || 'medium',
           isArchived: row.is_archived || false,
           lastContactDate: row.last_contact_date ? new Date(row.last_contact_date) : undefined,
           healthScore: row.health_score || 50,
@@ -81,23 +82,24 @@ export const clientRouter = router({
           });
         }
 
+        const row = data as ClientRow;
         const client: Client = {
-          id: data.id,
-          userId: data.user_id,
-          name: data.name,
-          email: data.email,
-          company: data.company,
-          phone: data.phone,
-          website: data.website,
-          notes: data.notes,
-          relationshipStage: data.relationship_stage as Client['relationshipStage'],
-          tags: data.tags || [],
-          priority: data.priority as Client['priority'],
-          isArchived: data.is_archived || false,
-          lastContactDate: data.last_contact_date ? new Date(data.last_contact_date) : undefined,
-          healthScore: data.health_score || 50,
-          createdAt: new Date(data.created_at),
-          updatedAt: new Date(data.updated_at),
+          id: row.id,
+          userId: row.user_id,
+          name: row.name,
+          email: row.email ?? undefined,
+          company: row.company ?? undefined,
+          phone: row.phone ?? undefined,
+          website: row.website ?? undefined,
+          notes: row.notes ?? undefined,
+          relationshipStage: row.relationship_stage as Client['relationshipStage'],
+          tags: row.tags || [],
+          priority: (row.priority as Client['priority']) || 'medium',
+          isArchived: row.is_archived || false,
+          lastContactDate: row.last_contact_date ? new Date(row.last_contact_date) : undefined,
+          healthScore: row.health_score || 50,
+          createdAt: new Date(row.created_at),
+          updatedAt: new Date(row.updated_at),
         };
 
         return client;
@@ -145,23 +147,24 @@ export const clientRouter = router({
           });
         }
 
+        const row = data as ClientRow;
         const client: Client = {
-          id: data.id,
-          userId: data.user_id,
-          name: data.name,
-          email: data.email,
-          company: data.company,
-          phone: data.phone,
-          website: data.website,
-          notes: data.notes,
-          relationshipStage: data.relationship_stage as Client['relationshipStage'],
-          tags: data.tags || [],
-          priority: data.priority as Client['priority'],
-          isArchived: data.is_archived || false,
-          lastContactDate: data.last_contact_date ? new Date(data.last_contact_date) : undefined,
-          healthScore: data.health_score || 50,
-          createdAt: new Date(data.created_at),
-          updatedAt: new Date(data.updated_at),
+          id: row.id,
+          userId: row.user_id,
+          name: row.name,
+          email: row.email ?? undefined,
+          company: row.company ?? undefined,
+          phone: row.phone ?? undefined,
+          website: row.website ?? undefined,
+          notes: row.notes ?? undefined,
+          relationshipStage: row.relationship_stage as Client['relationshipStage'],
+          tags: row.tags || [],
+          priority: (row.priority as Client['priority']) || 'medium',
+          isArchived: row.is_archived || false,
+          lastContactDate: row.last_contact_date ? new Date(row.last_contact_date) : undefined,
+          healthScore: row.health_score || 50,
+          createdAt: new Date(row.created_at),
+          updatedAt: new Date(row.updated_at),
         };
 
         return client;
@@ -216,23 +219,24 @@ export const clientRouter = router({
           });
         }
 
+        const row = data as ClientRow;
         const client: Client = {
-          id: data.id,
-          userId: data.user_id,
-          name: data.name,
-          email: data.email,
-          company: data.company,
-          phone: data.phone,
-          website: data.website,
-          notes: data.notes,
-          relationshipStage: data.relationship_stage as Client['relationshipStage'],
-          tags: data.tags || [],
-          priority: data.priority as Client['priority'],
-          isArchived: data.is_archived || false,
-          lastContactDate: data.last_contact_date ? new Date(data.last_contact_date) : undefined,
-          healthScore: data.health_score || 50,
-          createdAt: new Date(data.created_at),
-          updatedAt: new Date(data.updated_at),
+          id: row.id,
+          userId: row.user_id,
+          name: row.name,
+          email: row.email ?? undefined,
+          company: row.company ?? undefined,
+          phone: row.phone ?? undefined,
+          website: row.website ?? undefined,
+          notes: row.notes ?? undefined,
+          relationshipStage: row.relationship_stage as Client['relationshipStage'],
+          tags: row.tags || [],
+          priority: (row.priority as Client['priority']) || 'medium',
+          isArchived: row.is_archived || false,
+          lastContactDate: row.last_contact_date ? new Date(row.last_contact_date) : undefined,
+          healthScore: row.health_score || 50,
+          createdAt: new Date(row.created_at),
+          updatedAt: new Date(row.updated_at),
         };
 
         return client;
@@ -372,10 +376,11 @@ export const clientRouter = router({
           if (fetchError) throw fetchError;
 
           // Update each client
-          for (const client of clients || []) {
+          for (const client of (clients as Pick<ClientRow, 'id' | 'tags'>[]) || []) {
             let newTags = client.tags || [];
             if (input.mode === 'add') {
-              newTags = [...new Set([...newTags, ...input.tags])];
+              const combinedTags = newTags.concat(input.tags);
+              newTags = Array.from(new Set(combinedTags));
             } else if (input.mode === 'remove') {
               newTags = newTags.filter(tag => !input.tags.includes(tag));
             }
@@ -412,7 +417,7 @@ export const clientRouter = router({
 
         // Flatten and deduplicate tags
         const allTags = new Set<string>();
-        (data || []).forEach(row => {
+        ((data as Pick<ClientRow, 'tags'>[]) || []).forEach((row: Pick<ClientRow, 'tags'>) => {
           (row.tags || []).forEach(tag => allTags.add(tag));
         });
 
