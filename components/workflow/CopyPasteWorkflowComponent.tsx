@@ -48,6 +48,7 @@ export function CopyPasteWorkflowComponent() {
     historyId: streamingHistoryId,
     generateResponses: generateStreamingResponses,
     cancelStream,
+    resetResponses,
   } = useStreamingResponse();
 
   const generateMutation = trpc.responses.generate.useMutation({
@@ -178,7 +179,8 @@ export function CopyPasteWorkflowComponent() {
     setPromptInput('');
     setShowAdvancedOptions(false);
     setShowTemplates(false);
-  }, [setCurrentInput, setCurrentResponse, setSelectedResponseIndex, setError]);
+    resetResponses(); // Clear streaming responses and localStorage
+  }, [setCurrentInput, setCurrentResponse, setSelectedResponseIndex, setError, resetResponses]);
 
   const handleTemplateSelect = useCallback((input: ValidatedMessageInput) => {
     setShowTemplates(false);

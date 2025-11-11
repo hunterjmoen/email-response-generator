@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { type ResponseContext, type AIResponseOptions } from '@freelance-flow/shared';
 import { supabase } from '../utils/supabase';
 
@@ -19,6 +19,7 @@ interface UseStreamingResponseReturn {
   historyId: string | null;
   generateResponses: (originalMessage: string, context: ResponseContext, refinementInstructions?: string, previousResponses?: StreamingResponse[]) => Promise<void>;
   cancelStream: () => void;
+  resetResponses: () => void;
 }
 
 export function useStreamingResponse(): UseStreamingResponseReturn {
@@ -28,11 +29,50 @@ export function useStreamingResponse(): UseStreamingResponseReturn {
   const [historyId, setHistoryId] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // Restore responses from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('streamingResponses');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setResponses(parsed);
+          }
+        } catch (err) {
+          console.error('Failed to restore streaming responses:', err);
+        }
+      }
+    }
+  }, []);
+
+  // Persist responses to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined' && responses.length > 0) {
+      localStorage.setItem('streamingResponses', JSON.stringify(responses));
+    }
+  }, [responses]);
+
   const cancelStream = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
       setIsStreaming(false);
+    }
+  }, []);
+
+  const resetResponses = useCallback(() => {
+    setResponses([]);
+    setError(null);
+    setHistoryId(null);
+    setIsStreaming(false);
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    // Clear persisted responses
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('streamingResponses');
     }
   }, []);
 
@@ -197,6 +237,7 @@ export function useStreamingResponse(): UseStreamingResponseReturn {
     historyId,
     generateResponses,
     cancelStream,
+    resetResponses,
   };
 }
 
