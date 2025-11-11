@@ -420,7 +420,7 @@ export function EnhancedClientList({
                   type="checkbox"
                   checked={selectedIds.size === filteredAndSortedClients.length && filteredAndSortedClients.length > 0}
                   onChange={handleSelectAll}
-                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded"
                 />
               </th>
               <SortableHeader column="name" currentSort={sortColumn} direction={sortDirection} onClick={handleSort}>
@@ -462,7 +462,7 @@ export function EnhancedClientList({
                     type="checkbox"
                     checked={selectedIds.has(client.id)}
                     onChange={() => handleSelectOne(client.id)}
-                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded"
                   />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">

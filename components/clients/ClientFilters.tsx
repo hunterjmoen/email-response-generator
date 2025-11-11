@@ -107,7 +107,7 @@ export function ClientFilters({
                     type="checkbox"
                     checked={filters.stages.includes(stage)}
                     onChange={() => toggleStage(stage)}
-                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded"
                   />
                   <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                     {getRelationshipStageLabel(stage)}
@@ -129,7 +129,7 @@ export function ClientFilters({
                     type="checkbox"
                     checked={filters.priority.includes(priority)}
                     onChange={() => togglePriority(priority)}
-                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded"
                   />
                   <span className="ml-2 text-sm text-gray-700 dark:text-gray-300 capitalize">
                     {priority}
@@ -210,7 +210,7 @@ export function ClientFilters({
                     type="checkbox"
                     checked={filters.missingData.includes(field)}
                     onChange={() => toggleMissingData(field)}
-                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded"
                   />
                   <span className="ml-2 text-sm text-gray-700 dark:text-gray-300 capitalize">
                     No {field}
