@@ -96,9 +96,9 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToPasswordRes
       </button>
 
       <div className="relative max-w-md w-full">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 space-y-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 space-y-6">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               Discover your neighborhood
             </h2>
           </div>
@@ -107,7 +107,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToPasswordRes
             <button
               type="button"
               onClick={() => handleSocialLogin('google')}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -127,49 +127,49 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToPasswordRes
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              <span className="text-gray-700 font-medium">Continue with Google</span>
+              <span className="text-gray-700 dark:text-gray-200 font-medium">Continue with Google</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleSocialLogin('apple')}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
               </svg>
-              <span className="text-gray-700 font-medium">Continue with Apple</span>
+              <span className="text-gray-700 dark:text-gray-200 font-medium">Continue with Apple</span>
             </button>
           </div>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
+              <div className="w-full border-t border-gray-300 dark:border-gray-600" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">or</span>
+              <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">or</span>
             </div>
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Email address
               </label>
               <input
                 {...register('email')}
                 type="email"
                 autoComplete="email"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                 placeholder="alexsmith.mobbin+1@gmail.com"
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Create a password
               </label>
               <div className="relative">
@@ -177,13 +177,13 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToPasswordRes
                   {...register('password')}
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent pr-10"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent pr-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                   placeholder="••••••••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   {showPassword ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -198,22 +198,22 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToPasswordRes
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
               )}
             </div>
 
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-gray-600 dark:text-gray-400">
               By continuing with sign up, you agree to our{' '}
-              <a href="#" className="text-emerald-600 hover:underline">Privacy Policy</a>
+              <a href="#" className="text-emerald-600 dark:text-emerald-400 hover:underline">Privacy Policy</a>
               {', '}
-              <a href="#" className="text-emerald-600 hover:underline">Cookie Policy</a>
+              <a href="#" className="text-emerald-600 dark:text-emerald-400 hover:underline">Cookie Policy</a>
               {', and '}
-              <a href="#" className="text-emerald-600 hover:underline">Member Agreement</a>.
+              <a href="#" className="text-emerald-600 dark:text-emerald-400 hover:underline">Member Agreement</a>.
             </div>
 
             {submitError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-sm text-red-600">{submitError}</p>
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                <p className="text-sm text-red-600 dark:text-red-400">{submitError}</p>
               </div>
             )}
 
@@ -230,7 +230,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToPasswordRes
             <button
               type="button"
               onClick={onSwitchToRegister}
-              className="text-sm text-gray-700 hover:underline"
+              className="text-sm text-gray-700 dark:text-gray-300 hover:underline"
             >
               Have an invite code?
             </button>

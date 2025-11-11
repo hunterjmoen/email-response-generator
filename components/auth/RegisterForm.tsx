@@ -100,10 +100,10 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
     <div className="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-gray-100">
             Create your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             Join FreelanceFlow and streamline your client communications
           </p>
         </div>
@@ -112,59 +112,59 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   First Name
                 </label>
                 <input
                   {...register('firstName')}
                   type="text"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-800 dark:text-gray-100"
                   placeholder="John"
                 />
                 {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.firstName.message}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.firstName.message}</p>
                 )}
               </div>
-              
+
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Last Name
                 </label>
                 <input
                   {...register('lastName')}
                   type="text"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-800 dark:text-gray-100"
                   placeholder="Doe"
                 />
                 {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.lastName.message}</p>
                 )}
               </div>
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Email Address
               </label>
               <input
                 {...register('email')}
                 type="email"
                 autoComplete="email"
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-800 dark:text-gray-100"
                 placeholder="john@example.com"
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="industry" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="industry" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Industry (Optional)
               </label>
               <select
                 {...register('industry')}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-800 dark:text-gray-100"
               >
                 <option value="">Select your industry</option>
                 <option value="web-development">Web Development</option>
@@ -178,7 +178,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Password
               </label>
               <input
@@ -187,32 +187,32 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                 })}
                 type="password"
                 autoComplete="new-password"
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-800 dark:text-gray-100"
                 placeholder="Minimum 8 characters"
               />
 
               {/* Real-time password strength indicator */}
               {passwordValue && (
-                <div className="mt-3 space-y-2 p-3 bg-gray-50 rounded-md">
-                  <p className="text-xs font-medium text-gray-700">Password must contain:</p>
+                <div className="mt-3 space-y-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Password must contain:</p>
                   <ul className="space-y-1.5">
-                    <li className={`flex items-center text-xs ${passwordChecks.length ? 'text-green-600' : 'text-gray-500'}`}>
+                    <li className={`flex items-center text-xs ${passwordChecks.length ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                       <span className="mr-2 font-bold">{passwordChecks.length ? '✓' : '○'}</span>
                       At least 8 characters
                     </li>
-                    <li className={`flex items-center text-xs ${passwordChecks.uppercase ? 'text-green-600' : 'text-gray-500'}`}>
+                    <li className={`flex items-center text-xs ${passwordChecks.uppercase ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                       <span className="mr-2 font-bold">{passwordChecks.uppercase ? '✓' : '○'}</span>
                       One uppercase letter (A-Z)
                     </li>
-                    <li className={`flex items-center text-xs ${passwordChecks.lowercase ? 'text-green-600' : 'text-gray-500'}`}>
+                    <li className={`flex items-center text-xs ${passwordChecks.lowercase ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                       <span className="mr-2 font-bold">{passwordChecks.lowercase ? '✓' : '○'}</span>
                       One lowercase letter (a-z)
                     </li>
-                    <li className={`flex items-center text-xs ${passwordChecks.number ? 'text-green-600' : 'text-gray-500'}`}>
+                    <li className={`flex items-center text-xs ${passwordChecks.number ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                       <span className="mr-2 font-bold">{passwordChecks.number ? '✓' : '○'}</span>
                       One number (0-9)
                     </li>
-                    <li className={`flex items-center text-xs ${passwordChecks.special ? 'text-green-600' : 'text-gray-500'}`}>
+                    <li className={`flex items-center text-xs ${passwordChecks.special ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                       <span className="mr-2 font-bold">{passwordChecks.special ? '✓' : '○'}</span>
                       One special character (!@#$%^&*)
                     </li>
@@ -221,20 +221,20 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               )}
 
               {errors.password && !passwordValue && (
-                <p className="mt-2 text-sm text-red-600">{errors.password.message}</p>
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
               )}
             </div>
           </div>
 
           {submitError && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-4">
-              <p className="text-sm text-red-600">{submitError}</p>
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-md p-4">
+              <p className="text-sm text-red-600 dark:text-red-400">{submitError}</p>
             </div>
           )}
 
           {submitMessage && (
-            <div className="bg-green-50 border border-green-200 rounded-md p-4">
-              <p className="text-sm text-green-600">{submitMessage}</p>
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-md p-4">
+              <p className="text-sm text-green-600 dark:text-green-400">{submitMessage}</p>
             </div>
           )}
 

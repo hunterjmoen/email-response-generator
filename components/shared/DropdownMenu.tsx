@@ -42,11 +42,11 @@ export function DropdownMenu({ items, triggerClassName = '' }: DropdownMenuProps
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className={`p-1 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 ${triggerClassName}`}
+        className={`p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 ${triggerClassName}`}
         aria-label="More options"
       >
         <svg
-          className="w-5 h-5 text-gray-500"
+          className="w-5 h-5 text-gray-500 dark:text-gray-400"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -61,7 +61,7 @@ export function DropdownMenu({ items, triggerClassName = '' }: DropdownMenuProps
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-10 mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+        <div className="absolute right-0 z-10 mt-2 w-48 rounded-lg shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 dark:ring-gray-700">
           <div className="py-1" role="menu">
             {items.map((item, index) => (
               <button
@@ -69,8 +69,8 @@ export function DropdownMenu({ items, triggerClassName = '' }: DropdownMenuProps
                 onClick={() => handleItemClick(item.onClick)}
                 className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
                   item.variant === 'danger'
-                    ? 'text-red-700 hover:bg-red-50'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
                 role="menuitem"
               >
