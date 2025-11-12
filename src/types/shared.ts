@@ -13,7 +13,10 @@ export interface User {
     tier: 'free' | 'professional' | 'premium';
     status: 'active' | 'cancelled' | 'expired';
     usageCount: number;
+    monthlyLimit: number;
     billingCycle?: string;
+    stripe_customer_id?: string;
+    stripe_subscription_id?: string;
   };
   preferences: {
     defaultContext: ResponseContext;

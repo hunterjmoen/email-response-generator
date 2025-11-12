@@ -15,6 +15,8 @@ export interface User {
     usageCount: number;
     monthlyLimit: number;
     billingCycle?: string;
+    stripe_customer_id?: string;
+    stripe_subscription_id?: string;
   };
   preferences: {
     defaultContext: ResponseContext;
