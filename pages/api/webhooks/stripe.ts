@@ -184,9 +184,15 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   try {
     const { tier, monthlyLimit } = getTierFromSubscription(subscription);
 
+    // Get customer ID from subscription
+    const customerId = typeof subscription.customer === 'string'
+      ? subscription.customer
+      : subscription.customer?.id;
+
     const { error } = await supabaseAdmin
       .from('subscriptions')
       .update({
+        stripe_customer_id: customerId,
         stripe_subscription_id: subscription.id,
         status: subscription.status,
         tier,

@@ -411,4 +411,85 @@ export const stripeRouter = router({
         });
       }
     }),
+
+  /**
+   * Check and fix missing stripe_customer_id for current user's subscription
+   */
+  fixMySubscriptionData: protectedProcedure.mutation(async ({ ctx }) => {
+    try {
+      // Get current user's subscription
+      const { data: subscription, error: fetchError } = await ctx.supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', ctx.user.id)
+        .single();
+
+      if (fetchError || !subscription) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No subscription found',
+        });
+      }
+
+      // Check if stripe_customer_id is missing but stripe_subscription_id exists
+      if (!subscription.stripe_customer_id && subscription.stripe_subscription_id) {
+        console.log(`Fixing subscription for user ${ctx.user.id}`);
+
+        // Fetch the subscription from Stripe to get the customer ID
+        const stripeSubscription = await stripe.subscriptions.retrieve(
+          subscription.stripe_subscription_id
+        );
+
+        const customerId = typeof stripeSubscription.customer === 'string'
+          ? stripeSubscription.customer
+          : stripeSubscription.customer.id;
+
+        // Update the database
+        const { error: updateError } = await ctx.supabase
+          .from('subscriptions')
+          .update({
+            stripe_customer_id: customerId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', ctx.user.id);
+
+        if (updateError) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to update subscription',
+          });
+        }
+
+        return {
+          fixed: true,
+          stripe_customer_id: customerId,
+          message: 'Subscription data fixed successfully',
+        };
+      }
+
+      // Check if both are present
+      if (subscription.stripe_customer_id && subscription.stripe_subscription_id) {
+        return {
+          fixed: false,
+          stripe_customer_id: subscription.stripe_customer_id,
+          message: 'Subscription data is already correct',
+        };
+      }
+
+      // No Stripe data at all
+      return {
+        fixed: false,
+        message: 'No Stripe subscription found for this account',
+      };
+    } catch (error) {
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+      console.error('Failed to fix subscription data:', error);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to fix subscription data',
+      });
+    }
+  }),
 });
