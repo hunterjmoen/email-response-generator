@@ -77,13 +77,16 @@ export default function Pricing() {
 
   // Handle opening billing portal
   const handleManageSubscription = async () => {
-    if (!user) return;
+    if (!user || !user.subscription?.stripe_customer_id) {
+      alert('No subscription found. Please contact support.');
+      return;
+    }
 
     setPortalLoading(true);
     try {
       const baseUrl = window.location.origin;
       const result = await createPortalSession.mutateAsync({
-        customerId: user.id,
+        customerId: user.subscription.stripe_customer_id,
         returnUrl: `${baseUrl}/pricing`,
       });
 

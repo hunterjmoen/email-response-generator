@@ -52,12 +52,14 @@ export interface UserRow {
 export interface SubscriptionRow {
   id: string;
   user_id: string;
-  tier: 'free' | 'pro' | 'enterprise';
+  tier: 'free' | 'professional' | 'premium';
   status: 'active' | 'inactive' | 'cancelled';
   usage_count: number;
   monthly_limit: number;
   usage_reset_date?: string | null;
   stripe_subscription_id?: string | null;
+  stripe_customer_id?: string | null;
+  billing_cycle?: string | null;
   created_at: string;
   updated_at: string;
 }
