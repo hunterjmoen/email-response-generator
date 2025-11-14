@@ -1,13 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { SettingsLayout } from '../../components/layouts/SettingsLayout';
 import { SettingsSection, SettingsDivider } from '../../components/settings/SettingsSection';
 import { useAuthStore } from '../../stores/auth';
+import { trpc } from '../../utils/trpc';
 
 export default function AccountSettings() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const cancelSubscription = trpc.stripe.cancelSubscription.useMutation();
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -15,6 +19,29 @@ export default function AccountSettings() {
       router.push('/auth/login?redirect=/settings/account');
     }
   }, [authLoading, isAuthenticated, router]);
+
+  const handleCancelSubscription = async () => {
+    if (!user?.subscription?.stripe_subscription_id) return;
+
+    setCancelLoading(true);
+    try {
+      await cancelSubscription.mutateAsync({
+        subscriptionId: user.subscription.stripe_subscription_id,
+        cancelAtPeriodEnd: true,
+      });
+
+      alert('Your subscription will be cancelled at the end of the billing period. You will retain access until then.');
+      setShowCancelModal(false);
+
+      // Refresh the page to show updated subscription status
+      router.reload();
+    } catch (error) {
+      console.error('Failed to cancel subscription:', error);
+      alert('Failed to cancel subscription. Please try again or contact support.');
+    } finally {
+      setCancelLoading(false);
+    }
+  };
 
   if (authLoading) {
     return (
@@ -39,7 +66,9 @@ export default function AccountSettings() {
     : 0;
 
   const isPremium = subscription?.tier === 'premium';
+  const isProfessional = subscription?.tier === 'professional';
   const isFree = subscription?.tier === 'free';
+  const hasActiveSubscription = !isFree && subscription?.status === 'active';
 
   return (
     <SettingsLayout>
@@ -80,23 +109,29 @@ export default function AccountSettings() {
           </div>
         </div>
 
-        {/* Billing Info for Premium */}
-        {isPremium && subscription?.billingCycle && (
+        {/* Billing Info for Paid Subscribers */}
+        {hasActiveSubscription && (
           <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Next Billing Date</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {new Date(subscription.billingCycle).toLocaleDateString()}
+                  {subscription?.billingCycle ? new Date(subscription.billingCycle).toLocaleDateString() : 'N/A'}
                 </p>
               </div>
               <Link
                 href="/pricing"
                 className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium"
               >
-                Manage Billing
+                Change Plan
               </Link>
             </div>
+            <button
+              onClick={() => setShowCancelModal(true)}
+              className="w-full px-4 py-2 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+            >
+              Cancel Subscription
+            </button>
           </div>
         )}
       </SettingsSection>
@@ -257,6 +292,36 @@ export default function AccountSettings() {
           </div>
         </div>
       </SettingsSection>
+
+      {/* Cancel Subscription Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 shadow-xl">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+              Cancel Subscription
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Are you sure you want to cancel your subscription? You'll continue to have access to {subscription?.tier} features until the end of your current billing period.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                disabled={cancelLoading}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+              >
+                Keep Subscription
+              </button>
+              <button
+                onClick={handleCancelSubscription}
+                disabled={cancelLoading}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {cancelLoading ? 'Cancelling...' : 'Yes, Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </SettingsLayout>
   );
 }

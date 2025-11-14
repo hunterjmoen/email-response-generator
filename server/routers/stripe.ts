@@ -297,6 +297,45 @@ export const stripeRouter = router({
     }),
 
   /**
+   * Update a subscription to a new price/tier
+   */
+  updateSubscription: protectedProcedure
+    .input(
+      z.object({
+        subscriptionId: z.string(),
+        newPriceId: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        // Get the current subscription
+        const subscription = await stripe.subscriptions.retrieve(input.subscriptionId);
+
+        // Update the subscription with the new price
+        const updatedSubscription = await stripe.subscriptions.update(
+          input.subscriptionId,
+          {
+            items: [
+              {
+                id: subscription.items.data[0].id,
+                price: input.newPriceId,
+              },
+            ],
+            proration_behavior: 'create_prorations',
+          }
+        );
+
+        return updatedSubscription;
+      } catch (error) {
+        console.error('Failed to update subscription:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update subscription',
+        });
+      }
+    }),
+
+  /**
    * Get available prices/plans
    */
   getPrices: protectedProcedure.query(async () => {

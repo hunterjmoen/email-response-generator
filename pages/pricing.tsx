@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { LoginModal } from '../components/auth/LoginModal';
 import { UserProfileMenu } from '../components/UserProfileMenu';
@@ -7,14 +8,26 @@ import { useAuthStore } from '../stores/auth';
 import { supabase } from '../utils/supabase';
 import ThemeToggle from '../components/shared/ThemeToggle';
 
+type PlanChangeAction = {
+  type: 'upgrade' | 'downgrade' | 'switch' | 'cancel';
+  targetTier: 'free' | 'professional' | 'premium';
+  targetPriceId: string;
+  targetPrice: number;
+  billingCycle: 'monthly' | 'annual';
+};
+
 export default function Pricing() {
+  const router = useRouter();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isAnnual, setIsAnnual] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PlanChangeAction | null>(null);
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const createPortalSession = trpc.stripe.createPortalSession.useMutation();
+  const cancelSubscription = trpc.stripe.cancelSubscription.useMutation();
 
   // Prevent hydration mismatch by only rendering auth UI on client
   useEffect(() => {
@@ -40,6 +53,7 @@ export default function Pricing() {
   const PREMIUM_ANNUAL_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PREMIUM_ANNUAL_PRICE_ID || 'price_premium_annual';
 
   const createSubscriptionSession = trpc.stripe.createSubscriptionSession.useMutation();
+  const updateSubscription = trpc.stripe.updateSubscription.useMutation();
 
   // Helper function to get usage percentage
   const getUsagePercentage = () => {
@@ -83,7 +97,7 @@ export default function Pricing() {
     try {
       const baseUrl = window.location.origin;
       const result = await createPortalSession.mutateAsync({
-        customerId: user.id,
+        customerId: user.stripe_customer_id || '',
         returnUrl: `${baseUrl}/pricing`,
       });
 
@@ -97,7 +111,7 @@ export default function Pricing() {
     }
   };
 
-  const handleProfessionalClick = async () => {
+  const handleProfessionalClick = () => {
     if (!user) {
       // Store the billing period preference before login
       localStorage.setItem('pendingCheckout', isAnnual ? 'professional-annual' : 'professional-monthly');
@@ -105,29 +119,26 @@ export default function Pricing() {
       return;
     }
 
-    setLoading(true);
-    try {
-      const priceId = isAnnual ? PROFESSIONAL_ANNUAL_PRICE_ID : PROFESSIONAL_MONTHLY_PRICE_ID;
-      const baseUrl = window.location.origin;
+    const priceId = isAnnual ? PROFESSIONAL_ANNUAL_PRICE_ID : PROFESSIONAL_MONTHLY_PRICE_ID;
+    const price = isAnnual ? professionalAnnualPrice : professionalMonthlyPrice;
+    const currentTier = user.subscription?.tier || 'free';
 
-      const result = await createSubscriptionSession.mutateAsync({
-        priceId,
-        successUrl: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl: `${baseUrl}/pricing`,
-        trialPeriodDays: 14,
-      });
+    // Determine action type
+    let actionType: 'upgrade' | 'downgrade' | 'switch' = 'upgrade';
+    if (currentTier === 'premium') actionType = 'downgrade';
+    else if (currentTier === 'professional') actionType = 'switch';
 
-      if (result.url) {
-        window.location.href = result.url;
-      }
-    } catch (error) {
-      console.error('Checkout error:', error);
-      alert('Failed to start checkout. Please try again.');
-      setLoading(false);
-    }
+    setPendingAction({
+      type: actionType,
+      targetTier: 'professional',
+      targetPriceId: priceId,
+      targetPrice: price,
+      billingCycle: isAnnual ? 'annual' : 'monthly',
+    });
+    setShowConfirmModal(true);
   };
 
-  const handlePremiumClick = async () => {
+  const handlePremiumClick = () => {
     if (!user) {
       // Store the billing period preference before login
       localStorage.setItem('pendingCheckout', isAnnual ? 'premium-annual' : 'premium-monthly');
@@ -135,26 +146,22 @@ export default function Pricing() {
       return;
     }
 
-    setLoading(true);
-    try {
-      const priceId = isAnnual ? PREMIUM_ANNUAL_PRICE_ID : PREMIUM_MONTHLY_PRICE_ID;
-      const baseUrl = window.location.origin;
+    const priceId = isAnnual ? PREMIUM_ANNUAL_PRICE_ID : PREMIUM_MONTHLY_PRICE_ID;
+    const price = isAnnual ? premiumAnnualPrice : premiumMonthlyPrice;
+    const currentTier = user.subscription?.tier || 'free';
 
-      const result = await createSubscriptionSession.mutateAsync({
-        priceId,
-        successUrl: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl: `${baseUrl}/pricing`,
-        trialPeriodDays: 14,
-      });
+    // Determine action type
+    let actionType: 'upgrade' | 'downgrade' | 'switch' = 'upgrade';
+    if (currentTier === 'premium') actionType = 'switch';
 
-      if (result.url) {
-        window.location.href = result.url;
-      }
-    } catch (error) {
-      console.error('Checkout error:', error);
-      alert('Failed to start checkout. Please try again.');
-      setLoading(false);
-    }
+    setPendingAction({
+      type: actionType,
+      targetTier: 'premium',
+      targetPriceId: priceId,
+      targetPrice: price,
+      billingCycle: isAnnual ? 'annual' : 'monthly',
+    });
+    setShowConfirmModal(true);
   };
 
   // Check for pending checkout after login
@@ -217,6 +224,73 @@ export default function Pricing() {
     }
   }, [user]);
 
+  // Handle plan change confirmation
+  const handleConfirmPlanChange = async () => {
+    if (!pendingAction) return;
+
+    setLoading(true);
+    try {
+      if (pendingAction.type === 'cancel') {
+        // Handle cancellation to free
+        const subscriptionId = user?.subscription?.stripe_subscription_id;
+        console.log('[Pricing] Cancelling subscription:', subscriptionId);
+
+        if (!subscriptionId) {
+          throw new Error('No subscription ID found');
+        }
+
+        await cancelSubscription.mutateAsync({
+          subscriptionId,
+          cancelAtPeriodEnd: true,
+        });
+
+        console.log('[Pricing] Subscription cancelled successfully');
+        setShowConfirmModal(false);
+        setPendingAction(null);
+        setLoading(false);
+        // Use router to navigate instead of reload to avoid dev server conflicts
+        router.push('/settings/account');
+      } else if (hasSubscription() && user?.subscription?.stripe_subscription_id) {
+        // Update existing subscription
+        const subscriptionId = user.subscription.stripe_subscription_id;
+        console.log('[Pricing] Updating subscription:', subscriptionId, 'to price:', pendingAction.targetPriceId);
+
+        await updateSubscription.mutateAsync({
+          subscriptionId,
+          newPriceId: pendingAction.targetPriceId,
+        });
+
+        console.log('[Pricing] Subscription updated successfully');
+        setShowConfirmModal(false);
+        setPendingAction(null);
+        setLoading(false);
+        // Refresh current page data by re-navigating
+        router.replace(router.asPath);
+      } else {
+        // Create new subscription for free tier users
+        console.log('[Pricing] Creating new subscription for price:', pendingAction.targetPriceId);
+        const baseUrl = window.location.origin;
+        const result = await createSubscriptionSession.mutateAsync({
+          priceId: pendingAction.targetPriceId,
+          successUrl: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${baseUrl}/pricing`,
+          trialPeriodDays: 14,
+        });
+
+        if (result.url) {
+          window.location.href = result.url;
+        }
+      }
+    } catch (error: any) {
+      console.error('[Pricing] Plan change error:', error);
+      const errorMessage = error?.message || 'Failed to update subscription. Please try again.';
+      alert(`Error: ${errorMessage}\n\nPlease contact support if this persists.`);
+      setLoading(false);
+      setShowConfirmModal(false);
+      setPendingAction(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors">
       <header className="border-b border-gray-200 dark:border-gray-800 transition-colors">
@@ -273,6 +347,23 @@ export default function Pricing() {
               Start free. Upgrade when you're ready. No hidden fees.
             </p>
 
+            {/* Subscription Status Banner */}
+            {hasSubscription() && user?.subscription && (
+              <div className="max-w-2xl mx-auto mb-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div className="flex items-center justify-center gap-2 text-blue-900 dark:text-blue-100">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <span className="font-medium">
+                    You're currently on <span className="font-bold capitalize">{user.subscription.tier}</span>
+                    {user.subscription.billingCycle && (
+                      <> • Renews {new Date(user.subscription.billingCycle).toLocaleDateString()}</>
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div className="inline-flex items-center bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm border border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => setIsAnnual(false)}
@@ -326,12 +417,37 @@ export default function Pricing() {
                 </div>
               </div>
 
-              <button
-                onClick={() => setIsLoginModalOpen(true)}
-                className="w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white px-6 py-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 font-semibold mb-8 transition-colors"
-              >
-                Start Free
-              </button>
+              {isCurrentTier('free') ? (
+                <button
+                  disabled
+                  className="w-full bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 px-6 py-3 rounded-lg font-semibold mb-8 transition-colors cursor-not-allowed"
+                >
+                  Current Plan
+                </button>
+              ) : hasSubscription() ? (
+                <button
+                  onClick={() => {
+                    setPendingAction({
+                      type: 'cancel',
+                      targetTier: 'free',
+                      targetPriceId: '',
+                      targetPrice: 0,
+                      billingCycle: 'monthly',
+                    });
+                    setShowConfirmModal(true);
+                  }}
+                  className="w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white px-6 py-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 font-semibold mb-8 transition-colors"
+                >
+                  ↓ Downgrade to Free
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white px-6 py-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 font-semibold mb-8 transition-colors"
+                >
+                  Start Free
+                </button>
+              )}
 
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
@@ -441,10 +557,15 @@ export default function Pricing() {
               ) : (
                 <button
                   onClick={handleProfessionalClick}
-                  disabled={loading || (hasSubscription() && !canUpgradeToTier('professional'))}
+                  disabled={loading}
                   className="w-full bg-green-600 dark:bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold mb-8 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Processing...' : user ? 'Start Free Trial' : 'Sign Up for Professional'}
+                  {loading ? 'Processing...' :
+                   !user ? 'Sign Up for Professional' :
+                   !hasSubscription() ? 'Start Free Trial' :
+                   user.subscription?.tier === 'premium' ? '↓ Downgrade to Professional' :
+                   user.subscription?.tier === 'professional' ? 'Switch Billing' :
+                   '↑ Upgrade to Professional'}
                 </button>
               )}
 
@@ -555,10 +676,14 @@ export default function Pricing() {
               ) : (
                 <button
                   onClick={handlePremiumClick}
-                  disabled={loading || (isCurrentTier('premium'))}
+                  disabled={loading}
                   className="w-full bg-gray-900 dark:bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 font-semibold mb-8 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Processing...' : user ? 'Start Free Trial' : 'Sign Up for Premium'}
+                  {loading ? 'Processing...' :
+                   !user ? 'Sign Up for Premium' :
+                   !hasSubscription() ? 'Start Free Trial' :
+                   user.subscription?.tier === 'premium' ? 'Switch Billing' :
+                   '↑ Upgrade to Premium'}
                 </button>
               )}
 
@@ -805,6 +930,79 @@ export default function Pricing() {
       </footer>
 
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+
+      {/* Plan Change Confirmation Modal */}
+      {showConfirmModal && pendingAction && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 shadow-xl">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+              {pendingAction.type === 'cancel' ? 'Cancel Subscription' :
+               pendingAction.type === 'upgrade' ? 'Upgrade Plan' :
+               pendingAction.type === 'downgrade' ? 'Downgrade Plan' : 'Switch Billing Cycle'}
+            </h3>
+
+            <div className="mb-6">
+              {pendingAction.type === 'cancel' ? (
+                <p className="text-gray-600 dark:text-gray-400">
+                  Your subscription will be cancelled and you'll return to the Free plan at the end of your billing period. You'll retain access to {user?.subscription?.tier} features until then.
+                </p>
+              ) : (
+                <>
+                  <p className="text-gray-600 dark:text-gray-400 mb-3">
+                    You're changing to <span className="font-bold capitalize">{pendingAction.targetTier}</span> ({pendingAction.billingCycle}).
+                  </p>
+
+                  {hasSubscription() ? (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                      <div className="flex items-start gap-2">
+                        <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                        <div className="text-sm text-blue-900 dark:text-blue-100">
+                          <p className="font-medium mb-1">Changes take effect immediately</p>
+                          <p className="text-blue-700 dark:text-blue-300">
+                            You'll be {pendingAction.type === 'upgrade' ? 'charged' : 'credited'} a prorated amount based on your current billing cycle.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                      <p className="text-sm text-green-900 dark:text-green-100">
+                        <span className="font-medium">14-day free trial</span> • Then ${pendingAction.targetPrice}/{pendingAction.billingCycle === 'annual' ? 'year' : 'month'}
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  setPendingAction(null);
+                }}
+                disabled={loading}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmPlanChange}
+                disabled={loading}
+                className={`flex-1 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 ${
+                  pendingAction.type === 'cancel'
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                {loading ? 'Processing...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

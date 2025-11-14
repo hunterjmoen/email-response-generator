@@ -91,7 +91,7 @@ export const useAuthStore = create<AuthStore>()(
       // Fetch subscription separately for better performance
       const { data: subscriptionData } = await supabase
         .from('subscriptions')
-        .select('tier, status, usage_count, monthly_limit, usage_reset_date')
+        .select('tier, status, usage_count, monthly_limit, usage_reset_date, stripe_customer_id, stripe_subscription_id')
         .eq('user_id', session.user.id)
         .single();
 
@@ -108,7 +108,10 @@ export const useAuthStore = create<AuthStore>()(
           usageCount: subscriptionData?.usage_count || 0,
           monthlyLimit: subscriptionData?.monthly_limit || 10,
           billingCycle: subscriptionData?.usage_reset_date || undefined,
+          stripe_customer_id: subscriptionData?.stripe_customer_id || undefined,
+          stripe_subscription_id: subscriptionData?.stripe_subscription_id || undefined,
         },
+        stripe_customer_id: subscriptionData?.stripe_customer_id || undefined,
         preferences: userData.preferences,
         createdAt: userData.created_at,
         updatedAt: userData.updated_at,
@@ -132,7 +135,7 @@ export const useAuthStore = create<AuthStore>()(
           // Fetch updated subscription data
           const { data: subscriptionData, error } = await supabase
             .from('subscriptions')
-            .select('tier, status, usage_count, monthly_limit, usage_reset_date')
+            .select('tier, status, usage_count, monthly_limit, usage_reset_date, stripe_customer_id, stripe_subscription_id')
             .eq('user_id', user.id)
             .single();
 
@@ -150,7 +153,10 @@ export const useAuthStore = create<AuthStore>()(
               usageCount: subscriptionData.usage_count,
               monthlyLimit: subscriptionData.monthly_limit,
               billingCycle: subscriptionData.usage_reset_date || undefined,
+              stripe_customer_id: subscriptionData.stripe_customer_id || undefined,
+              stripe_subscription_id: subscriptionData.stripe_subscription_id || undefined,
             },
+            stripe_customer_id: subscriptionData.stripe_customer_id || undefined,
           };
 
           console.log('[Auth] Subscription refreshed. Usage:', subscriptionData.usage_count);

@@ -147,12 +147,16 @@ async function handleCheckoutSessionCompleted(
 
     const { tier, monthlyLimit } = getTierFromSubscription(subscription);
 
+    // Extract IDs as strings (not full objects)
+    const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
+    const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id;
+
     // Update subscription in database
     const { error } = await supabaseAdmin
       .from('subscriptions')
       .update({
-        stripe_customer_id: session.customer as string,
-        stripe_subscription_id: session.subscription as string,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscriptionId,
         tier,
         status: 'active',
         monthly_limit: monthlyLimit,
@@ -184,10 +188,13 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   try {
     const { tier, monthlyLimit } = getTierFromSubscription(subscription);
 
+    // Ensure we're storing the subscription ID as a string
+    const subscriptionId = typeof subscription.id === 'string' ? subscription.id : String(subscription.id);
+
     const { error } = await supabaseAdmin
       .from('subscriptions')
       .update({
-        stripe_subscription_id: subscription.id,
+        stripe_subscription_id: subscriptionId,
         status: subscription.status,
         tier,
         monthly_limit: monthlyLimit,
@@ -218,10 +225,15 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   }
 
   try {
+    // Get the tier and limit from the subscription (in case it changed)
+    const { tier, monthlyLimit } = getTierFromSubscription(subscription);
+
     const { error } = await supabaseAdmin
       .from('subscriptions')
       .update({
         status: subscription.status,
+        tier,
+        monthly_limit: monthlyLimit,
         usage_reset_date: new Date(subscription.current_period_end * 1000).toISOString(),
         updated_at: new Date().toISOString(),
       })
@@ -232,7 +244,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       throw error;
     }
 
-    console.log(`Subscription updated for user ${userId}, status: ${subscription.status}`);
+    console.log(`Subscription updated for user ${userId}, tier: ${tier}, status: ${subscription.status}`);
   } catch (error) {
     console.error('Failed to update subscription in database:', error);
     throw error;
