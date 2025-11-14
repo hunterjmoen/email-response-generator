@@ -4,6 +4,8 @@ import { LoginModal } from '../components/auth/LoginModal';
 import { UserProfileMenu } from '../components/UserProfileMenu';
 import { useAuthStore } from '../stores/auth';
 import ThemeToggle from '../components/shared/ThemeToggle';
+import FAQAccordion from '../components/faq/FAQAccordion';
+import { FAQ_ITEMS } from '../data/faq-items';
 
 export default function Home() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -32,6 +34,7 @@ export default function Home() {
             <nav className="hidden md:flex items-center gap-10">
               <a href="#features" className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition-colors">Features</a>
               <Link href="/pricing" className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition-colors">Pricing</Link>
+              <a href="#faq" className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition-colors">FAQ</a>
             </nav>
             <div className="flex items-center gap-4">
               <ThemeToggle />
@@ -279,6 +282,20 @@ export default function Home() {
         </div>
       </section>
 
+      <section id="faq" className="py-24 bg-gray-50 dark:bg-gray-800 transition-colors">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Everything you need to know about FreelanceFlow
+            </p>
+          </div>
+          <FAQAccordion items={FAQ_ITEMS} />
+        </div>
+      </section>
+
       <footer className="bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-16 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
@@ -297,6 +314,7 @@ export default function Home() {
                 <ul className="space-y-3">
                   <li><Link href="#features" className="text-sm text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors">Features</Link></li>
                   <li><Link href="/pricing" className="text-sm text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors">Pricing</Link></li>
+                  <li><a href="#faq" className="text-sm text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors">FAQ</a></li>
                 </ul>
               </div>
             </div>
