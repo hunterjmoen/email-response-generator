@@ -137,7 +137,12 @@ export default function ClientsPage() {
             </div>
           ) : (
             <EnhancedClientList
-              clients={clients || []}
+              clients={(clients || []).map(client => ({
+                ...client,
+                createdAt: new Date(client.createdAt),
+                updatedAt: new Date(client.updatedAt),
+                lastContactDate: client.lastContactDate ? new Date(client.lastContactDate) : undefined
+              }))}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onBulkDelete={handleBulkDelete}

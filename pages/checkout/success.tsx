@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuthStore } from '../../stores/auth';
-import { supabase } from '../../utils/supabase';
-import { trpc } from '../../utils/trpc';
 
 export default function CheckoutSuccess() {
   const router = useRouter();
@@ -13,32 +11,28 @@ export default function CheckoutSuccess() {
   const [subscriptionRefreshed, setSubscriptionRefreshed] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
 
-  const verifyCheckout = trpc.stripe.verifyCheckoutSession.useMutation();
-
-  // TEMPORARY: Manually verify and activate subscription for local testing
-  // This replaces the webhook flow when STRIPE_WEBHOOK_SECRET is not properly configured
+  // Wait for webhook to process, then refresh user data
   useEffect(() => {
     if (isAuthenticated && !subscriptionRefreshed && session_id && typeof session_id === 'string') {
-      console.log('[Checkout Success] Verifying checkout session:', session_id);
+      console.log('[Checkout Success] Payment successful, waiting for webhook to activate subscription');
 
-      const verifyAndActivate = async () => {
+      const refreshSubscription = async () => {
         try {
-          // Call the temporary endpoint to verify and activate the subscription
-          await verifyCheckout.mutateAsync({ sessionId: session_id });
-          console.log('[Checkout Success] Subscription activated successfully');
+          // Wait a bit for webhook to process
+          await new Promise(resolve => setTimeout(resolve, 2000));
 
           // Refresh user data to get the updated subscription
           await initialize();
           setSubscriptionRefreshed(true);
           console.log('[Checkout Success] User data refreshed, new tier:', useAuthStore.getState().user?.subscription?.tier);
         } catch (error: any) {
-          console.error('[Checkout Success] Failed to verify checkout:', error);
-          setVerificationError(error.message || 'Failed to activate subscription');
+          console.error('[Checkout Success] Failed to refresh subscription:', error);
+          setVerificationError(error.message || 'Failed to load subscription');
           setSubscriptionRefreshed(true); // Still mark as refreshed to stop loading
         }
       };
 
-      verifyAndActivate();
+      refreshSubscription();
     }
   }, [isAuthenticated, subscriptionRefreshed, session_id, initialize]);
 

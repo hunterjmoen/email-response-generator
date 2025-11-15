@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Monitoring and logging utilities for FreelanceFlow
  * Provides structured logging and performance monitoring

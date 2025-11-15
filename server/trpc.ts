@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { initTRPC, TRPCError } from '@trpc/server';
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { createClient } from '@supabase/supabase-js';

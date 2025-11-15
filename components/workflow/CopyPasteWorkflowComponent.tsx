@@ -36,6 +36,7 @@ export function CopyPasteWorkflowComponent() {
     setError,
     addToHistory,
     setCopiedResponseIndex,
+    clearCurrentWorkflow,
   } = useResponseGenerationStore();
 
   const responseOptions = useCurrentResponseOptions();
@@ -172,15 +173,12 @@ export function CopyPasteWorkflowComponent() {
   );
 
   const handleStartNew = useCallback(() => {
-    setCurrentInput(null);
-    setCurrentResponse(null);
-    setSelectedResponseIndex(null);
-    setError(null);
+    clearCurrentWorkflow();
     setPromptInput('');
     setShowAdvancedOptions(false);
     setShowTemplates(false);
     resetResponses(); // Clear streaming responses and localStorage
-  }, [setCurrentInput, setCurrentResponse, setSelectedResponseIndex, setError, resetResponses]);
+  }, [clearCurrentWorkflow, resetResponses]);
 
   const handleTemplateSelect = useCallback((input: ValidatedMessageInput) => {
     setShowTemplates(false);

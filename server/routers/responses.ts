@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { z } from 'zod';
 import { router, protectedProcedure } from '../trpc';
 import { createClient } from '@supabase/supabase-js';

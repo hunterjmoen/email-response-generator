@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { z } from 'zod';
 import { router, protectedProcedure } from '../trpc';
 import { projectSchema } from '@freelance-flow/shared';

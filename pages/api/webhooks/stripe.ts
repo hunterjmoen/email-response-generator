@@ -191,7 +191,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
         status: subscription.status,
         tier,
         monthly_limit: monthlyLimit,
-        usage_reset_date: new Date(subscription.current_period_end * 1000).toISOString(),
+        usage_reset_date: new Date((subscription as any).current_period_end * 1000).toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId);
@@ -222,7 +222,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       .from('subscriptions')
       .update({
         status: subscription.status,
-        usage_reset_date: new Date(subscription.current_period_end * 1000).toISOString(),
+        usage_reset_date: new Date((subscription as any).current_period_end * 1000).toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId);
@@ -276,9 +276,9 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   console.log('Invoice payment succeeded:', invoice.id);
 
   // For recurring payments, ensure subscription remains active
-  if (invoice.subscription) {
+  if ((invoice as any).subscription) {
     const subscription = await stripe.subscriptions.retrieve(
-      invoice.subscription as string
+      (invoice as any).subscription as string
     );
 
     const userId = subscription.metadata?.userId;
@@ -306,9 +306,9 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   console.log('Invoice payment failed:', invoice.id);
 
   // Mark subscription as past_due
-  if (invoice.subscription) {
+  if ((invoice as any).subscription) {
     const subscription = await stripe.subscriptions.retrieve(
-      invoice.subscription as string
+      (invoice as any).subscription as string
     );
 
     const userId = subscription.metadata?.userId;

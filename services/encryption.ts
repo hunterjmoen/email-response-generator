@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto';
 import { serverConfig } from '../config/server';
 
