@@ -10,6 +10,36 @@ import {
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { type HistorySearchResult } from '@freelance-flow/shared';
 
+/**
+ * Safe component for highlighting search terms without using dangerouslySetInnerHTML
+ * Prevents XSS attacks by using React elements instead of raw HTML
+ */
+function HighlightedText({ text }: { text: string }) {
+  // Extract the highlighted portion from the snippet format: "...search term..."
+  const match = text.match(/\.\.\.(.*?)\.\.\./);
+
+  if (!match || !match[1]) {
+    // No highlight pattern found, render as plain text
+    return <span>{text}</span>;
+  }
+
+  const searchTerm = match[1];
+  const parts = text.split(searchTerm);
+
+  return (
+    <span>
+      {parts.map((part, index) => (
+        <span key={index}>
+          {part}
+          {index < parts.length - 1 && (
+            <mark className="bg-yellow-200">{searchTerm}</mark>
+          )}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 interface ResponseHistoryItemProps {
   item: HistorySearchResult;
   onCopy: (content: string) => void;
@@ -170,14 +200,7 @@ export function ResponseHistoryItem({
           <div className="text-sm text-gray-600 mb-1">Original Message:</div>
           <div className="text-sm text-gray-900">
             {item.snippet ? (
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: item.snippet.replace(
-                    new RegExp(`(${item.snippet.match(/\.\.\.(.*?)\.\.\./)?.[1] || ''})`, 'gi'),
-                    '<mark class="bg-yellow-200">$1</mark>'
-                  )
-                }}
-              />
+              <HighlightedText text={item.snippet} />
             ) : (
               <>
                 {expanded ? item.originalMessage : truncateText(item.originalMessage)}

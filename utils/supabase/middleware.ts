@@ -1,7 +1,52 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+/**
+ * Get allowed CORS origins from environment variable
+ */
+function getAllowedOrigins(): string[] {
+  const originsEnv = process.env.NEXT_PUBLIC_ALLOWED_ORIGINS;
+  if (!originsEnv) {
+    // Default to production domain if not set
+    return ['https://freelance-flow.vercel.app'];
+  }
+  return originsEnv.split(',').map(origin => origin.trim());
+}
+
+/**
+ * Check if origin is allowed for CORS
+ */
+function isOriginAllowed(origin: string | null): boolean {
+  if (!origin) return false;
+  const allowedOrigins = getAllowedOrigins();
+  return allowedOrigins.includes(origin);
+}
+
+/**
+ * Add CORS headers to response if applicable
+ */
+function addCorsHeaders(response: NextResponse, request: NextRequest): void {
+  const origin = request.headers.get('origin');
+
+  // Only add CORS headers for API routes
+  if (request.nextUrl.pathname.startsWith('/api')) {
+    if (origin && isOriginAllowed(origin)) {
+      response.headers.set('Access-Control-Allow-Origin', origin);
+      response.headers.set('Access-Control-Allow-Credentials', 'true');
+      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    }
+  }
+}
+
 export async function updateSession(request: NextRequest) {
+  // Handle preflight requests
+  if (request.method === 'OPTIONS') {
+    const response = new NextResponse(null, { status: 200 });
+    addCorsHeaders(response, request);
+    return response;
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -63,6 +108,9 @@ export async function updateSession(request: NextRequest) {
   //    return myNewResponse
   // If this is not done, you may be causing the browser and server to go out
   // of sync and terminate the user's session prematurely!
+
+  // Add CORS headers to the response
+  addCorsHeaders(supabaseResponse, request);
 
   return supabaseResponse
 }

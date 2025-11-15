@@ -264,12 +264,48 @@ class SecurityLogger {
     const events = this.eventBuffer.splice(0);
 
     try {
-      // In a real implementation, you would save these to your database
-      // For now, we'll just log to console in production
-      if (process.env.NODE_ENV === 'production') {
-        console.log(`[SECURITY] Flushing ${events.length} security events to database`);
-        // TODO: Implement database storage
-        // await saveSecurityEventsToDatabase(events);
+      // Import Supabase client (dynamic to avoid circular dependencies)
+      const { createClient } = await import('@supabase/supabase-js');
+
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false
+          }
+        }
+      );
+
+      // Batch insert security events
+      const eventRecords = events.map(event => ({
+        event_type: event.eventType,
+        user_id: event.userId || null,
+        user_email: event.userEmail || null,
+        client_ip: event.clientIP,
+        user_agent: event.userAgent || null,
+        severity: event.severity,
+        message: event.message,
+        metadata: event.metadata || null,
+        session_id: event.sessionId || null,
+        endpoint: event.endpoint || null,
+        success: event.success,
+        created_at: event.timestamp.toISOString(),
+      }));
+
+      const { error } = await supabaseAdmin
+        .from('security_events')
+        .insert(eventRecords);
+
+      if (error) {
+        console.error('Failed to insert security events:', error);
+        // Re-add events to buffer for retry (up to a limit)
+        if (this.eventBuffer.length < 1000) {
+          this.eventBuffer.unshift(...events);
+        }
+      } else {
+        console.log(`[SECURITY] Successfully flushed ${events.length} security events to database`);
       }
     } catch (error) {
       console.error('Failed to flush security events to database:', error);

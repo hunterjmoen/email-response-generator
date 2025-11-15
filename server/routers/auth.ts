@@ -11,6 +11,7 @@ import {
 import { createClient } from '@supabase/supabase-js';
 import { TRPCError } from '@trpc/server';
 import securityLogger from '../../services/securityLogger';
+import { AccountLockoutService } from '../../services/accountLockout';
 import {
   RegisterSchema,
   LoginSchema,
@@ -205,12 +206,43 @@ export const authRouter = router({
       const clientIP = ctx.req?.socket?.remoteAddress || 'unknown';
       const userAgent = ctx.req?.headers['user-agent'] || 'unknown';
       try {
+        // Check if account is locked
+        const isLocked = await AccountLockoutService.isAccountLocked(input.email);
+
+        if (isLocked) {
+          const lockoutInfo = await AccountLockoutService.getLockoutInfo(input.email);
+
+          securityLogger.logLoginAttempt({
+            userEmail: input.email,
+            clientIP,
+            userAgent,
+            success: false,
+            failureReason: 'Account locked due to too many failed attempts',
+          });
+
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: lockoutInfo
+              ? `Account temporarily locked. Please try again in ${lockoutInfo.minutesRemaining} minutes.`
+              : 'Account temporarily locked due to too many failed login attempts. Please try again later.',
+          });
+        }
+
         const { data, error } = await supabaseAdmin.auth.signInWithPassword({
           email: input.email,
           password: input.password,
         });
 
         if (error) {
+          // Record failed login attempt
+          await AccountLockoutService.recordLoginAttempt({
+            email: input.email,
+            clientIP,
+            userAgent,
+            success: false,
+            failureReason: error.message,
+          });
+
           securityLogger.logLoginAttempt({
             userEmail: input.email,
             clientIP,
@@ -289,14 +321,26 @@ export const authRouter = router({
           updatedAt: userData.updated_at,
         };
 
-        // Log successful login
+        // Record successful login attempt
+        await AccountLockoutService.recordLoginAttempt({
+          email: input.email,
+          clientIP,
+          userAgent,
+          success: true,
+        });
+
+        // Log successful login (hash session token for security)
+        const sessionIdHash = data.session.access_token
+          ? `...${data.session.access_token.slice(-8)}`
+          : undefined;
+
         securityLogger.logLoginAttempt({
           userEmail: input.email,
           clientIP,
           userAgent,
           success: true,
           userId: user.id,
-          sessionId: data.session.access_token,
+          sessionId: sessionIdHash,
         });
 
         return {

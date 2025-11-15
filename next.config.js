@@ -12,14 +12,6 @@ const nextConfig = {
   experimental: {
     externalDir: true,
   },
-
-  // Temporarily ignore TypeScript and ESLint errors during build for deployment setup
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
 }
 
 // Sentry configuration

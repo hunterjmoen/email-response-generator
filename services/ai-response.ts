@@ -12,6 +12,44 @@ const DEFAULT_MODEL = process.env.OPENAI_MODEL || 'gpt-4';
 
 export class AIResponseService {
   /**
+   * Sanitize user input to prevent prompt injection
+   */
+  private static sanitizeInput(input: string): string {
+    // Remove common prompt injection patterns
+    let sanitized = input
+      // Remove attempts to break out of context
+      .replace(/```[\s\S]*?```/g, '[code block removed]')
+      .replace(/<\|.*?\|>/g, '[special token removed]')
+      // Remove system-like commands
+      .replace(/\/\w+/g, '')
+      // Limit length to prevent excessive token usage
+      .slice(0, 2000);
+
+    return sanitized.trim();
+  }
+
+  /**
+   * Validate input doesn't contain malicious patterns
+   */
+  private static validateInput(input: string): void {
+    const dangerousPatterns = [
+      /ignore\s+(previous|above|all)\s+instructions/i,
+      /you\s+are\s+now/i,
+      /system\s*:/i,
+      /assistant\s*:/i,
+      /new\s+instructions/i,
+      /<\|im_start\|>/i,
+      /<\|im_end\|>/i,
+    ];
+
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(input)) {
+        throw new Error('Input contains potentially malicious content and has been blocked for security reasons.');
+      }
+    }
+  }
+
+  /**
    * Generate AI response options based on client message and context
    */
   static async generateResponses(
@@ -20,7 +58,17 @@ export class AIResponseService {
     styleProfile?: any
   ): Promise<AIResponseOptions[]> {
     try {
-      const prompt = this.buildPrompt(originalMessage, context);
+      // Validate and sanitize inputs
+      this.validateInput(originalMessage);
+      const sanitizedMessage = this.sanitizeInput(originalMessage);
+
+      // Sanitize custom notes if present
+      if (context.customNotes) {
+        this.validateInput(context.customNotes);
+        context.customNotes = this.sanitizeInput(context.customNotes);
+      }
+
+      const prompt = this.buildPrompt(sanitizedMessage, context);
 
       const completion = await openai.chat.completions.create({
         model: DEFAULT_MODEL,
@@ -69,13 +117,15 @@ export class AIResponseService {
     const contextDescription = this.getContextDescription(context);
 
     return `
-Please generate 2-3 professional response options for the following client message:
+Please generate 2-3 professional response options for the following client message.
 
-CLIENT MESSAGE:
-"${originalMessage}"
+==== CLIENT MESSAGE START ====
+${originalMessage}
+==== CLIENT MESSAGE END ====
 
-CONTEXT:
+==== CONTEXT START ====
 ${contextDescription}
+==== CONTEXT END ====
 
 Requirements:
 - Generate exactly 2-3 response variations (brief, standard, detailed)
@@ -233,14 +283,29 @@ ${context.customNotes ? `- Additional Context: ${context.customNotes}` : ''}
     refinementInstructions: string,
     styleProfile?: any
   ): Promise<AIResponseOptions[]> {
+    // Validate and sanitize inputs
+    this.validateInput(originalMessage);
+    this.validateInput(refinementInstructions);
+
+    const sanitizedMessage = this.sanitizeInput(originalMessage);
+    const sanitizedRefinement = this.sanitizeInput(refinementInstructions);
+
+    // Sanitize custom notes if present
+    if (context.customNotes) {
+      this.validateInput(context.customNotes);
+      context.customNotes = this.sanitizeInput(context.customNotes);
+    }
+
     const refinedPrompt = `
-${this.buildPrompt(originalMessage, context)}
+${this.buildPrompt(sanitizedMessage, context)}
 
-PREVIOUS RESPONSES:
+==== PREVIOUS RESPONSES START ====
 ${previousResponses.map((r, i) => `${i + 1}. ${r.content}`).join('\n')}
+==== PREVIOUS RESPONSES END ====
 
-REFINEMENT INSTRUCTIONS:
-${refinementInstructions}
+==== REFINEMENT INSTRUCTIONS START ====
+${sanitizedRefinement}
+==== REFINEMENT INSTRUCTIONS END ====
 
 Please generate improved responses based on the refinement feedback above.
     `;
