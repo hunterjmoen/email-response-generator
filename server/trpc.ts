@@ -37,7 +37,12 @@ export const createContext = async (opts: CreateNextContextOptions): Promise<Con
         getAll() {
           // Parse cookies from header string for Pages Router
           const cookieHeader = req.headers.cookie || '';
-          return parseCookieHeader(cookieHeader);
+          const parsed = parseCookieHeader(cookieHeader);
+          // Ensure all cookies have string values (filter out undefined)
+          return parsed.map(cookie => ({
+            name: cookie.name,
+            value: cookie.value || ''
+          }));
         },
         setAll(cookiesToSet) {
           // Set cookies using proper serialization
