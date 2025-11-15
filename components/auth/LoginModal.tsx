@@ -39,7 +39,8 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
     resolver: zodResolver(RegisterSchema),
   });
 
-  const { register, handleSubmit, formState: { errors } } = mode === 'login' ? loginForm : registerForm;
+  // Get form methods based on mode
+  const { register, formState: { errors } } = mode === 'login' ? loginForm : registerForm;
 
   const handleSocialLogin = async (provider: 'google' | 'apple') => {
     try {
@@ -198,8 +199,6 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
     }
   };
 
-  const onSubmit = mode === 'login' ? onLoginSubmit : onRegisterSubmit;
-
   if (!isOpen) return null;
 
   return (
@@ -230,7 +229,7 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={mode === 'login' ? loginForm.handleSubmit(onLoginSubmit) : registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
           {mode === 'register' && (
             <div className="grid grid-cols-2 gap-4">
               <div>
