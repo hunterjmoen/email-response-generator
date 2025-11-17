@@ -201,9 +201,12 @@ export default function HistoryPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        item.selectedResponse && handleCopyResponse(String(item.selectedResponse));
+                        if (item.selectedResponse !== undefined && item.generatedOptions?.[item.selectedResponse]) {
+                          handleCopyResponse(item.generatedOptions[item.selectedResponse].content);
+                        }
                       }}
-                      className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      disabled={item.selectedResponse === undefined || !item.generatedOptions?.[item.selectedResponse]}
+                      className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Copy
                     </button>
