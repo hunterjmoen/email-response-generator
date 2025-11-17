@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { ProtectedRoute } from '../../../components/auth/ProtectedRoute';
 import { DashboardLayout } from '../../../components/layouts/DashboardLayout';
@@ -27,10 +27,20 @@ export default function ClientDetailPage() {
     { id: clientId },
     { enabled: !!clientId }
   );
-  const { data: projects, isLoading: isLoadingProjects } = trpc.projects.listByClient.useQuery(
+  const { data: rawProjects, isLoading: isLoadingProjects } = trpc.projects.listByClient.useQuery(
     { clientId },
     { enabled: !!clientId }
   );
+
+  // Convert string dates to Date objects
+  const projects = useMemo(() => {
+    return rawProjects?.map(project => ({
+      ...project,
+      deadline: project.deadline ? new Date(project.deadline) : undefined,
+      createdAt: new Date(project.createdAt),
+      updatedAt: new Date(project.updatedAt),
+    }));
+  }, [rawProjects]);
 
   const updateClientMutation = trpc.clients.update.useMutation({
     onSuccess: () => {
@@ -204,11 +214,11 @@ export default function ClientDetailPage() {
                       </svg>
                     }
                     label="Email"
-                    value={client.email}
+                    value={client.email!}
                     action={
                       <button
                         onClick={async () => {
-                          await navigator.clipboard.writeText(client.email);
+                          await navigator.clipboard.writeText(client.email!);
                           toast.success('Email copied to clipboard!');
                         }}
                         className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -229,11 +239,11 @@ export default function ClientDetailPage() {
                       </svg>
                     }
                     label="Phone"
-                    value={client.phone}
+                    value={client.phone!}
                     action={
                       <button
                         onClick={async () => {
-                          await navigator.clipboard.writeText(client.phone);
+                          await navigator.clipboard.writeText(client.phone!);
                           toast.success('Phone copied to clipboard!');
                         }}
                         className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -255,14 +265,14 @@ export default function ClientDetailPage() {
                     }
                     label="Website"
                     value={
-                      <a href={client.website} target="_blank" rel="noopener noreferrer" className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 underline">
+                      <a href={client.website!} target="_blank" rel="noopener noreferrer" className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 underline">
                         {client.website}
                       </a>
                     }
                     action={
                       <button
                         onClick={async () => {
-                          await navigator.clipboard.writeText(client.website);
+                          await navigator.clipboard.writeText(client.website!);
                           toast.success('Website copied to clipboard!');
                         }}
                         className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"

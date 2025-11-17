@@ -34,12 +34,12 @@ export default function Dashboard() {
             {/* Left Column - Main Content */}
             <div className="lg:col-span-2 space-y-6">
               <QuickActions />
-              <RecentActivity activities={recentActivity || []} isLoading={activityLoading} />
+              <RecentActivity activities={recentActivity as any || []} isLoading={activityLoading} />
             </div>
 
             {/* Right Column - Sidebar */}
             <div className="space-y-6">
-              <ActiveClientsWidget clients={activeClients || []} isLoading={clientsLoading} />
+              <ActiveClientsWidget clients={activeClients as any || []} isLoading={clientsLoading} />
             </div>
           </div>
         </div>

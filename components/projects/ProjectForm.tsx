@@ -34,7 +34,7 @@ export function ProjectForm({ projectId, clientId, onClose, onSubmit }: ProjectF
         description: existingProject.description || '',
         status: existingProject.status,
         budget: existingProject.budget,
-        deadline: existingProject.deadline,
+        deadline: existingProject.deadline ? new Date(existingProject.deadline) : undefined,
       });
     }
   }, [existingProject]);

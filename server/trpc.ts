@@ -21,7 +21,7 @@ export interface Context {
   user?: User;
   req?: CreateNextContextOptions['req'];
   res?: CreateNextContextOptions['res'];
-  supabase: ReturnType<typeof createClient>;
+  supabase: any; // Using any to avoid database schema type generation requirement
 }
 
 export const createContext = async (opts: CreateNextContextOptions): Promise<Context> => {
@@ -36,7 +36,11 @@ export const createContext = async (opts: CreateNextContextOptions): Promise<Con
         getAll() {
           // Parse cookies from header string for Pages Router
           const cookieHeader = req.headers.cookie || '';
-          return parseCookieHeader(cookieHeader);
+          const cookies = parseCookieHeader(cookieHeader);
+          // Filter out cookies with undefined values to match expected type
+          return cookies.filter((cookie): cookie is { name: string; value: string } =>
+            cookie.value !== undefined
+          );
         },
         setAll(cookiesToSet) {
           // Set cookies using proper serialization

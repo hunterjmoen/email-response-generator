@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ProtectedRoute } from '../../components/auth/ProtectedRoute';
 import { DashboardLayout } from '../../components/layouts/DashboardLayout';
 import { EnhancedClientList } from '../../components/clients/EnhancedClientList';
@@ -12,8 +12,18 @@ export default function ClientsPage() {
   const [editingClient, setEditingClient] = useState<string | null>(null);
 
   const utils = trpc.useContext();
-  const { data: clients, isLoading } = trpc.clients.list.useQuery();
+  const { data: rawClients, isLoading } = trpc.clients.list.useQuery();
   const { data: allTags } = trpc.clients.getAllTags.useQuery();
+
+  // Convert string dates to Date objects
+  const clients = useMemo(() => {
+    return rawClients?.map(client => ({
+      ...client,
+      lastContactDate: client.lastContactDate ? new Date(client.lastContactDate) : undefined,
+      createdAt: new Date(client.createdAt),
+      updatedAt: new Date(client.updatedAt),
+    }));
+  }, [rawClients]);
 
   const createMutation = trpc.clients.create.useMutation({
     onSuccess: () => {
