@@ -39,11 +39,6 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
     resolver: zodResolver(RegisterSchema),
   });
 
-  const loginFormData = loginForm;
-  const registerFormData = registerForm;
-
-  const { register, handleSubmit, formState: { errors } } = mode === 'login' ? loginFormData : registerFormData;
-
   const handleSocialLogin = async (provider: 'google' | 'apple') => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -201,14 +196,6 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
     }
   };
 
-  const onSubmit = async (data: LoginInput | RegisterInput) => {
-    if (mode === 'login') {
-      await onLoginSubmit(data as LoginInput);
-    } else {
-      await onRegisterSubmit(data as RegisterInput);
-    }
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -239,7 +226,7 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={mode === 'login' ? loginForm.handleSubmit(onLoginSubmit) : registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
           {mode === 'register' && (
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -247,13 +234,13 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
                   First Name
                 </label>
                 <input
-                  {...register('firstName')}
+                  {...registerForm.register('firstName')}
                   type="text"
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                   placeholder="John"
                 />
-                {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.firstName.message}</p>
+                {registerForm.formState.errors.firstName && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{registerForm.formState.errors.firstName.message}</p>
                 )}
               </div>
               <div>
@@ -261,13 +248,13 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
                   Last Name
                 </label>
                 <input
-                  {...register('lastName')}
+                  {...registerForm.register('lastName')}
                   type="text"
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                   placeholder="Doe"
                 />
-                {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.lastName.message}</p>
+                {registerForm.formState.errors.lastName && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{registerForm.formState.errors.lastName.message}</p>
                 )}
               </div>
             </div>
@@ -278,14 +265,20 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
               {mode === 'register' ? 'Email Address' : 'Work email'}
             </label>
             <input
-              {...register('email')}
+              {...(mode === 'login' ? loginForm.register('email') : registerForm.register('email'))}
               type="email"
               autoComplete="email"
               className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
               placeholder="alexsmith@content-mobbin.com"
             />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
+            {mode === 'login' ? (
+              loginForm.formState.errors.email && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{loginForm.formState.errors.email.message}</p>
+              )
+            ) : (
+              registerForm.formState.errors.email && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{registerForm.formState.errors.email.message}</p>
+              )
             )}
           </div>
 
@@ -295,7 +288,7 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
                 Industry (Optional)
               </label>
               <select
-                {...register('industry')}
+                {...registerForm.register('industry')}
                 className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white"
               >
                 <option value="">Select your industry</option>
@@ -316,7 +309,7 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
             </label>
             <div className="relative">
               <input
-                {...register('password')}
+                {...(mode === 'login' ? loginForm.register('password') : registerForm.register('password'))}
                 type={showPassword ? 'text' : 'password'}
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                 className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent pr-10 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
@@ -339,8 +332,14 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
                 )}
               </button>
             </div>
-            {errors.password && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
+            {mode === 'login' ? (
+              loginForm.formState.errors.password && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{loginForm.formState.errors.password.message}</p>
+              )
+            ) : (
+              registerForm.formState.errors.password && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{registerForm.formState.errors.password.message}</p>
+              )
             )}
           </div>
 
