@@ -14,6 +14,7 @@ import { UserProfileMenu } from '../UserProfileMenu';
 import { DashboardSidebar } from '../navigation/DashboardSidebar';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { useStreamingResponse, convertStreamingToAIResponse } from '../../hooks/useStreamingResponse';
+import ThemeToggle from '../shared/ThemeToggle';
 
 export function CopyPasteWorkflowComponent() {
   const router = useRouter();
@@ -247,6 +248,7 @@ export function CopyPasteWorkflowComponent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </button>
+            <ThemeToggle />
             {isAuthenticated ? (
               <UserProfileMenu />
             ) : (
