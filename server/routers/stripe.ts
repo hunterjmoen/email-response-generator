@@ -195,8 +195,22 @@ export const stripeRouter = router({
         customerId: z.string(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
+        // SECURITY: Verify user owns this customer ID
+        const { data: subscription } = await ctx.supabase
+          .from('subscriptions')
+          .select('stripe_customer_id')
+          .eq('user_id', ctx.user.id)
+          .single();
+
+        if (!subscription || subscription.stripe_customer_id !== input.customerId) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Access denied to this customer',
+          });
+        }
+
         const session = await stripe.billingPortal.sessions.create({
           customer: input.customerId,
           return_url: input.returnUrl,
@@ -207,6 +221,9 @@ export const stripeRouter = router({
         };
       } catch (error) {
         console.error('Stripe portal session creation failed:', error);
+        if (error instanceof TRPCError) {
+          throw error;
+        }
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to create portal session',
@@ -223,8 +240,22 @@ export const stripeRouter = router({
         customerId: z.string(),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       try {
+        // SECURITY: Verify user owns this customer ID
+        const { data: subscription } = await ctx.supabase
+          .from('subscriptions')
+          .select('stripe_customer_id')
+          .eq('user_id', ctx.user.id)
+          .single();
+
+        if (!subscription || subscription.stripe_customer_id !== input.customerId) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Access denied to this customer',
+          });
+        }
+
         const paymentMethods = await stripe.paymentMethods.list({
           customer: input.customerId,
           type: 'card',
@@ -233,6 +264,9 @@ export const stripeRouter = router({
         return paymentMethods.data;
       } catch (error) {
         console.error('Failed to retrieve payment methods:', error);
+        if (error instanceof TRPCError) {
+          throw error;
+        }
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to retrieve payment methods',
@@ -249,8 +283,22 @@ export const stripeRouter = router({
         customerId: z.string(),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       try {
+        // SECURITY: Verify user owns this customer ID
+        const { data: subscription } = await ctx.supabase
+          .from('subscriptions')
+          .select('stripe_customer_id')
+          .eq('user_id', ctx.user.id)
+          .single();
+
+        if (!subscription || subscription.stripe_customer_id !== input.customerId) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Access denied to this customer',
+          });
+        }
+
         const subscriptions = await stripe.subscriptions.list({
           customer: input.customerId,
           status: 'all',
@@ -260,6 +308,9 @@ export const stripeRouter = router({
         return subscriptions.data;
       } catch (error) {
         console.error('Failed to retrieve subscriptions:', error);
+        if (error instanceof TRPCError) {
+          throw error;
+        }
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to retrieve subscriptions',
@@ -277,18 +328,35 @@ export const stripeRouter = router({
         cancelAtPeriodEnd: z.boolean().default(true),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
-        const subscription = await stripe.subscriptions.update(
+        // SECURITY: Verify user owns this subscription ID
+        const { data: subscription } = await ctx.supabase
+          .from('subscriptions')
+          .select('stripe_subscription_id')
+          .eq('user_id', ctx.user.id)
+          .single();
+
+        if (!subscription || subscription.stripe_subscription_id !== input.subscriptionId) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Access denied to this subscription',
+          });
+        }
+
+        const updatedSubscription = await stripe.subscriptions.update(
           input.subscriptionId,
           {
             cancel_at_period_end: input.cancelAtPeriodEnd,
           }
         );
 
-        return subscription;
+        return updatedSubscription;
       } catch (error) {
         console.error('Failed to cancel subscription:', error);
+        if (error instanceof TRPCError) {
+          throw error;
+        }
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to cancel subscription',
@@ -306,10 +374,24 @@ export const stripeRouter = router({
         newPriceId: z.string(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
+        // SECURITY: Verify user owns this subscription ID
+        const { data: subscription } = await ctx.supabase
+          .from('subscriptions')
+          .select('stripe_subscription_id')
+          .eq('user_id', ctx.user.id)
+          .single();
+
+        if (!subscription || subscription.stripe_subscription_id !== input.subscriptionId) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Access denied to this subscription',
+          });
+        }
+
         // Get the current subscription
-        const subscription = await stripe.subscriptions.retrieve(input.subscriptionId);
+        const stripeSubscription = await stripe.subscriptions.retrieve(input.subscriptionId);
 
         // Update the subscription with the new price
         const updatedSubscription = await stripe.subscriptions.update(
@@ -317,7 +399,7 @@ export const stripeRouter = router({
           {
             items: [
               {
-                id: subscription.items.data[0].id,
+                id: stripeSubscription.items.data[0].id,
                 price: input.newPriceId,
               },
             ],
@@ -328,6 +410,9 @@ export const stripeRouter = router({
         return updatedSubscription;
       } catch (error) {
         console.error('Failed to update subscription:', error);
+        if (error instanceof TRPCError) {
+          throw error;
+        }
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to update subscription',

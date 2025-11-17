@@ -10,6 +10,43 @@ const openai = new OpenAI({
 // Default model configuration
 const DEFAULT_MODEL = process.env.OPENAI_MODEL || 'gpt-4';
 
+/**
+ * Sanitize user input to prevent prompt injection attacks
+ * Removes patterns that could manipulate the AI's behavior
+ */
+function sanitizeUserInput(input: string): string {
+  if (!input) return '';
+
+  // Remove common prompt injection patterns
+  const dangerousPatterns = [
+    /ignore\s+(previous|above|all|prior)\s+instructions?/gi,
+    /disregard\s+(previous|above|all|prior)\s+instructions?/gi,
+    /forget\s+(previous|above|all|prior)\s+instructions?/gi,
+    /new\s+instructions?:/gi,
+    /system\s*:/gi,
+    /assistant\s*:/gi,
+    /\[SYSTEM\]/gi,
+    /\[INST\]/gi,
+    /<\|im_start\|>/gi,
+    /<\|im_end\|>/gi,
+  ];
+
+  let sanitized = input;
+
+  // Remove dangerous patterns
+  for (const pattern of dangerousPatterns) {
+    sanitized = sanitized.replace(pattern, '');
+  }
+
+  // Limit consecutive newlines to prevent context breaking
+  sanitized = sanitized.replace(/\n{4,}/g, '\n\n\n');
+
+  // Trim and limit length
+  sanitized = sanitized.trim().slice(0, 5000);
+
+  return sanitized;
+}
+
 export interface StreamChunk {
   type: 'start' | 'content' | 'complete' | 'error';
   responseIndex?: number;
@@ -113,17 +150,33 @@ export class AIResponseStreamingService {
    * Build the prompt for streaming generation
    */
   private static buildPrompt(originalMessage: string, context: ResponseContext, refinementInstructions?: string, previousResponses?: string[]): string {
-    const contextDescription = this.getContextDescription(context);
+    // Sanitize all user inputs
+    const sanitizedMessage = sanitizeUserInput(originalMessage);
+    const sanitizedRefinementInstructions = refinementInstructions ? sanitizeUserInput(refinementInstructions) : '';
+    const sanitizedPreviousResponses = previousResponses?.map(r => sanitizeUserInput(r)) || [];
+    const sanitizedCustomNotes = context.customNotes ? sanitizeUserInput(context.customNotes) : '';
+    const sanitizedClientName = context.clientName ? sanitizeUserInput(context.clientName) : '';
+    const sanitizedUserName = context.userName ? sanitizeUserInput(context.userName) : '';
+
+    // Update context with sanitized values
+    const sanitizedContext = {
+      ...context,
+      customNotes: sanitizedCustomNotes,
+      clientName: sanitizedClientName,
+      userName: sanitizedUserName,
+    };
+
+    const contextDescription = this.getContextDescription(sanitizedContext);
 
     let previousResponsesText = '';
-    if (previousResponses && previousResponses.length > 0 && refinementInstructions) {
+    if (sanitizedPreviousResponses.length > 0 && sanitizedRefinementInstructions) {
       previousResponsesText = `
 
 PREVIOUS RESPONSES THAT NEED REFINEMENT:
-${previousResponses.map((r, i) => `${i + 1}. ${r}`).join('\n\n')}
+${sanitizedPreviousResponses.map((r, i) => `${i + 1}. ${r}`).join('\n\n')}
 
 REFINEMENT INSTRUCTIONS:
-${refinementInstructions}
+${sanitizedRefinementInstructions}
 
 Please generate NEW responses that incorporate the refinement instructions above. Make sure to apply the requested changes (e.g., if asked to change "3 days" to "5 days", make that specific change).
 `;
@@ -133,7 +186,7 @@ Please generate NEW responses that incorporate the refinement instructions above
 Please generate a professional response for the following client message:
 
 CLIENT MESSAGE:
-"${originalMessage}"
+"${sanitizedMessage}"
 
 CONTEXT:
 ${contextDescription}
@@ -141,10 +194,10 @@ ${previousResponsesText}
 
 Requirements:
 - Be professional and appropriate for the context
-${context.clientName ? `- Start with "Hello ${context.clientName}," or "Hi ${context.clientName}," depending on the tone` : '- Use an appropriate greeting'}
-${context.userName ? `- End with an appropriate sign-off using the name "${context.userName}"` : '- End with an appropriate professional sign-off'}
+${sanitizedContext.clientName ? `- Start with "Hello ${sanitizedContext.clientName}," or "Hi ${sanitizedContext.clientName}," depending on the tone` : '- Use an appropriate greeting'}
+${sanitizedContext.userName ? `- End with an appropriate sign-off using the name "${sanitizedContext.userName}"` : '- End with an appropriate professional sign-off'}
 - Be clear, concise, and solution-oriented
-${refinementInstructions ? `- IMPORTANT: Apply the refinement instructions: ${refinementInstructions}` : ''}
+${sanitizedRefinementInstructions ? `- IMPORTANT: Apply the refinement instructions: ${sanitizedRefinementInstructions}` : ''}
     `.trim();
   }
 
