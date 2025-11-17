@@ -39,7 +39,10 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
     resolver: zodResolver(RegisterSchema),
   });
 
-  const { register, handleSubmit, formState: { errors } } = mode === 'login' ? loginForm : registerForm;
+  const loginFormData = loginForm;
+  const registerFormData = registerForm;
+
+  const { register, handleSubmit, formState: { errors } } = mode === 'login' ? loginFormData : registerFormData;
 
   const handleSocialLogin = async (provider: 'google' | 'apple') => {
     try {
@@ -198,7 +201,13 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
     }
   };
 
-  const onSubmit = mode === 'login' ? onLoginSubmit : onRegisterSubmit;
+  const onSubmit = async (data: LoginInput | RegisterInput) => {
+    if (mode === 'login') {
+      await onLoginSubmit(data as LoginInput);
+    } else {
+      await onRegisterSubmit(data as RegisterInput);
+    }
+  };
 
   if (!isOpen) return null;
 
