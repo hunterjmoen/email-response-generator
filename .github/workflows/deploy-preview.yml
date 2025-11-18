@@ -22,9 +22,15 @@ jobs:
       run: npm ci
 
     - name: Run tests
-      run: npm run test
       env:
         NODE_ENV: test
+        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+      run: npm run test
+
 
     - name: Build application
       run: npm run build
