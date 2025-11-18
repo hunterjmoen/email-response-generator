@@ -31,6 +31,7 @@ jobs:
         ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
       run: npm run test
 
+
     - name: Build application
       run: npm run build
       env:
