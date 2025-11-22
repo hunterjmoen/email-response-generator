@@ -1,50 +1,47 @@
-# Task: Add Dark Mode Toggle to Response Generator Page
+# Fix GitHub CI Test Failures
 
-## Problem
-The dark mode toggle is missing from the response generator tab, but it exists on other pages like the pricing page, home page, and dashboard layout.
+## Problem Analysis
+The GitHub Actions workflow is failing tests because:
+1. **Missing environment variables**: The workflow defines secrets in GitHub Settings but doesn't inject them into the test step's environment
+2. **The test files exist and are correct**: Tests at [infrastructure.test.ts](tests/integration/infrastructure.test.ts) import from [utils/config.ts](utils/config.ts) and [utils/monitoring.ts](utils/monitoring.ts) which both exist and have correct exports
 
-## Plan
+## Root Cause
+The workflow file at [.github/workflows/deploy-production.yml](.github/workflows/deploy-production.yml) only sets `NODE_ENV: test` in the test step but doesn't pass the required Supabase, OpenAI, and encryption secrets that the tests validate.
 
-### Todo Items
-- [ ] Import ThemeToggle component into generate.tsx
-- [ ] Add dark mode styles to the page container and content areas
-- [ ] Position the ThemeToggle in the header area (consistent with other pages)
-- [ ] Test that dark mode toggle works correctly on the page
+## Todo List
 
-## Implementation Notes
-- ThemeToggle component is located at: `components/shared/ThemeToggle.tsx`
-- Pattern from other pages: place in a header div with flex items-center gap-4
-- Need to add dark mode Tailwind classes (dark:bg-gray-900, dark:text-white, etc.)
-- Keep changes minimal - only add what's necessary for the toggle
+- [x] Inject all required secrets into the test step environment in deploy-production.yml
+- [x] Verify the fix works by checking the workflow syntax
+
+## Changes to Make
+
+### File: .github/workflows/deploy-production.yml
+- Add environment variable mappings to the "Run tests" step
+- Include: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY, ENCRYPTION_KEY
+
+---
 
 ## Review
 
 ### Summary of Changes
-Successfully added dark mode toggle to the ACTUAL response generator page (CopyPasteWorkflowComponent) in the header area.
+Fixed GitHub Actions CI test failures by injecting required environment secrets into the test step.
 
 ### Changes Made
 
-**File Modified**: [CopyPasteWorkflowComponent.tsx](components/workflow/CopyPasteWorkflowComponent.tsx)
+**File Modified**: [.github/workflows/deploy-production.yml](.github/workflows/deploy-production.yml:24-32)
 
-1. **Added Import** (line 17)
-   - Imported `ThemeToggle` component from `../shared/ThemeToggle`
+1. **Added Environment Variables to Test Step** (lines 28-32)
+   - Added `NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}`
+   - Added `NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}`
+   - Added `SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}`
+   - Added `OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}`
+   - Added `ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}`
 
-2. **Positioned ThemeToggle in Header** (line 251)
-   - Added `<ThemeToggle />` in the header's flex container
-   - Placed between search button and user profile menu
-   - Consistent with pattern used on other pages (gap-4 spacing)
-
-3. **Dark Mode Styles**
-   - Component already had comprehensive dark mode support
-   - All necessary `dark:` classes were already present throughout the component
-
-### Root Cause of Initial Mistake
-- Initially edited the wrong file: `packages/shared/pages/dashboard/generate.tsx` (placeholder page)
-- The actual response generator is `CopyPasteWorkflowComponent.tsx`
-- The placeholder file is not being used - the real implementation is in the component
+### Root Cause
+The workflow had secrets defined in GitHub Settings but wasn't passing them to the test environment. The tests in [infrastructure.test.ts](tests/integration/infrastructure.test.ts) validate these environment variables are present and properly formatted, causing failures when they weren't available.
 
 ### Impact
-- Users can now toggle dark mode on the response generator page
-- Theme preference persists across page navigation (via Zustand store)
-- Visual consistency maintained across all pages in the application
-- Toggle appears in the same header position as other pages
+- GitHub Actions tests will now have access to required secrets
+- Environment validation tests will pass
+- Database connectivity tests can run properly
+- No code changes needed - utils files were already correct
