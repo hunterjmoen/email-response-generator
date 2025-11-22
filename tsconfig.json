@@ -29,6 +29,7 @@
       "@/stores/*": ["./src/stores/*"],
       "@/utils/*": ["./src/utils/*"],
       "@/styles/*": ["./src/styles/*"],
+      "@/data/*": ["./data/*"],
       "@freelance-flow/shared": ["./packages/shared/src/index.ts"]
     }
   },
