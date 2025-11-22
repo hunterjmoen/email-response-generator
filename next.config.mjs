@@ -1,4 +1,4 @@
-const { withSentryConfig } = require('@sentry/nextjs');
+import { withSentryConfig } from '@sentry/nextjs';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -31,6 +31,6 @@ const sentryWebpackPluginOptions = {
 }
 
 // Only wrap with Sentry if DSN is configured
-module.exports = process.env.SENTRY_DSN
+export default process.env.SENTRY_DSN
   ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
   : nextConfig
