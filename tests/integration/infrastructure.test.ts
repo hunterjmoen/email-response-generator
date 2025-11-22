@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeAll } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
-import { HealthMonitor, logger } from '../../utils/monitoring';
+import { HealthMonitor, logger, PerformanceMonitor } from '../../utils/monitoring';
+import { getClientConfig, getServerConfig } from '../../utils/config';
 
 // Test environment validation
 describe('Infrastructure Tests', () => {
@@ -124,12 +125,10 @@ describe('Infrastructure Tests', () => {
 
       // Start timer
       expect(() => {
-        const { PerformanceMonitor } = require('../../utils/monitoring');
         PerformanceMonitor.startTimer(label);
       }).not.toThrow();
 
       // End timer should return a number
-      const { PerformanceMonitor } = require('../../utils/monitoring');
       const duration = PerformanceMonitor.endTimer(label);
 
       expect(typeof duration).toBe('number');
@@ -139,7 +138,6 @@ describe('Infrastructure Tests', () => {
 
   describe('Configuration Service', () => {
     test('Client config only exposes public variables', () => {
-      const { getClientConfig } = require('../../utils/config');
       const clientConfig = getClientConfig();
 
       // Should have public variables
@@ -153,8 +151,6 @@ describe('Infrastructure Tests', () => {
     });
 
     test('Server config includes all variables', () => {
-      const { getServerConfig } = require('../../utils/config');
-
       expect(() => {
         const serverConfig = getServerConfig();
         expect(serverConfig).toHaveProperty('SUPABASE_SERVICE_ROLE_KEY');
