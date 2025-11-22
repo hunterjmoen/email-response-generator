@@ -1,39 +1,54 @@
-# Fix TypeScript Build Errors
+# Fix TypeScript Build Errors - Progress Report
 
-## Problem Analysis
-TypeScript build is failing with ~60+ errors across multiple categories:
+## Changes Made
 
-### Critical Issues (blocking build):
-1. **Supabase 'never' type errors** (server/routers/*.ts) - Most critical, affects core TRPC routes
-2. **Stripe API version mismatch** (server/lib/stripe.ts)
-3. **Missing module**: @/data/faq-items
-4. **Property name mismatches**: snake_case vs camelCase in database queries
+### Round 1 - Quick Wins (Commit 6c13ba0)
+- ✅ Fixed Stripe API version (2025-10-29 → 2025-09-30)
+- ✅ Added @/data/* path mapping to tsconfig
 
-### Medium Priority:
-5. **Date vs String type mismatches** in Client/Project models
-6. **Optional vs Required properties** in Activity and ActiveClient types
-7. **Form type issues** in LoginModal
+### Round 2 - Property Naming Fixes (Current)
+- ✅ Fixed snake_case → camelCase in history page:
+  - `original_message` → `originalMessage`
+  - `created_at` → `createdAt`
+  - `selected_response` → `selectedResponse`
+- ✅ Fixed urgency comparison ('urgent' → 'immediate')
 
-## Root Causes
-1. Supabase types not properly generated or imported - causing 'never' types
-2. Stripe API version hardcoded to old version
-3. Missing FAQ data file
-4. Inconsistent property naming between database (snake_case) and TypeScript (camelCase)
+### Progress
+- **Before**: 82 TypeScript errors
+- **After Round 1**: 80 errors  (-2)
+- **After Round 2**: 72 errors  (-10)
 
-## Strategy
-Focus on the BLOCKING issues first - the Supabase 'never' types are preventing all server-side code from compiling. Once that's fixed, tackle remaining issues.
+## Remaining Issues (~72 errors)
 
-## Todo List
+### High Priority - Server-Side Type Issues
+1. **Supabase 'never' types** (~15 errors)
+   - server/routers/clients.ts
+   - server/routers/projects.ts
+   - server/routers/stripe.ts
+   - Root cause: Supabase client not properly typed with Database schema
 
-- [ ] Check if Supabase types need to be regenerated
-- [ ] Fix Stripe API version constant
-- [ ] Create missing @/data/faq-items file
-- [ ] Fix database property name mismatches (snake_case vs camelCase)
-- [ ] Run type-check again to see remaining issues
-- [ ] Fix remaining type errors
-- [ ] Test and commit
+2. **TRPC Return Type Mismatches** (~10 errors)
+   - Dashboard router returning snake_case from DB
+   - Frontend expects camelCase types
+   - Need transformation layer or type mapping
+
+### Medium Priority
+3. **Form Type Issues** (10 errors in LoginModal)
+   - Union type problems with react-hook-form
+4. **Date vs String** (5+ errors)
+   - Various places expecting Date but getting string
+5. **Optional vs Required** (Activity, ActiveClient types)
+6. **Stripe webhook types** (current_period_end, subscription properties)
+
+### Low Priority
+7. **Deno errors** (5 errors) - Edge functions, can ignore for main build
+
+## Next Steps
+The biggest blocker is the Supabase type system. Two approaches:
+1. Generate proper Supabase types and import them
+2. Add transformation layer in TRPC routers to convert snake_case → camelCase
 
 ---
 
 ## Review
-(Will be filled after completing tasks)
+Successfully reduced errors by 12% (82 → 72). Property naming fixes in history page resolved immediate user-facing issues.

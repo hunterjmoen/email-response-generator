@@ -35,7 +35,7 @@ export default function HistoryPage() {
 
   const filteredHistory = history?.filter((item) =>
     searchQuery
-      ? item.original_message?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ? item.originalMessage?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.context?.messageType?.toLowerCase().includes(searchQuery.toLowerCase())
       : true
   );
@@ -72,7 +72,7 @@ export default function HistoryPage() {
           <div className="text-sm text-gray-600 dark:text-gray-400">This Month</div>
           <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
             {history?.filter(item => {
-              const created = new Date(item.created_at);
+              const created = new Date(item.createdAt);
               const now = new Date();
               return created.getMonth() === now.getMonth() &&
                      created.getFullYear() === now.getFullYear();
@@ -83,7 +83,7 @@ export default function HistoryPage() {
           <div className="text-sm text-gray-600 dark:text-gray-400">This Week</div>
           <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
             {history?.filter(item => {
-              const created = new Date(item.created_at);
+              const created = new Date(item.createdAt);
               const weekAgo = new Date();
               weekAgo.setDate(weekAgo.getDate() - 7);
               return created >= weekAgo;
@@ -165,8 +165,8 @@ export default function HistoryPage() {
                   <div className="flex-1 min-w-0">
                     {/* Original Message Preview */}
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                      {item.original_message?.substring(0, 100)}
-                      {item.original_message && item.original_message.length > 100 ? '...' : ''}
+                      {item.originalMessage?.substring(0, 100)}
+                      {item.originalMessage && item.originalMessage.length > 100 ? '...' : ''}
                     </p>
 
                     {/* Metadata */}
@@ -175,7 +175,7 @@ export default function HistoryPage() {
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
                       </span>
 
                       {item.context?.messageType && (
@@ -186,7 +186,7 @@ export default function HistoryPage() {
 
                       {item.context?.urgency && (
                         <span className={`px-2 py-1 rounded font-medium ${
-                          item.context.urgency === 'urgent' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300' :
+                          item.context.urgency === 'immediate' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300' :
                           item.context.urgency === 'standard' ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300' :
                           'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300'
                         }`}>
@@ -201,7 +201,7 @@ export default function HistoryPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        item.selected_response && handleCopyResponse(item.selected_response);
+                        item.selectedResponse && handleCopyResponse(item.selectedResponse.toString());
                       }}
                       className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
