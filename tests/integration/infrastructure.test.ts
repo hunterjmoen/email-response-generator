@@ -79,7 +79,7 @@ describe('Infrastructure Tests', () => {
       const tables = ['users', 'subscriptions', 'response_history'];
 
       for (const table of tables) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from(table)
           .select('count')
           .limit(1);

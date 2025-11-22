@@ -107,7 +107,7 @@ export const createContext = async (opts: CreateNextContextOptions): Promise<Con
         monthlyLimit: subscriptionData?.monthly_limit || 10,
         billingCycle: subscriptionData?.usage_reset_date || undefined,
       },
-      preferences: (userData.preferences as User['preferences']) || {
+      preferences: (userData.preferences as unknown as User['preferences']) || {
         defaultContext: {
           relationshipStage: 'established',
           projectPhase: 'active',

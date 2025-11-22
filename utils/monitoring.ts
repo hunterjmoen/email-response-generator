@@ -35,7 +35,7 @@ export class Logger {
 
   setRequestContext(requestId: string, userId?: string) {
     this.requestId = requestId;
-    this.userId = userId;
+    this.userId = userId ?? null;
   }
 
   private formatLog(entry: LogEntry): string {

@@ -173,9 +173,9 @@ export function CopyPasteWorkflowComponent() {
   );
 
   const handleStartNew = useCallback(() => {
-    setCurrentInput(null);
-    setCurrentResponse(null);
-    setSelectedResponseIndex(null);
+    setCurrentInput(undefined);
+    setCurrentResponse(undefined);
+    setSelectedResponseIndex(undefined);
     setError(null);
     setPromptInput('');
     setShowAdvancedOptions(false);

@@ -11,12 +11,7 @@ export const clientSchema = z.object({
   tags: z.array(z.string()).optional(),
   priority: z.enum(['low', 'medium', 'high']).optional(),
   isArchived: z.boolean().optional(),
-  lastContactDate: z.union([z.string(), z.date()]).transform((val) => {
-    if (typeof val === 'string') {
-      return new Date(val);
-    }
-    return val;
-  }).optional(),
+  lastContactDate: z.string().optional(),
   healthScore: z.number().min(0).max(100).optional(),
 });
 
@@ -26,12 +21,7 @@ export const projectSchema = z.object({
   description: z.string().optional(),
   status: z.enum(['discovery', 'active', 'completion', 'maintenance', 'on_hold']),
   budget: z.number().optional(),
-  deadline: z.union([z.string(), z.date()]).transform((val) => {
-    if (typeof val === 'string') {
-      return new Date(val);
-    }
-    return val;
-  }).optional(),
+  deadline: z.string().optional(),
 });
 
 export type ClientInput = z.infer<typeof clientSchema>;

@@ -14,7 +14,7 @@ describe('Database Migration Validation', () => {
 
   describe('Schema Validation', () => {
     test('Users table has correct structure', async () => {
-      const { data, error } = await supabase.rpc('get_table_info', {
+      const { data, error } = await (supabase as any).rpc('get_table_info', {
         table_name: 'users'
       });
 
@@ -164,7 +164,7 @@ describe('Database Migration Validation', () => {
       const tables = ['users', 'subscriptions', 'response_history'];
 
       for (const table of tables) {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from(table)
           .select('*')
           .limit(1);
@@ -180,7 +180,7 @@ describe('Database Migration Validation', () => {
       const tables = ['users', 'subscriptions', 'response_history'];
 
       for (const table of tables) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from(table)
           .select('*')
           .limit(1);
@@ -195,7 +195,7 @@ describe('Database Migration Validation', () => {
   describe('Functions and Triggers', () => {
     test('Updated_at trigger works on response_history', async () => {
       // This test requires authentication, so we'll check the function exists
-      const { error } = await supabase.rpc('update_updated_at_column');
+      const { error } = await (supabase as any).rpc('update_updated_at_column');
 
       // Function should exist (may fail due to parameters, not existence)
       expect(error?.message).not.toContain('function');
@@ -203,7 +203,7 @@ describe('Database Migration Validation', () => {
     });
 
     test('User subscription trigger function exists', async () => {
-      const { error } = await supabase.rpc('handle_new_user');
+      const { error } = await (supabase as any).rpc('handle_new_user');
 
       // Function should exist
       expect(error?.message).not.toContain('function');
@@ -214,7 +214,7 @@ describe('Database Migration Validation', () => {
   describe('Extensions', () => {
     test('Required extensions are enabled', async () => {
       // Test uuid generation works
-      const { data, error } = await supabase.rpc('uuid_generate_v4');
+      const { data, error } = await (supabase as any).rpc('uuid_generate_v4');
 
       expect(error).toBeNull();
       expect(data).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);

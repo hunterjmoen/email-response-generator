@@ -1,4 +1,4 @@
-import ThemeToggle from '../../../components/shared/ThemeToggle';
+import ThemeToggle from '../../../../components/shared/ThemeToggle';
 
 export default function GeneratePage() {
   return (

@@ -24,9 +24,9 @@ interface ResponseGenerationState {
   ratings: Record<string, number>; // historyId -> rating
 
   // Actions
-  setCurrentInput: (input: ValidatedMessageInput) => void;
-  setCurrentResponse: (response: AIResponse) => void;
-  setSelectedResponseIndex: (index: number) => void;
+  setCurrentInput: (input: ValidatedMessageInput | undefined) => void;
+  setCurrentResponse: (response: AIResponse | undefined) => void;
+  setSelectedResponseIndex: (index: number | undefined) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setCopiedResponseIndex: (index: number | null) => void;
@@ -53,22 +53,22 @@ export const useResponseGenerationStore = create<ResponseGenerationState>()(
   immer((set, get) => ({
     ...initialState,
 
-    setCurrentInput: (input: ValidatedMessageInput) =>
+    setCurrentInput: (input: ValidatedMessageInput | undefined) =>
       set((state) => {
-        state.currentInput = input;
+        state.currentInput = input ?? null;
         state.error = null;
       }),
 
-    setCurrentResponse: (response: AIResponse) =>
+    setCurrentResponse: (response: AIResponse | undefined) =>
       set((state) => {
-        state.currentResponse = response;
+        state.currentResponse = response ?? null;
         state.selectedResponseIndex = null;
         state.error = null;
       }),
 
-    setSelectedResponseIndex: (index: number) =>
+    setSelectedResponseIndex: (index: number | undefined) =>
       set((state) => {
-        state.selectedResponseIndex = index;
+        state.selectedResponseIndex = index ?? null;
       }),
 
     setLoading: (loading: boolean) =>

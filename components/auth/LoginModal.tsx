@@ -39,7 +39,18 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
     resolver: zodResolver(RegisterSchema),
   });
 
-  const { register, handleSubmit, formState: { errors } } = mode === 'login' ? loginForm : registerForm;
+  // Separate destructures to avoid union types
+  const {
+    register: loginRegister,
+    handleSubmit: loginHandleSubmit,
+    formState: { errors: loginErrors },
+  } = loginForm;
+
+  const {
+    register: registerRegister,
+    handleSubmit: registerHandleSubmit,
+    formState: { errors: registerErrors },
+  } = registerForm;
 
   const handleSocialLogin = async (provider: 'google' | 'apple') => {
     try {
@@ -198,7 +209,10 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
     }
   };
 
-  const onSubmit = mode === 'login' ? onLoginSubmit : onRegisterSubmit;
+  // Determine which form handler to use
+  const formOnSubmit = mode === 'login'
+    ? loginHandleSubmit(onLoginSubmit)
+    : registerHandleSubmit(onRegisterSubmit);
 
   if (!isOpen) return null;
 
@@ -230,7 +244,7 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={formOnSubmit} className="space-y-4">
           {mode === 'register' && (
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -238,13 +252,13 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
                   First Name
                 </label>
                 <input
-                  {...register('firstName')}
+                  {...registerRegister('firstName')}
                   type="text"
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                   placeholder="John"
                 />
-                {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.firstName.message}</p>
+                {registerErrors.firstName && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{registerErrors.firstName.message}</p>
                 )}
               </div>
               <div>
@@ -252,13 +266,13 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
                   Last Name
                 </label>
                 <input
-                  {...register('lastName')}
+                  {...registerRegister('lastName')}
                   type="text"
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                   placeholder="Doe"
                 />
-                {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.lastName.message}</p>
+                {registerErrors.lastName && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{registerErrors.lastName.message}</p>
                 )}
               </div>
             </div>
@@ -269,14 +283,16 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
               {mode === 'register' ? 'Email Address' : 'Work email'}
             </label>
             <input
-              {...register('email')}
+              {...(mode === 'login' ? loginRegister('email') : registerRegister('email'))}
               type="email"
               autoComplete="email"
               className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
               placeholder="alexsmith@content-mobbin.com"
             />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
+            {(mode === 'login' ? loginErrors.email : registerErrors.email) && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                {(mode === 'login' ? loginErrors.email : registerErrors.email)?.message}
+              </p>
             )}
           </div>
 
@@ -286,7 +302,7 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
                 Industry (Optional)
               </label>
               <select
-                {...register('industry')}
+                {...registerRegister('industry')}
                 className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white"
               >
                 <option value="">Select your industry</option>
@@ -307,7 +323,7 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
             </label>
             <div className="relative">
               <input
-                {...register('password')}
+                {...(mode === 'login' ? loginRegister('password') : registerRegister('password'))}
                 type={showPassword ? 'text' : 'password'}
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                 className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent pr-10 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
@@ -330,8 +346,10 @@ export function LoginModal({ isOpen, onClose, initialMode = 'login' }: LoginModa
                 )}
               </button>
             </div>
-            {errors.password && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
+            {(mode === 'login' ? loginErrors.password : registerErrors.password) && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                {(mode === 'login' ? loginErrors.password : registerErrors.password)?.message}
+              </p>
             )}
           </div>
 

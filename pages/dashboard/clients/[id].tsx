@@ -208,7 +208,7 @@ export default function ClientDetailPage() {
                     action={
                       <button
                         onClick={async () => {
-                          await navigator.clipboard.writeText(client.email);
+                          await navigator.clipboard.writeText(client.email || '');
                           toast.success('Email copied to clipboard!');
                         }}
                         className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -233,7 +233,7 @@ export default function ClientDetailPage() {
                     action={
                       <button
                         onClick={async () => {
-                          await navigator.clipboard.writeText(client.phone);
+                          await navigator.clipboard.writeText(client.phone || '');
                           toast.success('Phone copied to clipboard!');
                         }}
                         className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -262,7 +262,7 @@ export default function ClientDetailPage() {
                     action={
                       <button
                         onClick={async () => {
-                          await navigator.clipboard.writeText(client.website);
+                          await navigator.clipboard.writeText(client.website || '');
                           toast.success('Website copied to clipboard!');
                         }}
                         className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"

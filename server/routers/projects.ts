@@ -34,9 +34,9 @@ export const projectRouter = router({
           description: row.description ?? undefined,
           status: row.status as Project['status'],
           budget: row.budget ? parseFloat(String(row.budget)) : undefined,
-          deadline: row.deadline ? new Date(row.deadline) : undefined,
-          createdAt: new Date(row.created_at),
-          updatedAt: new Date(row.updated_at),
+          deadline: row.deadline ?? undefined,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
         }));
 
         return projects;
@@ -78,9 +78,9 @@ export const projectRouter = router({
           description: row.description ?? undefined,
           status: row.status as Project['status'],
           budget: row.budget ? parseFloat(String(row.budget)) : undefined,
-          deadline: row.deadline ? new Date(row.deadline) : undefined,
-          createdAt: new Date(row.created_at),
-          updatedAt: new Date(row.updated_at),
+          deadline: row.deadline ?? undefined,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
         }));
 
         return projects;
@@ -130,9 +130,9 @@ export const projectRouter = router({
           description: row.description ?? undefined,
           status: row.status as Project['status'],
           budget: row.budget ? parseFloat(String(row.budget)) : undefined,
-          deadline: row.deadline ? new Date(row.deadline) : undefined,
-          createdAt: new Date(row.created_at),
-          updatedAt: new Date(row.updated_at),
+          deadline: row.deadline ?? undefined,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
         };
 
         return project;
@@ -198,9 +198,9 @@ export const projectRouter = router({
           description: row.description ?? undefined,
           status: row.status as Project['status'],
           budget: row.budget ? parseFloat(String(row.budget)) : undefined,
-          deadline: row.deadline ? new Date(row.deadline) : undefined,
-          createdAt: new Date(row.created_at),
-          updatedAt: new Date(row.updated_at),
+          deadline: row.deadline ?? undefined,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
         };
 
         return project;
@@ -273,9 +273,9 @@ export const projectRouter = router({
           description: row.description ?? undefined,
           status: row.status as Project['status'],
           budget: row.budget ? parseFloat(String(row.budget)) : undefined,
-          deadline: row.deadline ? new Date(row.deadline) : undefined,
-          createdAt: new Date(row.created_at),
-          updatedAt: new Date(row.updated_at),
+          deadline: row.deadline ?? undefined,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
         };
 
         return project;

@@ -137,11 +137,11 @@ export const dashboardRouter = router({
             );
 
             return {
-              id: response.id,
-              timestamp: response.created_at,
-              rating: response.user_rating,
-              templateUsed: response.template_used,
-              messageType: response.context?.messageType || 'update',
+              id: response.id as string,
+              timestamp: response.created_at as string,
+              rating: response.user_rating as number | null,
+              templateUsed: response.template_used as string | null,
+              messageType: (response.context?.messageType as string) || 'update',
               preview: selectedResponse
                 ? selectedResponse.substring(0, 100) + (selectedResponse.length > 100 ? '...' : '')
                 : '[No response selected]',
@@ -222,11 +222,11 @@ export const dashboardRouter = router({
             }
 
             return {
-              id: client.id,
-              name: client.name,
-              company: client.company,
-              email: client.email,
-              relationshipStage: client.relationship_stage,
+              id: client.id as string,
+              name: client.name as string,
+              company: client.company as string | null,
+              email: client.email as string | null,
+              relationshipStage: client.relationship_stage as string,
               lastContactDays: daysSinceContact,
               status,
             };

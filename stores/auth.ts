@@ -98,13 +98,17 @@ export const useAuthStore = create<AuthStore>()(
       const user: User = {
         id: userData.id,
         email: userData.email,
-        firstName: userData.first_name,
-        lastName: userData.last_name,
-        industry: userData.industry,
-        communicationStyle: userData.communication_style,
+        firstName: userData.first_name ?? '',
+        lastName: userData.last_name ?? '',
+        industry: userData.industry ?? undefined,
+        communicationStyle: (userData.communication_style as User['communicationStyle']) || {
+          formality: 'professional',
+          tone: 'neutral',
+          length: 'standard',
+        },
         subscription: {
-          tier: subscriptionData?.tier || 'free',
-          status: subscriptionData?.status || 'active',
+          tier: (subscriptionData?.tier as User['subscription']['tier']) || 'free',
+          status: (subscriptionData?.status as User['subscription']['status']) || 'active',
           usageCount: subscriptionData?.usage_count || 0,
           monthlyLimit: subscriptionData?.monthly_limit || 10,
           billingCycle: subscriptionData?.usage_reset_date || undefined,
@@ -112,7 +116,15 @@ export const useAuthStore = create<AuthStore>()(
           stripe_subscription_id: subscriptionData?.stripe_subscription_id || undefined,
         },
         stripe_customer_id: subscriptionData?.stripe_customer_id || undefined,
-        preferences: userData.preferences,
+        preferences: (userData.preferences as unknown as User['preferences']) || {
+          defaultContext: {
+            relationshipStage: 'established',
+            projectPhase: 'active',
+            urgency: 'standard',
+            messageType: 'update',
+          },
+          emailNotifications: true,
+        },
         createdAt: userData.created_at,
         updatedAt: userData.updated_at,
       };
@@ -148,8 +160,8 @@ export const useAuthStore = create<AuthStore>()(
           const updatedUser: User = {
             ...user,
             subscription: {
-              tier: subscriptionData.tier,
-              status: subscriptionData.status,
+              tier: subscriptionData.tier as User['subscription']['tier'],
+              status: subscriptionData.status as User['subscription']['status'],
               usageCount: subscriptionData.usage_count,
               monthlyLimit: subscriptionData.monthly_limit,
               billingCycle: subscriptionData.usage_reset_date || undefined,

@@ -13,10 +13,10 @@ export interface Client {
   tags?: string[];
   priority?: 'low' | 'medium' | 'high';
   isArchived?: boolean;
-  lastContactDate?: Date;
+  lastContactDate?: string; // ISO 8601 date string from database
   healthScore?: number;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string; // ISO 8601 date string from database
+  updatedAt: string; // ISO 8601 date string from database
   projectCount?: number; // Optional - included in list queries
 }
 
@@ -28,9 +28,9 @@ export interface Project {
   description?: string;
   status: 'discovery' | 'active' | 'completion' | 'maintenance' | 'on_hold';
   budget?: number;
-  deadline?: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  deadline?: string; // ISO 8601 date string from database
+  createdAt: string; // ISO 8601 date string from database
+  updatedAt: string; // ISO 8601 date string from database
 }
 
 // Helper type for client with projects

@@ -251,7 +251,7 @@ export function StreamingResponseDisplay({
                   </div>
 
                   {/* Scroll anchor for auto-scroll */}
-                  <div ref={(el) => (responseEndRefs.current[index] = el)} />
+                  <div ref={(el) => { responseEndRefs.current[index] = el; }} />
 
                   {/* AI Reasoning - collapsible (only when complete) */}
                   {response.isComplete && response.reasoning && (

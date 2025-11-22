@@ -37,10 +37,10 @@ export const clientRouter = router({
           tags: row.tags || [],
           priority: (row.priority as Client['priority']) || 'medium',
           isArchived: row.is_archived || false,
-          lastContactDate: row.last_contact_date ? new Date(row.last_contact_date) : undefined,
+          lastContactDate: row.last_contact_date ?? undefined,
           healthScore: row.health_score || 50,
-          createdAt: new Date(row.created_at),
-          updatedAt: new Date(row.updated_at),
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
           projectCount: row.projects?.[0]?.count || 0,
         }));
 
@@ -96,10 +96,10 @@ export const clientRouter = router({
           tags: row.tags || [],
           priority: (row.priority as Client['priority']) || 'medium',
           isArchived: row.is_archived || false,
-          lastContactDate: row.last_contact_date ? new Date(row.last_contact_date) : undefined,
+          lastContactDate: row.last_contact_date ?? undefined,
           healthScore: row.health_score || 50,
-          createdAt: new Date(row.created_at),
-          updatedAt: new Date(row.updated_at),
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
         };
 
         return client;
@@ -161,10 +161,10 @@ export const clientRouter = router({
           tags: row.tags || [],
           priority: (row.priority as Client['priority']) || 'medium',
           isArchived: row.is_archived || false,
-          lastContactDate: row.last_contact_date ? new Date(row.last_contact_date) : undefined,
+          lastContactDate: row.last_contact_date ?? undefined,
           healthScore: row.health_score || 50,
-          createdAt: new Date(row.created_at),
-          updatedAt: new Date(row.updated_at),
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
         };
 
         return client;
@@ -233,10 +233,10 @@ export const clientRouter = router({
           tags: row.tags || [],
           priority: (row.priority as Client['priority']) || 'medium',
           isArchived: row.is_archived || false,
-          lastContactDate: row.last_contact_date ? new Date(row.last_contact_date) : undefined,
+          lastContactDate: row.last_contact_date ?? undefined,
           healthScore: row.health_score || 50,
-          createdAt: new Date(row.created_at),
-          updatedAt: new Date(row.updated_at),
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
         };
 
         return client;
