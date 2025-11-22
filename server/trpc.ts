@@ -4,9 +4,10 @@ import { createClient } from '@supabase/supabase-js';
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
 import type { User } from '@freelance-flow/shared';
 import { createRateLimitMiddleware } from './middleware/rateLimit';
+import type { Database } from '../types/supabase';
 
 // Create server-side Supabase client with service role for admin operations
-const supabaseAdmin = createClient(
+const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
   {
@@ -21,14 +22,14 @@ export interface Context {
   user?: User;
   req?: CreateNextContextOptions['req'];
   res?: CreateNextContextOptions['res'];
-  supabase: ReturnType<typeof createClient>;
+  supabase: ReturnType<typeof createClient<Database>>;
 }
 
 export const createContext = async (opts: CreateNextContextOptions): Promise<Context> => {
   const { req, res } = opts;
 
   // Create Supabase client that reads from cookies
-  const supabase = createServerClient(
+  const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -36,7 +37,12 @@ export const createContext = async (opts: CreateNextContextOptions): Promise<Con
         getAll() {
           // Parse cookies from header string for Pages Router
           const cookieHeader = req.headers.cookie || '';
-          return parseCookieHeader(cookieHeader);
+          const cookies = parseCookieHeader(cookieHeader);
+          // Ensure all cookie values are strings (not undefined)
+          return cookies.map(cookie => ({
+            name: cookie.name,
+            value: cookie.value || ''
+          }));
         },
         setAll(cookiesToSet) {
           // Set cookies using proper serialization
@@ -70,7 +76,7 @@ export const createContext = async (opts: CreateNextContextOptions): Promise<Con
       .from('users')
       .select('*')
       .eq('id', user.id)
-      .single();
+      .single<Database['public']['Tables']['users']['Row']>();
 
     if (userError || !userData) {
       return { req, res, supabase: supabaseAdmin };
@@ -81,7 +87,7 @@ export const createContext = async (opts: CreateNextContextOptions): Promise<Con
       .from('subscriptions')
       .select('tier, status, usage_count, monthly_limit, usage_reset_date')
       .eq('user_id', user.id)
-      .single();
+      .single<Database['public']['Tables']['subscriptions']['Row']>();
 
     const fullUser: User = {
       id: userData.id,

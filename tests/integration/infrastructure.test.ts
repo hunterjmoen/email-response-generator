@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeAll } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '../../types/supabase';
 import { HealthMonitor, logger, PerformanceMonitor } from '../../utils/monitoring';
 import { getClientConfig, getServerConfig } from '../../utils/config';
 
@@ -54,10 +55,10 @@ describe('Infrastructure Tests', () => {
   });
 
   describe('Database Connectivity', () => {
-    let supabase: ReturnType<typeof createClient>;
+    let supabase: ReturnType<typeof createClient<Database>>;
 
     beforeAll(() => {
-      supabase = createClient(
+      supabase = createClient<Database>(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
