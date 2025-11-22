@@ -133,7 +133,7 @@ export const clientRouter = router({
             tags: input.tags || [],
             priority: input.priority || 'medium',
             is_archived: input.isArchived || false,
-            last_contact_date: input.lastContactDate || null,
+            last_contact_date: input.lastContactDate ? new Date(input.lastContactDate).toISOString() : null,
             health_score: input.healthScore || 50,
           })
           .select()
@@ -197,7 +197,7 @@ export const clientRouter = router({
             tags: input.tags !== undefined ? input.tags : undefined,
             priority: input.priority !== undefined ? input.priority : undefined,
             is_archived: input.isArchived !== undefined ? input.isArchived : undefined,
-            last_contact_date: input.lastContactDate !== undefined ? input.lastContactDate : undefined,
+            last_contact_date: input.lastContactDate !== undefined ? (input.lastContactDate ? new Date(input.lastContactDate).toISOString() : null) : undefined,
             health_score: input.healthScore !== undefined ? input.healthScore : undefined,
           })
           .eq('id', input.id)

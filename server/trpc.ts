@@ -1,6 +1,6 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
 import type { User } from '@freelance-flow/shared';
 import { createRateLimitMiddleware } from './middleware/rateLimit';
@@ -22,7 +22,7 @@ export interface Context {
   user?: User;
   req?: CreateNextContextOptions['req'];
   res?: CreateNextContextOptions['res'];
-  supabase: ReturnType<typeof createClient<Database>>;
+  supabase: SupabaseClient<Database>;
 }
 
 export const createContext = async (opts: CreateNextContextOptions): Promise<Context> => {
@@ -92,22 +92,22 @@ export const createContext = async (opts: CreateNextContextOptions): Promise<Con
     const fullUser: User = {
       id: userData.id,
       email: userData.email,
-      firstName: userData.first_name,
-      lastName: userData.last_name,
-      industry: userData.industry,
-      communicationStyle: userData.communication_style || {
+      firstName: userData.first_name || '',
+      lastName: userData.last_name || '',
+      industry: userData.industry || undefined,
+      communicationStyle: (userData.communication_style as User['communicationStyle']) || {
         formality: 'professional',
         tone: 'neutral',
         length: 'standard'
       },
       subscription: {
-        tier: subscriptionData?.tier || 'free',
-        status: subscriptionData?.status || 'active',
+        tier: (subscriptionData?.tier === 'professional' ? 'professional' : subscriptionData?.tier === 'premium' ? 'premium' : 'free') as 'free' | 'professional' | 'premium',
+        status: (subscriptionData?.status === 'active' ? 'active' : subscriptionData?.status === 'cancelled' ? 'cancelled' : 'expired') as 'active' | 'cancelled' | 'expired',
         usageCount: subscriptionData?.usage_count || 0,
         monthlyLimit: subscriptionData?.monthly_limit || 10,
         billingCycle: subscriptionData?.usage_reset_date || undefined,
       },
-      preferences: userData.preferences || {
+      preferences: (userData.preferences as User['preferences']) || {
         defaultContext: {
           relationshipStage: 'established',
           projectPhase: 'active',

@@ -161,7 +161,7 @@ export default function CommunicationSettings() {
     try {
       const { error } = await supabase
         .from('users')
-        .update({ style_profile: null })
+        .update({ style_profile: null } as any)
         .eq('id', user.id);
 
       if (error) throw error;

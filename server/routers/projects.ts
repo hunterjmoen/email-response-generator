@@ -176,7 +176,7 @@ export const projectRouter = router({
             description: input.description || null,
             status: input.status,
             budget: input.budget || null,
-            deadline: input.deadline || null,
+            deadline: input.deadline ? new Date(input.deadline).toISOString() : null,
           })
           .select()
           .single();
@@ -243,7 +243,7 @@ export const projectRouter = router({
             description: input.description || null,
             status: input.status,
             budget: input.budget || null,
-            deadline: input.deadline || null,
+            deadline: input.deadline ? new Date(input.deadline).toISOString() : null,
           })
           .eq('id', input.id)
           .eq('user_id', ctx.user.id)

@@ -1,6 +1,3 @@
-// Supabase Database type for proper TypeScript inference
-// This file provides the Database generic type for Supabase client
-
 export type Json =
   | string
   | number
@@ -9,263 +6,309 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
-      users: {
-        Row: {
-          id: string
-          email: string
-          first_name: string | null
-          last_name: string | null
-          industry: string | null
-          communication_style: Json | null
-          preferences: Json | null
-          stripe_customer_id: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id: string
-          email: string
-          first_name?: string | null
-          last_name?: string | null
-          industry?: string | null
-          communication_style?: Json | null
-          preferences?: Json | null
-          stripe_customer_id?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          email?: string
-          first_name?: string | null
-          last_name?: string | null
-          industry?: string | null
-          communication_style?: Json | null
-          preferences?: Json | null
-          stripe_customer_id?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      subscriptions: {
-        Row: {
-          id: string
-          user_id: string
-          tier: 'free' | 'pro' | 'enterprise'
-          status: 'active' | 'inactive' | 'cancelled'
-          usage_count: number
-          monthly_limit: number
-          usage_reset_date: string | null
-          stripe_subscription_id: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          tier?: 'free' | 'pro' | 'enterprise'
-          status?: 'active' | 'inactive' | 'cancelled'
-          usage_count?: number
-          monthly_limit?: number
-          usage_reset_date?: string | null
-          stripe_subscription_id?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          tier?: 'free' | 'pro' | 'enterprise'
-          status?: 'active' | 'inactive' | 'cancelled'
-          usage_count?: number
-          monthly_limit?: number
-          usage_reset_date?: string | null
-          stripe_subscription_id?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
       clients: {
         Row: {
-          id: string
-          user_id: string
-          name: string
-          email: string | null
           company: string | null
-          phone: string | null
-          website: string | null
-          notes: string | null
-          relationship_stage: 'new' | 'established' | 'difficult' | 'long_term'
-          tags: string[] | null
-          priority: 'low' | 'medium' | 'high' | null
+          created_at: string
+          email: string | null
+          health_score: number | null
+          id: string
           is_archived: boolean | null
           last_contact_date: string | null
-          health_score: number | null
-          stripe_customer_id: string | null
-          created_at: string
+          name: string
+          notes: string | null
+          phone: string | null
+          priority: string | null
+          relationship_stage: string
+          tags: string[] | null
           updated_at: string
+          user_id: string
+          website: string | null
         }
         Insert: {
-          id?: string
-          user_id: string
-          name: string
-          email?: string | null
           company?: string | null
-          phone?: string | null
-          website?: string | null
-          notes?: string | null
-          relationship_stage?: 'new' | 'established' | 'difficult' | 'long_term'
-          tags?: string[] | null
-          priority?: 'low' | 'medium' | 'high' | null
+          created_at?: string
+          email?: string | null
+          health_score?: number | null
+          id?: string
           is_archived?: boolean | null
           last_contact_date?: string | null
-          health_score?: number | null
-          stripe_customer_id?: string | null
-          created_at?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          priority?: string | null
+          relationship_stage?: string
+          tags?: string[] | null
           updated_at?: string
+          user_id: string
+          website?: string | null
         }
         Update: {
-          id?: string
-          user_id?: string
-          name?: string
-          email?: string | null
           company?: string | null
-          phone?: string | null
-          website?: string | null
-          notes?: string | null
-          relationship_stage?: 'new' | 'established' | 'difficult' | 'long_term'
-          tags?: string[] | null
-          priority?: 'low' | 'medium' | 'high' | null
+          created_at?: string
+          email?: string | null
+          health_score?: number | null
+          id?: string
           is_archived?: boolean | null
           last_contact_date?: string | null
-          health_score?: number | null
-          stripe_customer_id?: string | null
-          created_at?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          priority?: string | null
+          relationship_stage?: string
+          tags?: string[] | null
           updated_at?: string
+          user_id?: string
+          website?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "clients_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       projects: {
         Row: {
-          id: string
-          user_id: string
+          budget: number | null
           client_id: string
-          name: string
-          description: string | null
-          status: 'active' | 'completed' | 'on_hold' | 'archived'
-          budget: string | number | null
-          deadline: string | null
           created_at: string
+          deadline: string | null
+          description: string | null
+          id: string
+          name: string
+          status: string
           updated_at: string
+          user_id: string
         }
         Insert: {
-          id?: string
-          user_id: string
+          budget?: number | null
           client_id: string
-          name: string
-          description?: string | null
-          status?: 'active' | 'completed' | 'on_hold' | 'archived'
-          budget?: string | number | null
-          deadline?: string | null
           created_at?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          status?: string
           updated_at?: string
+          user_id: string
         }
         Update: {
-          id?: string
-          user_id?: string
+          budget?: number | null
           client_id?: string
-          name?: string
-          description?: string | null
-          status?: 'active' | 'completed' | 'on_hold' | 'archived'
-          budget?: string | number | null
-          deadline?: string | null
           created_at?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string
           updated_at?: string
+          user_id?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       response_history: {
         Row: {
-          id: string
-          user_id: string
-          client_id: string | null
-          project_id: string | null
-          input_context: Json
-          generated_response: string
-          was_edited: boolean
-          final_response: string | null
-          feedback_rating: number | null
+          confidence_score: number | null
+          context: Json
+          copied_response_id: string | null
           created_at: string
+          generated_options: Json
+          generation_cost_cents: number | null
+          id: string
+          openai_model: string
+          original_message: string
+          original_message_encrypted: string | null
+          refinement_count: number
+          refinement_instructions: string | null
+          selected_response: number | null
+          selected_response_encrypted: string | null
+          template_used: string | null
+          updated_at: string
+          user_feedback: string | null
+          user_id: string
+          user_rating: number | null
         }
         Insert: {
-          id?: string
-          user_id: string
-          client_id?: string | null
-          project_id?: string | null
-          input_context: Json
-          generated_response: string
-          was_edited?: boolean
-          final_response?: string | null
-          feedback_rating?: number | null
+          confidence_score?: number | null
+          context?: Json
+          copied_response_id?: string | null
           created_at?: string
+          generated_options: Json
+          generation_cost_cents?: number | null
+          id?: string
+          openai_model?: string
+          original_message: string
+          original_message_encrypted?: string | null
+          refinement_count?: number
+          refinement_instructions?: string | null
+          selected_response?: number | null
+          selected_response_encrypted?: string | null
+          template_used?: string | null
+          updated_at?: string
+          user_feedback?: string | null
+          user_id: string
+          user_rating?: number | null
         }
         Update: {
-          id?: string
-          user_id?: string
-          client_id?: string | null
-          project_id?: string | null
-          input_context?: Json
-          generated_response?: string
-          was_edited?: boolean
-          final_response?: string | null
-          feedback_rating?: number | null
+          confidence_score?: number | null
+          context?: Json
+          copied_response_id?: string | null
           created_at?: string
+          generated_options?: Json
+          generation_cost_cents?: number | null
+          id?: string
+          openai_model?: string
+          original_message?: string
+          original_message_encrypted?: string | null
+          refinement_count?: number
+          refinement_instructions?: string | null
+          selected_response?: number | null
+          selected_response_encrypted?: string | null
+          template_used?: string | null
+          updated_at?: string
+          user_feedback?: string | null
+          user_id?: string
+          user_rating?: number | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "response_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      templates: {
+      subscriptions: {
         Row: {
-          id: string
-          user_id: string
-          name: string
-          content: string
-          category: string | null
-          tags: string[] | null
-          is_public: boolean
           created_at: string
+          monthly_limit: number
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          tier: string
+          updated_at: string
+          usage_count: number
+          usage_reset_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          monthly_limit?: number
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: string
+          updated_at?: string
+          usage_count?: number
+          usage_reset_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          monthly_limit?: number
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: string
+          updated_at?: string
+          usage_count?: number
+          usage_reset_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          communication_style: Json
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          industry: string | null
+          last_name: string
+          preferences: Json
+          privacy_settings: Json
+          style_profile: Json | null
           updated_at: string
         }
         Insert: {
-          id?: string
-          user_id: string
-          name: string
-          content: string
-          category?: string | null
-          tags?: string[] | null
-          is_public?: boolean
+          communication_style?: Json
           created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          industry?: string | null
+          last_name: string
+          preferences?: Json
+          privacy_settings?: Json
+          style_profile?: Json | null
           updated_at?: string
         }
         Update: {
-          id?: string
-          user_id?: string
-          name?: string
-          content?: string
-          category?: string | null
-          tags?: string[] | null
-          is_public?: boolean
+          communication_style?: Json
           created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          industry?: string | null
+          last_name?: string
+          preferences?: Json
+          privacy_settings?: Json
+          style_profile?: Json | null
           updated_at?: string
         }
+        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_client_health_score: {
+        Args: { client_id: string }
+        Returns: number
+      }
+      create_user_subscription: {
+        Args: { user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
       [_ in never]: never
     }
   }
