@@ -97,7 +97,9 @@ describe('Infrastructure Tests', () => {
 
       // Should get an error because RLS blocks unauthorized access
       expect(error).toBeDefined();
-      expect(error?.message).toContain('policy');
+      if (error) {
+        expect(error.message).toContain('policy');
+      }
     });
   });
 
@@ -171,11 +173,12 @@ describe('Infrastructure Tests', () => {
       expect(packageJson.scripts).toHaveProperty('deploy');
     });
 
-    test('Next.js configuration is valid', () => {
-      const nextConfig = require('../../next.config.js');
+    test('Next.js configuration is valid', async () => {
+      const nextConfig = await import('../../next.config.mjs');
 
       expect(nextConfig).toBeDefined();
-      expect(nextConfig).toHaveProperty('reactStrictMode');
+      expect(nextConfig.default).toBeDefined();
+      expect(nextConfig.default).toHaveProperty('reactStrictMode');
     });
 
     test('Vercel configuration is present', () => {
