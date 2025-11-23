@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { timingSafeEqual } from 'crypto';
 import { HealthMonitor, logger } from '../../utils/monitoring';
 import { withRateLimit, rateLimitPresets } from '../../utils/rateLimit';
 
@@ -10,9 +11,21 @@ async function handler(
     logger.setRequestContext(`health-${Date.now()}`);
     logger.info('Health check requested');
 
-    // Check for internal health check authorization
+    // Check for internal health check authorization (timing-safe comparison)
     const authHeader = req.headers.authorization;
-    const isAuthorized = authHeader && authHeader === `Bearer ${process.env.HEALTH_CHECK_SECRET}`;
+    const expectedAuth = `Bearer ${process.env.HEALTH_CHECK_SECRET}`;
+
+    let isAuthorized = false;
+    if (authHeader && authHeader.length === expectedAuth.length) {
+      try {
+        isAuthorized = timingSafeEqual(
+          Buffer.from(authHeader),
+          Buffer.from(expectedAuth)
+        );
+      } catch {
+        isAuthorized = false;
+      }
+    }
 
     const health = await HealthMonitor.checkHealth();
 
