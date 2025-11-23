@@ -255,7 +255,27 @@ export const responsesRouter = router({
           });
         }
 
-        return history as ResponseHistory[];
+        // Transform snake_case database columns to camelCase for TypeScript
+        const transformedHistory = history?.map((item) => ({
+          id: item.id,
+          userId: item.user_id,
+          originalMessage: item.original_message,
+          context: item.context,
+          generatedOptions: item.generated_options,
+          selectedResponse: item.selected_response,
+          userRating: item.user_rating,
+          userFeedback: item.user_feedback,
+          templateUsed: item.template_used,
+          refinementCount: item.refinement_count,
+          refinementInstructions: item.refinement_instructions,
+          openaiModel: item.openai_model,
+          generationCostCents: item.generation_cost_cents,
+          confidenceScore: item.confidence_score,
+          createdAt: item.created_at,
+          updatedAt: item.updated_at,
+        })) || [];
+
+        return transformedHistory as ResponseHistory[];
       } catch (error: any) {
         console.error('History fetch error:', error);
 
