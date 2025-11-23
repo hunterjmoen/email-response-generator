@@ -187,7 +187,7 @@ export const responsesRouter = router({
 
         // Extract and encrypt the selected response text
         const options = history.generated_options as AIResponseOptions[];
-        const selectedText = options[selectedResponse]?.text || '';
+        const selectedText = options[selectedResponse]?.content || '';
         const encryptedResponse = selectedText ? await encryptionService.encrypt(selectedText) : null;
 
         const { data: updated, error } = await supabaseAdmin
