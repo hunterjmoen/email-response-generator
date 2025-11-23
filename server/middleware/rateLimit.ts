@@ -30,7 +30,7 @@ export function createRateLimitMiddleware(
 ) {
   const config = AUTH_RATE_LIMITS[endpointType];
 
-  return (opts: { ctx: Context; next: () => any }) => {
+  return async (opts: { ctx: Context; next: () => any }) => {
     const { ctx, next } = opts;
 
     if (!ctx.req) {
@@ -41,7 +41,7 @@ export function createRateLimitMiddleware(
     const clientIP = getClientIP(ctx.req);
     const key = `${endpointType}:${clientIP}`;
 
-    const result = rateLimiter.checkLimit(key, config.limit, config.windowMs);
+    const result = await rateLimiter.checkLimit(key, config.limit, config.windowMs);
 
     if (result.isLimited) {
       const retryAfter = Math.ceil((result.resetTime - Date.now()) / 1000);
@@ -93,9 +93,9 @@ export function enhanceContextWithRateLimit(
  * Utility to manually reset rate limit for a specific IP and endpoint
  * Useful for testing or emergency situations
  */
-export function resetRateLimit(clientIP: string, endpointType: keyof typeof AUTH_RATE_LIMITS): void {
+export async function resetRateLimit(clientIP: string, endpointType: keyof typeof AUTH_RATE_LIMITS): Promise<void> {
   const key = `${endpointType}:${clientIP}`;
-  rateLimiter.reset(key);
+  await rateLimiter.reset(key);
 
   console.info(`Rate limit reset for ${endpointType} from IP ${clientIP}`, {
     endpoint: endpointType,
@@ -107,12 +107,12 @@ export function resetRateLimit(clientIP: string, endpointType: keyof typeof AUTH
 /**
  * Get current rate limit status for debugging
  */
-export function getRateLimitStatus(
+export async function getRateLimitStatus(
   clientIP: string,
   endpointType: keyof typeof AUTH_RATE_LIMITS
-): { count: number; resetTime: number; remaining: number } | null {
+): Promise<{ count: number; resetTime: number; remaining: number } | null> {
   const key = `${endpointType}:${clientIP}`;
-  const status = rateLimiter.getStatus(key);
+  const status = await rateLimiter.getStatus(key);
 
   if (!status) {
     return null;
