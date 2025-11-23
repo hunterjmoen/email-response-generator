@@ -13,12 +13,12 @@ const nextConfig = {
     externalDir: true,
   },
 
-  // Temporarily ignore TypeScript and ESLint errors during build for deployment setup
+  // Only ignore errors in development, enforce type safety in production
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: process.env.NODE_ENV === 'development',
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: process.env.NODE_ENV === 'development',
   },
 
   // Security headers configuration
