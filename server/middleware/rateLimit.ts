@@ -5,21 +5,50 @@ import securityLogger from '../../services/securityLogger';
 import type { Context } from '../trpc';
 
 /**
+ * Validate if a string is a valid IP address
+ */
+function isValidIP(ip: string): boolean {
+  // IPv4 regex
+  const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+  // IPv6 regex (simplified)
+  const ipv6Regex = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::(?:[0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4}$/;
+
+  return ipv4Regex.test(ip) || ipv6Regex.test(ip);
+}
+
+/**
  * Get client IP address from Next.js request
+ * Only trusts proxy headers when running on Vercel (VERCEL env var is set)
+ * Validates IP format to prevent header spoofing attacks
  */
 function getClientIP(req: CreateNextContextOptions['req']): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  const realIP = req.headers['x-real-ip'];
+  // Only trust proxy headers on Vercel
+  const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV !== undefined;
 
-  if (typeof forwarded === 'string') {
-    return forwarded.split(',')[0].trim();
+  if (isVercel) {
+    // On Vercel, x-forwarded-for and x-real-ip can be trusted
+    const forwarded = req.headers['x-forwarded-for'];
+    const realIP = req.headers['x-real-ip'];
+
+    if (typeof forwarded === 'string') {
+      const ip = forwarded.split(',')[0].trim();
+      if (isValidIP(ip)) {
+        return ip;
+      }
+    }
+
+    if (typeof realIP === 'string' && isValidIP(realIP)) {
+      return realIP;
+    }
   }
 
-  if (typeof realIP === 'string') {
-    return realIP;
+  // Fall back to socket address (not behind proxy or validation failed)
+  const socketIP = req.socket.remoteAddress;
+  if (socketIP && isValidIP(socketIP)) {
+    return socketIP;
   }
 
-  return req.socket.remoteAddress || 'unknown';
+  return 'unknown';
 }
 
 /**
@@ -30,7 +59,7 @@ export function createRateLimitMiddleware(
 ) {
   const config = AUTH_RATE_LIMITS[endpointType];
 
-  return (opts: { ctx: Context; next: () => any }) => {
+  return async (opts: { ctx: Context; next: () => any }) => {
     const { ctx, next } = opts;
 
     if (!ctx.req) {
@@ -41,7 +70,7 @@ export function createRateLimitMiddleware(
     const clientIP = getClientIP(ctx.req);
     const key = `${endpointType}:${clientIP}`;
 
-    const result = rateLimiter.checkLimit(key, config.limit, config.windowMs);
+    const result = await rateLimiter.checkLimit(key, config.limit, config.windowMs);
 
     if (result.isLimited) {
       const retryAfter = Math.ceil((result.resetTime - Date.now()) / 1000);
@@ -93,9 +122,9 @@ export function enhanceContextWithRateLimit(
  * Utility to manually reset rate limit for a specific IP and endpoint
  * Useful for testing or emergency situations
  */
-export function resetRateLimit(clientIP: string, endpointType: keyof typeof AUTH_RATE_LIMITS): void {
+export async function resetRateLimit(clientIP: string, endpointType: keyof typeof AUTH_RATE_LIMITS): Promise<void> {
   const key = `${endpointType}:${clientIP}`;
-  rateLimiter.reset(key);
+  await rateLimiter.reset(key);
 
   console.info(`Rate limit reset for ${endpointType} from IP ${clientIP}`, {
     endpoint: endpointType,
@@ -107,12 +136,12 @@ export function resetRateLimit(clientIP: string, endpointType: keyof typeof AUTH
 /**
  * Get current rate limit status for debugging
  */
-export function getRateLimitStatus(
+export async function getRateLimitStatus(
   clientIP: string,
   endpointType: keyof typeof AUTH_RATE_LIMITS
-): { count: number; resetTime: number; remaining: number } | null {
+): Promise<{ count: number; resetTime: number; remaining: number } | null> {
   const key = `${endpointType}:${clientIP}`;
-  const status = rateLimiter.getStatus(key);
+  const status = await rateLimiter.getStatus(key);
 
   if (!status) {
     return null;

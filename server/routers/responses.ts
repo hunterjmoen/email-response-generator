@@ -3,6 +3,7 @@ import { router, protectedProcedure } from '../trpc';
 import { createClient } from '@supabase/supabase-js';
 import { TRPCError } from '@trpc/server';
 import { AIResponseService } from '../../services/ai-response';
+import { encryptionService } from '../../services/encryption';
 import {
   MessageInputSchema,
   ResponseFeedbackSchema,
@@ -93,12 +94,16 @@ export const responsesRouter = router({
         // Estimate cost
         const estimatedCost = AIResponseService.estimateCost(originalMessage.length);
 
+        // Encrypt sensitive data
+        const encryptedMessage = await encryptionService.encrypt(originalMessage);
+
         // Save to response_history table
         const { data: responseHistory, error: historyError } = await supabaseAdmin
           .from('response_history')
           .insert({
             user_id: user.id,
             original_message: originalMessage,
+            original_message_encrypted: encryptedMessage,
             context: enrichedContext,
             generated_options: aiResponses,
             template_used: templateId || null,
@@ -165,10 +170,31 @@ export const responsesRouter = router({
       const { user } = ctx;
 
       try {
+        // Fetch the response to get the generated options
+        const { data: history, error: fetchError } = await supabaseAdmin
+          .from('response_history')
+          .select('generated_options')
+          .eq('id', historyId)
+          .eq('user_id', user.id)
+          .single();
+
+        if (fetchError || !history) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Response history not found',
+          });
+        }
+
+        // Extract and encrypt the selected response text
+        const options = history.generated_options as AIResponseOptions[];
+        const selectedText = options[selectedResponse]?.content || '';
+        const encryptedResponse = selectedText ? await encryptionService.encrypt(selectedText) : null;
+
         const { data: updated, error } = await supabaseAdmin
           .from('response_history')
           .update({
             selected_response: selectedResponse,
+            selected_response_encrypted: encryptedResponse,
             user_rating: rating,
             user_feedback: feedback,
             updated_at: new Date().toISOString(),
@@ -229,7 +255,27 @@ export const responsesRouter = router({
           });
         }
 
-        return history as ResponseHistory[];
+        // Transform snake_case database columns to camelCase for TypeScript
+        const transformedHistory = history?.map((item) => ({
+          id: item.id,
+          userId: item.user_id,
+          originalMessage: item.original_message,
+          context: item.context,
+          generatedOptions: item.generated_options,
+          selectedResponse: item.selected_response,
+          userRating: item.user_rating,
+          userFeedback: item.user_feedback,
+          templateUsed: item.template_used,
+          refinementCount: item.refinement_count,
+          refinementInstructions: item.refinement_instructions,
+          openaiModel: item.openai_model,
+          generationCostCents: item.generation_cost_cents,
+          confidenceScore: item.confidence_score,
+          createdAt: item.created_at,
+          updatedAt: item.updated_at,
+        })) || [];
+
+        return transformedHistory as ResponseHistory[];
       } catch (error: any) {
         console.error('History fetch error:', error);
 
