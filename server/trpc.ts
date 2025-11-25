@@ -5,6 +5,7 @@ import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@s
 import type { User } from '@freelance-flow/shared';
 import { createRateLimitMiddleware } from './middleware/rateLimit';
 import type { Database } from '../types/supabase';
+import { devLog, logError } from '../utils/logger';
 
 // Create server-side Supabase client with service role for admin operations
 const supabaseAdmin = createClient<Database>(
@@ -60,11 +61,7 @@ export const createContext = async (opts: CreateNextContextOptions): Promise<Con
     // Get user from session cookie
     const { data: { user }, error } = await supabase.auth.getUser();
 
-    console.log('[tRPC Context] Session check:', {
-      hasUser: !!user,
-      userId: user?.id,
-      error: error?.message,
-    });
+    devLog.log('[tRPC Context] Session check:', { hasUser: !!user });
 
     if (error || !user) {
       return { req, res, supabase: supabaseAdmin };
@@ -124,7 +121,7 @@ export const createContext = async (opts: CreateNextContextOptions): Promise<Con
 
     return { user: fullUser, req, res, supabase: supabaseAdmin };
   } catch (error) {
-    console.error('Error creating context:', error);
+    logError(error, { context: 'Create tRPC context' });
     return { req, res, supabase: supabaseAdmin };
   }
 };

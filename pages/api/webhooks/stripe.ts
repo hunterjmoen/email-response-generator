@@ -3,6 +3,7 @@ import { buffer } from 'micro';
 import { stripe } from '../../../server/lib/stripe';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { devLog, logError, logWarning } from '../../../utils/logger';
 
 // Create admin Supabase client for database updates
 const supabaseAdmin = createClient(
@@ -55,7 +56,7 @@ function getTierFromSubscription(subscription: Stripe.Subscription): {
   }
 
   // Default to premium monthly for backward compatibility with existing subscriptions
-  console.warn(`Unknown price ID: ${priceId}, defaulting to premium tier`);
+  logWarning('Unknown price ID, defaulting to premium tier', { priceId });
   return { tier: 'premium', monthlyLimit: 999999, billing_interval: 'monthly' };
 }
 
@@ -71,7 +72,7 @@ export default async function handler(
   const sig = req.headers['stripe-signature'];
 
   if (!sig || !webhookSecret) {
-    console.error('Missing stripe signature or webhook secret');
+    logError(new Error('Missing stripe signature or webhook secret'), { context: 'Stripe webhook' });
     return res.status(400).json({ error: 'Missing signature or secret' });
   }
 
@@ -81,8 +82,8 @@ export default async function handler(
     event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
   } catch (err) {
     const error = err as Error;
-    console.error('Webhook signature verification failed:', error.message);
-    return res.status(400).json({ error: `Webhook Error: ${error.message}` });
+    logError(error, { context: 'Webhook signature verification' });
+    return res.status(400).json({ error: 'Webhook signature verification failed' });
   }
 
   // Handle the event
@@ -125,12 +126,12 @@ export default async function handler(
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        devLog.log(`Unhandled event type: ${event.type}`);
     }
 
     res.status(200).json({ received: true });
   } catch (error) {
-    console.error('Error processing webhook:', error);
+    logError(error, { context: 'Process webhook' });
     res.status(500).json({ error: 'Webhook processing failed' });
   }
 }
@@ -138,11 +139,11 @@ export default async function handler(
 async function handleCheckoutSessionCompleted(
   session: Stripe.Checkout.Session
 ) {
-  console.log('Checkout session completed:', session.id);
+  devLog.log('Checkout session completed');
 
   const userId = session.metadata?.userId;
   if (!userId) {
-    console.error('No userId in session metadata');
+    logWarning('No userId in session metadata', { sessionId: session.id });
     return;
   }
 
@@ -184,23 +185,23 @@ async function handleCheckoutSessionCompleted(
       .eq('user_id', userId);
 
     if (error) {
-      console.error('Error updating subscription:', error);
+      logError(error, { context: 'Update subscription after checkout' });
       throw error;
     }
 
-    console.log(`Successfully updated subscription for user ${userId} to ${tier} tier`);
+    devLog.log(`Successfully updated subscription for user to ${tier} tier`);
   } catch (error) {
-    console.error('Failed to update subscription in database:', error);
+    logError(error, { context: 'Handle checkout session completed' });
     throw error;
   }
 }
 
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
-  console.log('Subscription created:', subscription.id);
+  devLog.log('Subscription created');
 
   const userId = subscription.metadata?.userId;
   if (!userId) {
-    console.error('No userId in subscription metadata');
+    logWarning('No userId in subscription metadata', { subscriptionId: subscription.id });
     return;
   }
 
@@ -228,23 +229,23 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
       .eq('user_id', userId);
 
     if (error) {
-      console.error('Error updating subscription:', error);
+      logError(error, { context: 'Create subscription in database' });
       throw error;
     }
 
-    console.log(`Subscription created for user ${userId} with ${tier} tier`);
+    devLog.log(`Subscription created for user with ${tier} tier`);
   } catch (error) {
-    console.error('Failed to create subscription in database:', error);
+    logError(error, { context: 'Handle subscription created' });
     throw error;
   }
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
-  console.log('[Webhook] Subscription updated:', subscription.id);
+  devLog.log('[Webhook] Subscription updated');
 
   const userId = subscription.metadata?.userId;
   if (!userId) {
-    console.error('[Webhook Error] No userId in subscription metadata for subscription:', subscription.id);
+    logWarning('No userId in subscription metadata for update', { subscriptionId: subscription.id });
     return;
   }
 
@@ -252,7 +253,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     // Get the tier, limit, and billing interval from the subscription (in case it changed)
     const { tier, monthlyLimit, billing_interval } = getTierFromSubscription(subscription);
 
-    console.log(`[Webhook] Updating user ${userId} to tier: ${tier}, status: ${subscription.status}, billing: ${billing_interval}`);
+    devLog.log(`[Webhook] Updating user to tier: ${tier}, status: ${subscription.status}`);
 
     const { error } = await supabaseAdmin
       .from('subscriptions')
@@ -267,37 +268,28 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       .eq('user_id', userId);
 
     if (error) {
-      console.error('[Webhook Error] Failed to update subscription in database:', {
-        userId,
-        subscriptionId: subscription.id,
-        error: error.message,
-        details: error,
-      });
+      logError(error, { context: 'Update subscription in database' });
       throw error;
     }
 
-    console.log(`[Webhook Success] Subscription updated for user ${userId}, tier: ${tier}, status: ${subscription.status}`);
+    devLog.log(`[Webhook Success] Subscription updated, tier: ${tier}, status: ${subscription.status}`);
   } catch (error) {
-    console.error('[Webhook Error] Exception in handleSubscriptionUpdated:', {
-      userId,
-      subscriptionId: subscription.id,
-      error,
-    });
+    logError(error, { context: 'Handle subscription updated' });
     throw error;
   }
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
-  console.log('[Webhook] Subscription deleted:', subscription.id);
+  devLog.log('[Webhook] Subscription deleted');
 
   const userId = subscription.metadata?.userId;
   if (!userId) {
-    console.error('[Webhook Error] No userId in subscription metadata for subscription:', subscription.id);
+    logWarning('No userId in subscription metadata for deletion', { subscriptionId: subscription.id });
     return;
   }
 
   try {
-    console.log(`[Webhook] Cancelling subscription for user ${userId}, resetting to free tier`);
+    devLog.log('[Webhook] Cancelling subscription, resetting to free tier');
 
     const { error } = await supabaseAdmin
       .from('subscriptions')
@@ -312,28 +304,19 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       .eq('user_id', userId);
 
     if (error) {
-      console.error('[Webhook Error] Failed to cancel subscription in database:', {
-        userId,
-        subscriptionId: subscription.id,
-        error: error.message,
-        details: error,
-      });
+      logError(error, { context: 'Cancel subscription in database' });
       throw error;
     }
 
-    console.log(`[Webhook Success] Subscription cancelled for user ${userId}, reset to free tier`);
+    devLog.log('[Webhook Success] Subscription cancelled, reset to free tier');
   } catch (error) {
-    console.error('[Webhook Error] Exception in handleSubscriptionDeleted:', {
-      userId,
-      subscriptionId: subscription.id,
-      error,
-    });
+    logError(error, { context: 'Handle subscription deleted' });
     throw error;
   }
 }
 
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
-  console.log('Invoice payment succeeded:', invoice.id);
+  devLog.log('Invoice payment succeeded');
 
   // For recurring payments, ensure subscription remains active
   if ((invoice as any).subscription && typeof (invoice as any).subscription === 'string') {
@@ -353,17 +336,17 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
           .eq('user_id', userId);
 
         if (error) {
-          console.error('Error updating subscription after payment:', error);
+          logError(error, { context: 'Update subscription after payment' });
         }
       } catch (error) {
-        console.error('Failed to update subscription after payment:', error);
+        logError(error, { context: 'Handle payment succeeded' });
       }
     }
   }
 }
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
-  console.log('Invoice payment failed:', invoice.id);
+  devLog.log('Invoice payment failed');
 
   // Mark subscription as past_due
   if ((invoice as any).subscription && typeof (invoice as any).subscription === 'string') {
@@ -383,10 +366,10 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
           .eq('user_id', userId);
 
         if (error) {
-          console.error('Error updating subscription after failed payment:', error);
+          logError(error, { context: 'Update subscription after failed payment' });
         }
       } catch (error) {
-        console.error('Failed to update subscription after failed payment:', error);
+        logError(error, { context: 'Handle payment failed' });
       }
     }
   }

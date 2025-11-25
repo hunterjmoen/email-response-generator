@@ -16,11 +16,15 @@ export function ContextSelector({ onChange }: ContextSelectorProps) {
   const currentContext = watch('context');
 
   // Fetch clients and projects
-  const { data: clients } = trpc.clients.list.useQuery();
-  const { data: projects } = trpc.projects.listByClient.useQuery(
+  const { data: clientsData } = trpc.clients.list.useQuery();
+  const { data: projectsData } = trpc.projects.listByClient.useQuery(
     { clientId: selectedClientId },
     { enabled: !!selectedClientId }
   );
+
+  // Extract clients and projects from paginated response
+  const clients = clientsData?.clients;
+  const projects = projectsData?.projects;
 
   const handleFieldChange = (field: keyof ResponseContext, value: string) => {
     const newContext = { ...currentContext, [field]: value };

@@ -27,10 +27,13 @@ export default function ClientDetailPage() {
     { id: clientId },
     { enabled: !!clientId }
   );
-  const { data: projects, isLoading: isLoadingProjects } = trpc.projects.listByClient.useQuery(
+  const { data: projectsData, isLoading: isLoadingProjects } = trpc.projects.listByClient.useQuery(
     { clientId },
     { enabled: !!clientId }
   );
+
+  // Extract projects from paginated response
+  const projects = projectsData?.projects;
 
   const updateClientMutation = trpc.clients.update.useMutation({
     onSuccess: () => {

@@ -12,8 +12,11 @@ export default function ClientsPage() {
   const [editingClient, setEditingClient] = useState<string | null>(null);
 
   const utils = trpc.useContext();
-  const { data: clients, isLoading } = trpc.clients.list.useQuery();
+  const { data: clientsData, isLoading } = trpc.clients.list.useQuery();
   const { data: allTags } = trpc.clients.getAllTags.useQuery();
+
+  // Extract clients from paginated response
+  const clients = clientsData?.clients;
 
   const createMutation = trpc.clients.create.useMutation({
     onSuccess: () => {

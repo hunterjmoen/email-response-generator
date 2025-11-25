@@ -18,6 +18,7 @@ import {
   PasswordResetSchema,
   type User
 } from '@freelance-flow/shared';
+import { devLog, logError } from '../../utils/logger';
 
 // Create server-side Supabase client with service role
 const supabaseAdmin = createClient(
@@ -90,7 +91,7 @@ export const authRouter = router({
           .single();
 
         if (userError) {
-          console.error('Error creating user profile:', userError);
+          logError(userError, { context: 'Create user profile' });
 
           securityLogger.logRegistrationAttempt({
             userEmail: input.email,
@@ -124,7 +125,7 @@ export const authRouter = router({
           });
 
         if (subscriptionError) {
-          console.error('Error creating subscription:', subscriptionError);
+          logError(subscriptionError, { context: 'Create subscription' });
           // Don't fail registration if subscription creation fails, just log it
         }
 
@@ -163,7 +164,7 @@ export const authRouter = router({
         });
 
         if (signInError || !signInData.session) {
-          console.error('Error signing in after registration:', signInError);
+          devLog.error('Error signing in after registration:', signInError);
           // Still return success but without session - user can login manually
           return {
             user,
@@ -178,7 +179,7 @@ export const authRouter = router({
           message: 'Registration successful!',
         };
       } catch (error) {
-        console.error('Registration error:', error);
+        logError(error, { context: 'Registration' });
 
         if (!(error instanceof TRPCError)) {
           securityLogger.logRegistrationAttempt({
@@ -307,7 +308,7 @@ export const authRouter = router({
           session: data.session,
         };
       } catch (error) {
-        console.error('Login error:', error);
+        logError(error, { context: 'Login' });
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -332,7 +333,7 @@ export const authRouter = router({
 
         return { message: 'Logout successful' };
       } catch (error) {
-        console.error('Logout error:', error);
+        logError(error, { context: 'Logout' });
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -372,7 +373,7 @@ export const authRouter = router({
           message: 'If an account with that email exists, we have sent a password reset link.',
         };
       } catch (error) {
-        console.error('Password reset request error:', error);
+        logError(error, { context: 'Password reset request' });
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -400,6 +401,12 @@ export const authRouter = router({
           });
         }
 
+        // Invalidate all other sessions for security
+        // This ensures any compromised sessions are terminated after password change
+        if (data.user?.id) {
+          await supabaseAdmin.auth.admin.signOut(data.user.id, 'others');
+        }
+
         // Log password reset completion
         securityLogger.logPasswordReset({
           userEmail: data.user?.email || 'unknown',
@@ -413,7 +420,7 @@ export const authRouter = router({
           message: 'Password updated successfully',
         };
       } catch (error) {
-        console.error('Password reset error:', error);
+        logError(error, { context: 'Password reset' });
         if (error instanceof TRPCError) {
           throw error;
         }

@@ -3,6 +3,13 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { User, AuthSession } from '@freelance-flow/shared';
 import { supabase } from '../utils/supabase';
 
+// Client-side development logging
+const isDev = process.env.NODE_ENV === 'development';
+const devLog = {
+  log: (...args: unknown[]) => { if (isDev) console.log(...args); },
+  error: (...args: unknown[]) => { if (isDev) console.error(...args); },
+};
+
 interface AuthState {
   user: User | null;
   session: AuthSession | null;
@@ -58,19 +65,18 @@ export const useAuthStore = create<AuthStore>()(
 
       initialize: async () => {
     try {
-      console.log('[Auth] Initializing auth state from cookies...');
+      devLog.log('[Auth] Initializing auth state from cookies...');
 
       // Get session from Supabase (reads from cookies now)
       const { data: { session }, error } = await supabase.auth.getSession();
 
-      console.log('[Auth] Cookie-based session check:', {
+      devLog.log('[Auth] Cookie-based session check:', {
         hasSession: !!session,
         hasUser: !!session?.user,
-        error: error?.message,
       });
 
       if (error || !session || !session.user) {
-        console.log('[Auth] No valid session found');
+        devLog.log('[Auth] No valid session found');
         get().clearAuth();
         return;
       }
@@ -83,7 +89,7 @@ export const useAuthStore = create<AuthStore>()(
         .single();
 
       if (userError || !userData) {
-        console.error('Error fetching user data:', userError);
+        devLog.error('Error fetching user data:', userError);
         get().clearAuth();
         return;
       }
@@ -91,7 +97,7 @@ export const useAuthStore = create<AuthStore>()(
       // Fetch subscription separately for better performance
       const { data: subscriptionData } = await supabase
         .from('subscriptions')
-        .select('tier, status, usage_count, monthly_limit, usage_reset_date, billing_interval, has_used_trial, stripe_customer_id, stripe_subscription_id')
+        .select('tier, status, usage_count, monthly_limit, usage_reset_date, billing_interval, has_used_trial, stripe_customer_id, stripe_subscription_id, cancel_at_period_end')
         .eq('user_id', session.user.id)
         .single();
 
@@ -127,6 +133,7 @@ export const useAuthStore = create<AuthStore>()(
           has_used_trial: (subscriptionData as any)?.has_used_trial || false,
           stripe_customer_id: extractId((subscriptionData as any)?.stripe_customer_id),
           stripe_subscription_id: extractId((subscriptionData as any)?.stripe_subscription_id),
+          cancel_at_period_end: (subscriptionData as any)?.cancel_at_period_end || false,
         },
         stripe_customer_id: extractId((subscriptionData as any)?.stripe_customer_id),
         preferences: (userData.preferences as unknown as User['preferences']) || {
@@ -142,10 +149,10 @@ export const useAuthStore = create<AuthStore>()(
         updatedAt: userData.updated_at,
       };
 
-      console.log('[Auth] Auth initialized successfully for user:', user.email);
+      devLog.log('[Auth] Auth initialized successfully');
       get().setAuth(user, session);
     } catch (error) {
-      console.error('[Auth] Error initializing auth:', error);
+      devLog.error('[Auth] Error initializing auth:', error);
       get().clearAuth();
     }
   },
@@ -155,17 +162,17 @@ export const useAuthStore = create<AuthStore>()(
         if (!user) return;
 
         try {
-          console.log('[Auth] Refreshing subscription data...');
+          devLog.log('[Auth] Refreshing subscription data...');
 
           // Fetch updated subscription data
           const { data: subscriptionData, error } = await supabase
             .from('subscriptions')
-            .select('tier, status, usage_count, monthly_limit, usage_reset_date, billing_interval, has_used_trial, stripe_customer_id, stripe_subscription_id')
+            .select('tier, status, usage_count, monthly_limit, usage_reset_date, billing_interval, has_used_trial, stripe_customer_id, stripe_subscription_id, cancel_at_period_end')
             .eq('user_id', user.id)
             .single();
 
           if (error || !subscriptionData) {
-            console.error('Error fetching subscription data:', error);
+            devLog.error('Error fetching subscription data:', error);
             return;
           }
 
@@ -193,14 +200,15 @@ export const useAuthStore = create<AuthStore>()(
               has_used_trial: (subscriptionData as any).has_used_trial || false,
               stripe_customer_id: extractId((subscriptionData as any).stripe_customer_id),
               stripe_subscription_id: extractId((subscriptionData as any).stripe_subscription_id),
+              cancel_at_period_end: (subscriptionData as any).cancel_at_period_end || false,
             },
             stripe_customer_id: extractId((subscriptionData as any).stripe_customer_id),
           };
 
-          console.log('[Auth] Subscription refreshed. Tier:', (subscriptionData as any).tier, 'Status:', (subscriptionData as any).status, 'Limit:', (subscriptionData as any).monthly_limit);
+          devLog.log('[Auth] Subscription refreshed');
           set({ user: updatedUser });
         } catch (error) {
-          console.error('[Auth] Error refreshing subscription:', error);
+          devLog.error('[Auth] Error refreshing subscription:', error);
         }
       },
     }),
@@ -224,7 +232,7 @@ useAuthStore.getState().initialize();
 supabase.auth.onAuthStateChange(async (event, session) => {
   const { initialize, clearAuth, user } = useAuthStore.getState();
 
-  console.log('[Auth] onAuthStateChange event:', event, 'has session:', !!session, 'has user in store:', !!user);
+  devLog.log('[Auth] onAuthStateChange event:', event, 'has session:', !!session);
 
   if (event === 'SIGNED_OUT' || !session) {
     clearAuth();
@@ -232,10 +240,10 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     // Only re-initialize if we don't already have user data in the store
     // This prevents duplicate initialization when login manually sets the session
     if (!user) {
-      console.log('[Auth] No user in store, initializing...');
+      devLog.log('[Auth] No user in store, initializing...');
       await initialize();
     } else {
-      console.log('[Auth] User already in store, skipping initialization');
+      devLog.log('[Auth] User already in store, skipping initialization');
     }
   }
 });

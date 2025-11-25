@@ -3,6 +3,7 @@ import { router, protectedProcedure } from '../trpc';
 import { stripe } from '../lib/stripe';
 import { TRPCError } from '@trpc/server';
 import type Stripe from 'stripe';
+import { devLog, logError, logWarning } from '../../utils/logger';
 
 // Helper function to determine tier and billing interval from subscription
 function getTierFromSubscription(subscription: Stripe.Subscription): {
@@ -14,10 +15,10 @@ function getTierFromSubscription(subscription: Stripe.Subscription): {
   const priceItem = subscription.items.data[0]?.price;
   const priceId = typeof priceItem === 'string' ? priceItem : priceItem?.id;
 
-  console.log('[getTierFromSubscription] Price ID:', priceId);
+  devLog.log('[getTierFromSubscription] Price ID:', priceId);
 
   if (!priceId) {
-    console.warn('[getTierFromSubscription] No price ID found in subscription, defaulting to premium tier');
+    logWarning('No price ID found in subscription, defaulting to premium tier');
     return { tier: 'premium', monthlyLimit: 999999, billing_interval: 'monthly' };
   }
 
@@ -43,7 +44,7 @@ function getTierFromSubscription(subscription: Stripe.Subscription): {
   }
 
   // Default to premium monthly for backward compatibility with existing subscriptions
-  console.warn(`Unknown price ID: ${priceId}, defaulting to premium tier`);
+  logWarning('Unknown price ID, defaulting to premium tier', { priceId });
   return { tier: 'premium', monthlyLimit: 999999, billing_interval: 'monthly' };
 }
 
@@ -74,7 +75,7 @@ export const stripeRouter = router({
 
         if (existingSubscription?.stripe_customer_id) {
           customerId = existingSubscription.stripe_customer_id;
-          console.log('Using existing Stripe customer for payment:', customerId);
+          devLog.log('[Stripe] Using existing customer for payment');
         }
 
         // Generate idempotency key to prevent duplicate charges
@@ -106,7 +107,7 @@ export const stripeRouter = router({
           url: session.url,
         };
       } catch (error) {
-        console.error('Stripe checkout session creation failed:', error);
+        logError(error, { context: 'Stripe checkout session creation' });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to create checkout session',
@@ -144,10 +145,10 @@ export const stripeRouter = router({
           try {
             await stripe.customers.retrieve(existingSubscription.stripe_customer_id);
             customerId = existingSubscription.stripe_customer_id;
-            console.log('Using existing Stripe customer:', customerId);
-          } catch (error) {
+            devLog.log('[Stripe] Using existing customer');
+          } catch {
             // Customer doesn't exist in Stripe, create a new one
-            console.log('Existing customer ID invalid, creating new customer');
+            devLog.log('[Stripe] Existing customer invalid, creating new');
             const customer = await stripe.customers.create({
               email: ctx.user.email,
               metadata: {
@@ -156,7 +157,7 @@ export const stripeRouter = router({
               name: `${ctx.user.firstName} ${ctx.user.lastName}`.trim() || undefined,
             });
             customerId = customer.id;
-            console.log('Created new Stripe customer:', customerId);
+            devLog.log('[Stripe] Created new customer');
 
             // Update the database with the new customer ID
             await ctx.supabase
@@ -174,7 +175,7 @@ export const stripeRouter = router({
             name: `${ctx.user.firstName} ${ctx.user.lastName}`.trim() || undefined,
           });
           customerId = customer.id;
-          console.log('Created new Stripe customer:', customerId);
+          devLog.log('[Stripe] Created new customer');
         }
 
         // Generate idempotency key to prevent duplicate sessions
@@ -221,7 +222,7 @@ export const stripeRouter = router({
           url: session.url,
         };
       } catch (error) {
-        console.error('Stripe subscription session creation failed:', error);
+        logError(error, { context: 'Stripe subscription session creation' });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to create subscription session',
@@ -250,7 +251,7 @@ export const stripeRouter = router({
           url: session.url,
         };
       } catch (error) {
-        console.error('Stripe portal session creation failed:', error);
+        logError(error, { context: 'Stripe portal session creation' });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to create portal session',
@@ -276,7 +277,7 @@ export const stripeRouter = router({
 
         return paymentMethods.data;
       } catch (error) {
-        console.error('Failed to retrieve payment methods:', error);
+        logError(error, { context: 'Retrieve payment methods' });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to retrieve payment methods',
@@ -303,7 +304,7 @@ export const stripeRouter = router({
 
         return subscriptions.data;
       } catch (error) {
-        console.error('Failed to retrieve subscriptions:', error);
+        logError(error, { context: 'Retrieve subscriptions' });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to retrieve subscriptions',
@@ -338,19 +339,20 @@ export const stripeRouter = router({
             .from('subscriptions')
             .update({
               status: 'active', // Still active until period ends
+              cancel_at_period_end: true,
               updated_at: new Date().toISOString(),
             })
             .eq('user_id', ctx.user.id);
 
           if (dbError) {
-            console.error('Failed to update database after subscription cancellation:', dbError);
+            logError(dbError, { context: 'Update database after subscription cancellation' });
             // Don't throw - webhook will reconcile later
           }
         }
 
         return subscription;
       } catch (error) {
-        console.error('Failed to cancel subscription:', error);
+        logError(error, { context: 'Cancel subscription' });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to cancel subscription',
@@ -370,13 +372,14 @@ export const stripeRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        console.log('[updateSubscription] Starting update:', { subscriptionId: input.subscriptionId, newPriceId: input.newPriceId });
+        devLog.log('[updateSubscription] Starting update');
 
         // Get the current subscription
         const subscription = await stripe.subscriptions.retrieve(input.subscriptionId);
-        console.log('[updateSubscription] Current subscription retrieved');
+        devLog.log('[updateSubscription] Current subscription retrieved');
 
         // Update the subscription with the new price
+        // Also reset cancel_at_period_end to false in case user is resubscribing
         const updatedSubscription = await stripe.subscriptions.update(
           input.subscriptionId,
           {
@@ -387,9 +390,10 @@ export const stripeRouter = router({
               },
             ],
             proration_behavior: 'create_prorations',
+            cancel_at_period_end: false,
           }
         );
-        console.log('[updateSubscription] Stripe subscription updated successfully');
+        devLog.log('[updateSubscription] Stripe subscription updated successfully');
 
         // Immediately update the database (optimistic update)
         // Webhook will confirm and reconcile later
@@ -398,7 +402,7 @@ export const stripeRouter = router({
           ? new Date(((updatedSubscription as any).current_period_end || 0) * 1000).toISOString()
           : new Date().toISOString();
 
-        console.log('[updateSubscription] Updating database:', { tier, monthlyLimit, billing_interval, userId: ctx.user.id });
+        devLog.log('[updateSubscription] Updating database');
 
         const { error: dbError } = await ctx.supabase
           .from('subscriptions')
@@ -408,23 +412,24 @@ export const stripeRouter = router({
             billing_interval,
             status: updatedSubscription.status as 'active' | 'cancelled' | 'past_due' | 'expired' | 'trialing',
             usage_reset_date: nextBillingDate,
+            cancel_at_period_end: false,
             updated_at: new Date().toISOString(),
           })
           .eq('user_id', ctx.user.id);
 
         if (dbError) {
-          console.error('[updateSubscription] Database update error:', dbError);
+          logError(dbError, { context: 'Update subscription database' });
           // Don't throw - webhook will reconcile later
         } else {
-          console.log('[updateSubscription] Database updated successfully');
+          devLog.log('[updateSubscription] Database updated successfully');
         }
 
         return updatedSubscription;
-      } catch (error: any) {
-        console.error('[updateSubscription] Error:', error);
+      } catch (error: unknown) {
+        logError(error, { context: 'Update subscription' });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: `Failed to update subscription: ${error?.message || 'Unknown error'}`,
+          message: 'Failed to update subscription',
         });
       }
     }),
@@ -441,13 +446,14 @@ export const stripeRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        console.log('[switchBillingCycle] Starting switch:', { subscriptionId: input.subscriptionId, newPriceId: input.newPriceId });
+        devLog.log('[switchBillingCycle] Starting switch');
 
         // Get the current subscription
         const subscription = await stripe.subscriptions.retrieve(input.subscriptionId);
-        console.log('[switchBillingCycle] Current subscription retrieved');
+        devLog.log('[switchBillingCycle] Current subscription retrieved');
 
         // Update the subscription with the new billing cycle
+        // Also reset cancel_at_period_end in case user is resubscribing
         const updatedSubscription = await stripe.subscriptions.update(
           input.subscriptionId,
           {
@@ -458,9 +464,10 @@ export const stripeRouter = router({
               },
             ],
             proration_behavior: 'create_prorations',
+            cancel_at_period_end: false,
           }
         );
-        console.log('[switchBillingCycle] Stripe subscription updated successfully');
+        devLog.log('[switchBillingCycle] Stripe subscription updated successfully');
 
         // Update database with new billing interval
         const { tier, monthlyLimit, billing_interval } = getTierFromSubscription(updatedSubscription);
@@ -468,7 +475,7 @@ export const stripeRouter = router({
           ? new Date(((updatedSubscription as any).current_period_end || 0) * 1000).toISOString()
           : new Date().toISOString();
 
-        console.log('[switchBillingCycle] Updating database:', { tier, billing_interval, userId: ctx.user.id });
+        devLog.log('[switchBillingCycle] Updating database');
 
         const { error: dbError } = await ctx.supabase
           .from('subscriptions')
@@ -478,22 +485,138 @@ export const stripeRouter = router({
             billing_interval,
             status: updatedSubscription.status as 'active' | 'cancelled' | 'past_due' | 'expired' | 'trialing',
             usage_reset_date: nextBillingDate,
+            cancel_at_period_end: false,
             updated_at: new Date().toISOString(),
           })
           .eq('user_id', ctx.user.id);
 
         if (dbError) {
-          console.error('[switchBillingCycle] Database update error:', dbError);
+          logError(dbError, { context: 'Switch billing cycle database update' });
         } else {
-          console.log('[switchBillingCycle] Database updated successfully');
+          devLog.log('[switchBillingCycle] Database updated successfully');
         }
 
         return updatedSubscription;
-      } catch (error: any) {
-        console.error('[switchBillingCycle] Error:', error);
+      } catch (error: unknown) {
+        logError(error, { context: 'Switch billing cycle' });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: `Failed to switch billing cycle: ${error?.message || 'Unknown error'}`,
+          message: 'Failed to switch billing cycle',
+        });
+      }
+    }),
+
+  /**
+   * Preview proration for a subscription change
+   * Returns the amount the user will be charged or credited
+   */
+  previewProration: protectedProcedure
+    .input(
+      z.object({
+        subscriptionId: z.string(),
+        newPriceId: z.string(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        devLog.log('[previewProration] Previewing proration');
+
+        // Get the current subscription
+        const subscription = await stripe.subscriptions.retrieve(input.subscriptionId);
+
+        // Get the current and new prices for display
+        const currentPriceId = subscription.items.data[0]?.price.id;
+        const [currentPrice, newPrice] = await Promise.all([
+          stripe.prices.retrieve(currentPriceId),
+          stripe.prices.retrieve(input.newPriceId),
+        ]);
+
+        // Create an invoice preview to see what the proration would be
+        const invoicePreview = await stripe.invoices.createPreview({
+          customer: subscription.customer as string,
+          subscription: input.subscriptionId,
+          subscription_details: {
+            items: [
+              {
+                id: subscription.items.data[0].id,
+                price: input.newPriceId,
+              },
+            ],
+            proration_behavior: 'create_prorations',
+          },
+        });
+
+        // Calculate the proration amount
+        // Find proration line items (they have type 'invoiceitem' with proration)
+        const prorationItems = invoicePreview.lines.data.filter(
+          (line) => (line as any).proration === true
+        );
+
+        // Sum up the proration amounts
+        const prorationAmount = prorationItems.reduce(
+          (sum, item) => sum + item.amount,
+          0
+        );
+
+        // Get period end date
+        const periodEnd = new Date((subscription as any).current_period_end * 1000);
+
+        // Determine if this is an upgrade or downgrade
+        const currentAmount = currentPrice.unit_amount || 0;
+        const newAmount = newPrice.unit_amount || 0;
+        const isUpgrade = newAmount > currentAmount;
+
+        // Get human-readable tier names
+        const getTierName = (priceId: string): string => {
+          const professionalMonthly = process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID;
+          const professionalAnnual = process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID;
+          const premiumMonthly = process.env.NEXT_PUBLIC_STRIPE_PREMIUM_MONTHLY_PRICE_ID;
+          const premiumAnnual = process.env.NEXT_PUBLIC_STRIPE_PREMIUM_ANNUAL_PRICE_ID;
+
+          if (priceId === professionalMonthly || priceId === professionalAnnual) {
+            return 'Professional';
+          }
+          if (priceId === premiumMonthly || priceId === premiumAnnual) {
+            return 'Premium';
+          }
+          return 'Unknown';
+        };
+
+        const getBillingInterval = (priceId: string): 'monthly' | 'annual' => {
+          const professionalAnnual = process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID;
+          const premiumAnnual = process.env.NEXT_PUBLIC_STRIPE_PREMIUM_ANNUAL_PRICE_ID;
+          return (priceId === professionalAnnual || priceId === premiumAnnual) ? 'annual' : 'monthly';
+        };
+
+        return {
+          // Amounts in cents
+          prorationAmount, // Positive = charge, negative = credit
+          currentPriceAmount: currentAmount,
+          newPriceAmount: newAmount,
+          // For display
+          prorationAmountFormatted: (Math.abs(prorationAmount) / 100).toFixed(2),
+          currentPriceFormatted: (currentAmount / 100).toFixed(2),
+          newPriceFormatted: (newAmount / 100).toFixed(2),
+          // Metadata
+          isUpgrade,
+          isCredit: prorationAmount < 0,
+          periodEnd: periodEnd.toISOString(),
+          currentTier: getTierName(currentPriceId),
+          newTier: getTierName(input.newPriceId),
+          currentInterval: getBillingInterval(currentPriceId),
+          newInterval: getBillingInterval(input.newPriceId),
+          // Invoice total (what will be charged now, if anything)
+          invoiceTotal: invoicePreview.total,
+          invoiceTotalFormatted: (invoicePreview.total / 100).toFixed(2),
+          // Amount due now vs at next billing
+          amountDueNow: invoicePreview.amount_due,
+          amountDueNowFormatted: (invoicePreview.amount_due / 100).toFixed(2),
+        };
+      } catch (error: unknown) {
+        logError(error, { context: 'Preview proration' });
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to preview proration',
         });
       }
     }),
@@ -510,7 +633,7 @@ export const stripeRouter = router({
 
       return prices.data;
     } catch (error) {
-      console.error('Failed to retrieve prices:', error);
+      logError(error, { context: 'Retrieve prices' });
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Failed to retrieve prices',
@@ -519,9 +642,9 @@ export const stripeRouter = router({
   }),
 
   /**
-   * TEMPORARY: Verify and activate subscription after checkout
-   * This is only for local testing when webhooks aren't configured.
-   * Remove this in production once Stripe webhooks are properly set up.
+   * Verify and activate subscription after checkout
+   * Used as fallback when webhooks haven't processed yet.
+   * In production, webhooks handle this automatically.
    */
   verifyCheckoutSession: protectedProcedure
     .input(
@@ -530,16 +653,35 @@ export const stripeRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // In production, only allow if webhook hasn't processed yet (acts as fallback)
+      // This prevents abuse while still allowing the endpoint for webhook race conditions
+      if (process.env.NODE_ENV === 'production') {
+        const { data: existingSub } = await ctx.supabase
+          .from('subscriptions')
+          .select('stripe_subscription_id, status')
+          .eq('user_id', ctx.user.id)
+          .single();
+
+        // If webhook already processed this subscription, return early
+        if (existingSub?.stripe_subscription_id && existingSub.status === 'active') {
+          devLog.log('[verifyCheckout] Subscription already active via webhook');
+          return { success: true, alreadyProcessed: true };
+        }
+      }
+
       try {
-        console.log('[TEMP] Verifying checkout session:', input.sessionId);
+        devLog.log('[verifyCheckout] Verifying checkout session');
 
         // Retrieve the checkout session from Stripe
         const session = await stripe.checkout.sessions.retrieve(input.sessionId, {
           expand: ['subscription', 'customer'],
         });
 
+        devLog.log('[verifyCheckout] Session retrieved');
+
         // Verify the session belongs to this user
         if (session.metadata?.userId !== ctx.user.id) {
+          logWarning('Checkout session user mismatch attempt');
           throw new TRPCError({
             code: 'FORBIDDEN',
             message: 'This checkout session does not belong to you',
@@ -558,11 +700,27 @@ export const stripeRouter = router({
         // Extract subscription ID - session.subscription is already expanded as an object
         const subscriptionId = typeof session.subscription === 'string'
           ? session.subscription
-          : (session.subscription as any).id;
+          : (session.subscription as any)?.id;
+
+        // Extract customer ID - session.customer may be expanded as an object
+        const customerId = typeof session.customer === 'string'
+          ? session.customer
+          : (session.customer as any)?.id;
+
+        devLog.log('[verifyCheckout] Extracted IDs');
+
+        if (!subscriptionId) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'No subscription found in checkout session',
+          });
+        }
 
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        devLog.log('[verifyCheckout] Subscription retrieved');
 
         const priceId = subscription.items.data[0]?.price.id;
+        const priceInterval = subscription.items.data[0]?.price.recurring?.interval;
         let tier: 'free' | 'professional' | 'premium' = 'premium';
         let monthlyLimit = 999999;
 
@@ -574,28 +732,43 @@ export const stripeRouter = router({
           monthlyLimit = 75;
         }
 
+        // Determine billing interval from price
+        const billingInterval = priceInterval === 'year' ? 'annual' : 'monthly';
+
+        // Safely get usage_reset_date from subscription period end
+        const periodEnd = (subscription as any).current_period_end;
+        const usageResetDate = periodEnd
+          ? new Date(periodEnd * 1000).toISOString()
+          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // Default to 30 days from now
+
+        devLog.log('[verifyCheckout] Updating database');
+
         // Update subscription in database
         const { error } = await ctx.supabase
           .from('subscriptions')
           .update({
-            stripe_customer_id: session.customer as string,
-            stripe_subscription_id: session.subscription as string,
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
             tier,
             status: 'active',
             monthly_limit: monthlyLimit,
+            billing_interval: billingInterval,
+            cancel_at_period_end: false,
+            usage_reset_date: usageResetDate,
+            has_used_trial: true,
             updated_at: new Date().toISOString(),
           })
           .eq('user_id', ctx.user.id);
 
         if (error) {
-          console.error('[TEMP] Error updating subscription:', error);
+          logError(error, { context: 'Activate subscription' });
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: 'Failed to activate subscription',
           });
         }
 
-        console.log(`[TEMP] Successfully activated ${tier} subscription for user:`, ctx.user.id);
+        devLog.log('[verifyCheckout] Successfully activated subscription');
 
         return {
           success: true,
@@ -606,7 +779,7 @@ export const stripeRouter = router({
         if (error instanceof TRPCError) {
           throw error;
         }
-        console.error('[TEMP] Failed to verify checkout session:', error);
+        logError(error, { context: 'Verify checkout session' });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to verify checkout session',

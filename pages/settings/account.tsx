@@ -1,17 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { SettingsLayout } from '../../components/layouts/SettingsLayout';
 import { SettingsSection, SettingsDivider } from '../../components/settings/SettingsSection';
 import { useAuthStore } from '../../stores/auth';
-import { trpc } from '../../utils/trpc';
 
 export default function AccountSettings() {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading: authLoading, refreshSubscription } = useAuthStore();
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [cancelLoading, setCancelLoading] = useState(false);
-  const cancelSubscription = trpc.stripe.cancelSubscription.useMutation();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -19,29 +15,6 @@ export default function AccountSettings() {
       router.push('/auth/login?redirect=/settings/account');
     }
   }, [authLoading, isAuthenticated, router]);
-
-  const handleCancelSubscription = async () => {
-    if (!user?.subscription?.stripe_subscription_id) return;
-
-    setCancelLoading(true);
-    try {
-      await cancelSubscription.mutateAsync({
-        subscriptionId: user.subscription.stripe_subscription_id,
-        cancelAtPeriodEnd: true,
-      });
-
-      alert('Your subscription will be cancelled at the end of the billing period. You will retain access until then.');
-      setShowCancelModal(false);
-
-      // Refresh auth store to show updated subscription status
-      await refreshSubscription();
-    } catch (error) {
-      console.error('Failed to cancel subscription:', error);
-      alert('Failed to cancel subscription. Please try again or contact support.');
-    } finally {
-      setCancelLoading(false);
-    }
-  };
 
   if (authLoading) {
     return (
@@ -60,170 +33,117 @@ export default function AccountSettings() {
     return null;
   }
 
-  const subscription = user?.subscription;
-  const usagePercentage = subscription
-    ? Math.min((subscription.usageCount / subscription.monthlyLimit) * 100, 100)
-    : 0;
-
-  const isPremium = subscription?.tier === 'premium';
-  const isProfessional = subscription?.tier === 'professional';
-  const isFree = subscription?.tier === 'free';
-  const hasActiveSubscription = !isFree && subscription?.status === 'active';
-
   return (
     <SettingsLayout>
-      {/* Subscription Section */}
+      {/* Account Overview */}
       <SettingsSection
-        title="Subscription Plan"
-        description="Manage your FreelanceFlow subscription"
+        title="Account Overview"
+        description="Your account information"
       >
-        <div className={`rounded-lg border-2 p-6 ${
-          isPremium ? 'border-green-600 bg-green-50 dark:bg-green-900' : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800'
-        }`}>
-          <div className="flex items-start justify-between">
+        <div className="space-y-4">
+          {/* Email */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <div>
-              <div className="flex items-center gap-3">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 capitalize">
-                  {subscription?.tier || 'Free'}
-                  {subscription?.billing_interval && ` (${subscription.billing_interval.charAt(0).toUpperCase() + subscription.billing_interval.slice(1)})`} Plan
-                </h3>
-                {isPremium && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-600 text-white">
-                    Active
-                  </span>
-                )}
-              </div>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                {isPremium
-                  ? 'Unlimited responses, priority support, and advanced features'
-                  : `${subscription?.monthlyLimit || 10} responses per month`}
-              </p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</p>
+              <p className="text-gray-900 dark:text-gray-100 font-medium">{user?.email}</p>
             </div>
-            {isFree && (
-              <Link
-                href="/pricing"
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-colors whitespace-nowrap"
-              >
-                Upgrade to Premium
-              </Link>
-            )}
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300">
+              Verified
+            </span>
+          </div>
+
+          {/* Name */}
+          <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</p>
+            <p className="text-gray-900 dark:text-gray-100 font-medium">
+              {user?.firstName} {user?.lastName}
+            </p>
+          </div>
+
+          {/* Member Since */}
+          <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Member Since</p>
+            <p className="text-gray-900 dark:text-gray-100 font-medium">
+              {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              }) : 'N/A'}
+            </p>
           </div>
         </div>
-
-        {/* Billing Info for Paid Subscribers */}
-        {hasActiveSubscription && (
-          <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Next Billing Date</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {subscription?.billingCycle ? new Date(subscription.billingCycle).toLocaleDateString() : 'N/A'}
-                </p>
-              </div>
-              <Link
-                href="/pricing"
-                className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium"
-              >
-                Change Plan
-              </Link>
-            </div>
-            <button
-              onClick={() => setShowCancelModal(true)}
-              className="w-full px-4 py-2 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
-            >
-              Cancel Subscription
-            </button>
-          </div>
-        )}
       </SettingsSection>
 
       <SettingsDivider />
 
-      {/* Usage Statistics Section */}
+      {/* Quick Links */}
       <SettingsSection
-        title="Usage Statistics"
-        description="Track your monthly usage"
+        title="Manage Account"
+        description="Quick access to account settings"
       >
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              Responses Generated This Month
-            </span>
-            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-              {subscription?.usageCount || 0} / {isPremium ? '∞' : subscription?.monthlyLimit || 10}
-            </span>
-          </div>
-
-          {!isPremium && (
-            <>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    usagePercentage >= 90
-                      ? 'bg-red-600'
-                      : usagePercentage >= 70
-                      ? 'bg-amber-500'
-                      : 'bg-green-600'
-                  }`}
-                  style={{ width: `${usagePercentage}%` }}
-                />
-              </div>
-
-              <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-                {subscription?.usageCount === subscription?.monthlyLimit ? (
-                  <span className="text-red-600 dark:text-red-400 font-medium">
-                    You've reached your monthly limit. Upgrade to Premium for unlimited responses.
-                  </span>
-                ) : usagePercentage >= 70 ? (
-                  <span className="text-amber-600 dark:text-amber-400 font-medium">
-                    You're using {Math.round(usagePercentage)}% of your monthly limit.
-                  </span>
-                ) : (
-                  <span>
-                    Usage resets on {subscription?.billingCycle ? new Date(subscription.billingCycle).toLocaleDateString() : 'the 1st of each month'}
-                  </span>
-                )}
-              </p>
-
-              {usagePercentage >= 70 && (
-                <div className="mt-4 p-4 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-green-900 dark:text-green-100 mb-1">
-                        Upgrade to Premium
-                      </p>
-                      <p className="text-sm text-green-700 dark:text-green-300 mb-3">
-                        Get unlimited responses and never worry about running out again.
-                      </p>
-                      <Link
-                        href="/pricing"
-                        className="inline-flex items-center text-sm font-medium text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
-                      >
-                        View pricing
-                        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          {isPremium && (
-            <div className="mt-4 p-4 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg flex items-center gap-3">
-              <svg className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <div className="space-y-3">
+          {/* Billing Link */}
+          <Link
+            href="/settings/billing"
+            className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+          >
+            <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
               </svg>
-              <p className="text-sm text-green-700 dark:text-green-300">
-                You have unlimited responses as a Premium member.
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-gray-900 dark:text-gray-100">Billing & Subscription</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Manage your plan, view usage, update payment method
               </p>
             </div>
-          )}
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+
+          {/* Profile Link */}
+          <Link
+            href="/settings/profile"
+            className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+          >
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-gray-900 dark:text-gray-100">Profile Settings</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Update your name, industry, and personal information
+              </p>
+            </div>
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+
+          {/* Privacy Link */}
+          <Link
+            href="/settings/privacy"
+            className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+          >
+            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-gray-900 dark:text-gray-100">Privacy & Security</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Manage data, change password, delete account
+              </p>
+            </div>
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
         </div>
       </SettingsSection>
 
@@ -232,14 +152,14 @@ export default function AccountSettings() {
       {/* Security Section */}
       <SettingsSection
         title="Security"
-        description="Manage your account security settings"
+        description="Manage your account security"
       >
         <div className="space-y-4">
           {/* Change Password */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <div>
               <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Password</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Last changed: Never
               </p>
             </div>
@@ -248,23 +168,10 @@ export default function AccountSettings() {
                 // TODO: Implement password change
                 alert('Password change functionality coming soon!');
               }}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
             >
               Change Password
             </button>
-          </div>
-
-          {/* Email */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div>
-              <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Email Address</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {user?.email}
-              </p>
-            </div>
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300">
-              Verified
-            </span>
           </div>
         </div>
       </SettingsSection>
@@ -276,12 +183,12 @@ export default function AccountSettings() {
         title="Danger Zone"
         description="Irreversible actions"
       >
-        <div className="bg-red-50 dark:bg-red-900 border-2 border-red-200 dark:border-red-700 rounded-lg p-4">
+        <div className="bg-red-50 dark:bg-red-900/30 border-2 border-red-200 dark:border-red-700 rounded-lg p-4">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <h4 className="text-sm font-semibold text-red-900 dark:text-red-100 mb-1">Delete Account</h4>
               <p className="text-sm text-red-700 dark:text-red-300">
-                Once you delete your account, there is no going back. This will permanently delete your account and all associated data.
+                Permanently delete your account and all associated data. This action cannot be undone.
               </p>
             </div>
             <Link
@@ -293,36 +200,6 @@ export default function AccountSettings() {
           </div>
         </div>
       </SettingsSection>
-
-      {/* Cancel Subscription Modal */}
-      {showCancelModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 shadow-xl">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-              Cancel Subscription
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Are you sure you want to cancel your subscription? You'll continue to have access to {subscription?.tier} features until the end of your current billing period.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowCancelModal(false)}
-                disabled={cancelLoading}
-                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
-              >
-                Keep Subscription
-              </button>
-              <button
-                onClick={handleCancelSubscription}
-                disabled={cancelLoading}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-              >
-                {cancelLoading ? 'Cancelling...' : 'Yes, Cancel'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </SettingsLayout>
   );
 }

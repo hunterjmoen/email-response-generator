@@ -4,6 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { logError } from './logger';
 
 interface RateLimitEntry {
   count: number;
@@ -69,7 +70,7 @@ class RateLimiter {
           });
 
         if (upsertError) {
-          console.error('Rate limit upsert error:', upsertError);
+          logError(upsertError, { context: 'Rate limit upsert' });
           // Fail open - allow request if database error
           return {
             isLimited: false,
@@ -104,7 +105,7 @@ class RateLimiter {
         .eq('key', key);
 
       if (updateError) {
-        console.error('Rate limit update error:', updateError);
+        logError(updateError, { context: 'Rate limit update' });
         // Fail open - allow request if database error
         return {
           isLimited: false,
@@ -119,7 +120,7 @@ class RateLimiter {
         resetTime: new Date(entry.reset_time).getTime(),
       };
     } catch (error) {
-      console.error('Rate limit check error:', error);
+      logError(error, { context: 'Rate limit check' });
       // Fail open - allow request if unexpected error
       return {
         isLimited: false,
@@ -133,21 +134,29 @@ class RateLimiter {
    * Reset rate limit for a specific key
    */
   async reset(key: string): Promise<void> {
-    await supabase
-      .from('rate_limits')
-      .delete()
-      .eq('key', key);
+    try {
+      await supabase
+        .from('rate_limits')
+        .delete()
+        .eq('key', key);
+    } catch (error) {
+      logError(error, { context: 'Rate limit reset' });
+    }
   }
 
   /**
    * Clean up expired entries
    */
   private async cleanup(): Promise<void> {
-    const now = new Date();
-    await supabase
-      .from('rate_limits')
-      .delete()
-      .lt('reset_time', now.toISOString());
+    try {
+      const now = new Date();
+      await supabase
+        .from('rate_limits')
+        .delete()
+        .lt('reset_time', now.toISOString());
+    } catch (error) {
+      logError(error, { context: 'Rate limit cleanup' });
+    }
   }
 
   /**

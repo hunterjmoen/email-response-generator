@@ -19,6 +19,7 @@ export interface User {
     has_used_trial: boolean;
     stripe_customer_id?: string;
     stripe_subscription_id?: string;
+    cancel_at_period_end?: boolean;
   };
   stripe_customer_id?: string;
   preferences: {

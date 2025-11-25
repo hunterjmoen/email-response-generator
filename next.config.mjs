@@ -28,11 +28,28 @@ const nextConfig = {
       ? process.env.ALLOWED_ORIGINS.split(',')
       : [process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'];
 
+    // Security headers applied to all routes
+    const securityHeaders = [
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'X-XSS-Protection', value: '1; mode=block' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      ...(process.env.NODE_ENV === 'production' ? [
+        { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+      ] : []),
+    ];
+
     return [
       {
-        // Apply to all API routes
+        // Apply security headers to all routes
+        source: '/:path*',
+        headers: securityHeaders,
+      },
+      {
+        // Apply CORS headers to API routes
         source: '/api/:path*',
         headers: [
+          ...securityHeaders,
           { key: 'Access-Control-Allow-Credentials', value: 'true' },
           { key: 'Access-Control-Allow-Origin', value: allowedOrigins[0] },
           { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,DELETE,OPTIONS' },

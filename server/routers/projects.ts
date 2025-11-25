@@ -4,21 +4,33 @@ import { projectSchema } from '@freelance-flow/shared';
 import { TRPCError } from '@trpc/server';
 import type { Project } from '@freelance-flow/shared';
 import type { ProjectRow } from '../../types/database';
+import { logError } from '../../utils/logger';
+
+// Pagination schema for list queries
+const paginationSchema = z.object({
+  limit: z.number().min(1).max(100).default(50),
+  offset: z.number().min(0).default(0),
+});
 
 export const projectRouter = router({
   listByClient: protectedProcedure
-    .input(z.object({ clientId: z.string().uuid() }))
+    .input(z.object({
+      clientId: z.string().uuid(),
+      limit: z.number().min(1).max(100).default(50),
+      offset: z.number().min(0).default(0),
+    }))
     .query(async ({ input, ctx }) => {
       try {
-        const { data, error } = await ctx.supabase
+        const { data, error, count } = await ctx.supabase
           .from('projects')
-          .select('*')
+          .select('*', { count: 'exact' })
           .eq('client_id', input.clientId)
           .eq('user_id', ctx.user.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .range(input.offset, input.offset + input.limit - 1);
 
         if (error) {
-          console.error('Error fetching projects:', error);
+          logError(error, { context: 'Fetch projects' });
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: 'Failed to fetch projects',
@@ -39,9 +51,14 @@ export const projectRouter = router({
           updatedAt: row.updated_at,
         }));
 
-        return projects;
+        return {
+          projects,
+          total: count || 0,
+          limit: input.limit,
+          offset: input.offset,
+        };
       } catch (error) {
-        console.error('Error in projects.listByClient:', error);
+        logError(error, { context: 'List projects by client' });
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -53,16 +70,20 @@ export const projectRouter = router({
     }),
 
   list: protectedProcedure
-    .query(async ({ ctx }) => {
+    .input(paginationSchema.optional())
+    .query(async ({ ctx, input }) => {
       try {
-        const { data, error } = await ctx.supabase
+        const { limit, offset } = input || { limit: 50, offset: 0 };
+
+        const { data, error, count } = await ctx.supabase
           .from('projects')
-          .select('*')
+          .select('*', { count: 'exact' })
           .eq('user_id', ctx.user.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1);
 
         if (error) {
-          console.error('Error fetching projects:', error);
+          logError(error, { context: 'Fetch projects' });
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: 'Failed to fetch projects',
@@ -83,9 +104,14 @@ export const projectRouter = router({
           updatedAt: row.updated_at,
         }));
 
-        return projects;
+        return {
+          projects,
+          total: count || 0,
+          limit: input?.limit || 50,
+          offset: input?.offset || 0,
+        };
       } catch (error) {
-        console.error('Error in projects.list:', error);
+        logError(error, { context: 'List projects' });
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -114,7 +140,7 @@ export const projectRouter = router({
               message: 'Project not found',
             });
           }
-          console.error('Error fetching project:', error);
+          logError(error, { context: 'Fetch project' });
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: 'Failed to fetch project',
@@ -137,7 +163,7 @@ export const projectRouter = router({
 
         return project;
       } catch (error) {
-        console.error('Error in projects.getById:', error);
+        logError(error, { context: 'Get project by ID' });
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -182,7 +208,7 @@ export const projectRouter = router({
           .single();
 
         if (error) {
-          console.error('Error creating project:', error);
+          logError(error, { context: 'Create project' });
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: 'Failed to create project',
@@ -205,7 +231,7 @@ export const projectRouter = router({
 
         return project;
       } catch (error) {
-        console.error('Error in projects.create:', error);
+        logError(error, { context: 'Create project' });
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -257,7 +283,7 @@ export const projectRouter = router({
               message: 'Project not found',
             });
           }
-          console.error('Error updating project:', error);
+          logError(error, { context: 'Update project' });
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: 'Failed to update project',
@@ -280,7 +306,7 @@ export const projectRouter = router({
 
         return project;
       } catch (error) {
-        console.error('Error in projects.update:', error);
+        logError(error, { context: 'Update project' });
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -302,7 +328,7 @@ export const projectRouter = router({
           .eq('user_id', ctx.user.id);
 
         if (error) {
-          console.error('Error deleting project:', error);
+          logError(error, { context: 'Delete project' });
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: 'Failed to delete project',
@@ -311,7 +337,7 @@ export const projectRouter = router({
 
         return { success: true };
       } catch (error) {
-        console.error('Error in projects.delete:', error);
+        logError(error, { context: 'Delete project' });
         if (error instanceof TRPCError) {
           throw error;
         }

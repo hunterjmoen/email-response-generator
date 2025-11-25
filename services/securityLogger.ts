@@ -3,6 +3,20 @@
  * Tracks authentication events, security violations, and suspicious activities
  */
 
+import { createClient } from '@supabase/supabase-js';
+
+// Create server-side Supabase client for security logging (uses service role)
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+);
+
 export type SecurityEventType =
   | 'AUTH_LOGIN_SUCCESS'
   | 'AUTH_LOGIN_FAILED'
@@ -264,15 +278,41 @@ class SecurityLogger {
     const events = this.eventBuffer.splice(0);
 
     try {
-      // In a real implementation, you would save these to your database
-      // For now, we'll just log to console in production
-      if (process.env.NODE_ENV === 'production') {
-        console.log(`[SECURITY] Flushing ${events.length} security events to database`);
-        // TODO: Implement database storage
-        // await saveSecurityEventsToDatabase(events);
+      // Transform events to database format
+      const dbEvents = events.map(event => ({
+        event_type: event.eventType,
+        user_id: event.userId || null,
+        user_email: event.userEmail || null,
+        client_ip: event.clientIP,
+        user_agent: event.userAgent || null,
+        severity: event.severity,
+        message: event.message,
+        metadata: event.metadata || {},
+        session_id: event.sessionId || null,
+        endpoint: event.endpoint || null,
+        success: event.success,
+        created_at: event.timestamp.toISOString(),
+      }));
+
+      // Insert events into database
+      const { error } = await supabaseAdmin
+        .from('security_events')
+        .insert(dbEvents);
+
+      if (error) {
+        // Log error but don't crash - security logging should not affect application
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Failed to flush security events to database:', error);
+        }
+        // Re-add events to buffer for retry (up to a limit)
+        if (this.eventBuffer.length < 1000) {
+          this.eventBuffer.unshift(...events);
+        }
       }
     } catch (error) {
-      console.error('Failed to flush security events to database:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to flush security events to database:', error);
+      }
       // Re-add events to buffer for retry (up to a limit)
       if (this.eventBuffer.length < 1000) {
         this.eventBuffer.unshift(...events);
@@ -287,10 +327,25 @@ class SecurityLogger {
     if (!this.config.webhookUrl) return;
 
     try {
-      // TODO: Implement webhook notifications
-      console.log(`[SECURITY] Would send webhook for ${event.eventType}:`, event.message);
+      await fetch(this.config.webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eventType: event.eventType,
+          severity: event.severity,
+          message: event.message,
+          timestamp: event.timestamp.toISOString(),
+          clientIP: event.clientIP,
+          userEmail: event.userEmail,
+          metadata: event.metadata,
+        }),
+      });
     } catch (error) {
-      console.error('Failed to send security webhook notification:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to send security webhook notification:', error);
+      }
     }
   }
 

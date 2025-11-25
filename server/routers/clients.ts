@@ -4,19 +4,30 @@ import { clientSchema } from '@freelance-flow/shared';
 import { TRPCError } from '@trpc/server';
 import type { Client } from '@freelance-flow/shared';
 import type { ClientRow } from '../../types/database';
+import { logError } from '../../utils/logger';
+
+// Pagination schema for list queries
+const paginationSchema = z.object({
+  limit: z.number().min(1).max(100).default(50),
+  offset: z.number().min(0).default(0),
+});
 
 export const clientRouter = router({
   list: protectedProcedure
-    .query(async ({ ctx }) => {
+    .input(paginationSchema.optional())
+    .query(async ({ ctx, input }) => {
       try {
-        const { data, error } = await ctx.supabase
+        const { limit, offset } = input || { limit: 50, offset: 0 };
+
+        const { data, error, count } = await ctx.supabase
           .from('clients')
-          .select('*, projects(count)')
+          .select('*, projects(count)', { count: 'exact' })
           .eq('user_id', ctx.user.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1);
 
         if (error) {
-          console.error('Error fetching clients:', error);
+          logError(error, { context: 'Fetch clients' });
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: 'Failed to fetch clients',
@@ -44,9 +55,14 @@ export const clientRouter = router({
           projectCount: row.projects?.[0]?.count || 0,
         }));
 
-        return clients;
+        return {
+          clients,
+          total: count || 0,
+          limit: input?.limit || 50,
+          offset: input?.offset || 0,
+        };
       } catch (error) {
-        console.error('Error in clients.list:', error);
+        logError(error, { context: 'List clients' });
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -75,7 +91,7 @@ export const clientRouter = router({
               message: 'Client not found',
             });
           }
-          console.error('Error fetching client:', error);
+          logError(error, { context: 'Fetch client by ID' });
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: 'Failed to fetch client',
@@ -104,7 +120,7 @@ export const clientRouter = router({
 
         return client;
       } catch (error) {
-        console.error('Error in clients.getById:', error);
+        logError(error, { context: 'Get client by ID' });
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -140,7 +156,7 @@ export const clientRouter = router({
           .single();
 
         if (error) {
-          console.error('Error creating client:', error);
+          logError(error, { context: 'Create client' });
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: 'Failed to create client',
@@ -169,7 +185,7 @@ export const clientRouter = router({
 
         return client;
       } catch (error) {
-        console.error('Error in clients.create:', error);
+        logError(error, { context: 'Create client' });
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -212,7 +228,7 @@ export const clientRouter = router({
               message: 'Client not found',
             });
           }
-          console.error('Error updating client:', error);
+          logError(error, { context: 'Update client' });
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: 'Failed to update client',
@@ -241,7 +257,7 @@ export const clientRouter = router({
 
         return client;
       } catch (error) {
-        console.error('Error in clients.update:', error);
+        logError(error, { context: 'Update client' });
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -263,7 +279,7 @@ export const clientRouter = router({
           .eq('user_id', ctx.user.id);
 
         if (error) {
-          console.error('Error deleting client:', error);
+          logError(error, { context: 'Delete client' });
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: 'Failed to delete client',
@@ -272,7 +288,7 @@ export const clientRouter = router({
 
         return { success: true };
       } catch (error) {
-        console.error('Error in clients.delete:', error);
+        logError(error, { context: 'Delete client' });
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -294,7 +310,7 @@ export const clientRouter = router({
           .eq('user_id', ctx.user.id);
 
         if (error) {
-          console.error('Error bulk deleting clients:', error);
+          logError(error, { context: 'Bulk delete clients' });
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: 'Failed to delete clients',
@@ -303,7 +319,7 @@ export const clientRouter = router({
 
         return { success: true, count: input.ids.length };
       } catch (error) {
-        console.error('Error in clients.bulkDelete:', error);
+        logError(error, { context: 'Bulk delete clients' });
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -328,7 +344,7 @@ export const clientRouter = router({
           .eq('user_id', ctx.user.id);
 
         if (error) {
-          console.error('Error bulk updating stage:', error);
+          logError(error, { context: 'Bulk update stage' });
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: 'Failed to update clients',
@@ -337,7 +353,7 @@ export const clientRouter = router({
 
         return { success: true, count: input.ids.length };
       } catch (error) {
-        console.error('Error in clients.bulkUpdateStage:', error);
+        logError(error, { context: 'Bulk update stage' });
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -397,7 +413,7 @@ export const clientRouter = router({
 
         return { success: true, count: input.ids.length };
       } catch (error) {
-        console.error('Error in clients.bulkUpdateTags:', error);
+        logError(error, { context: 'Bulk update tags' });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to update tags',
@@ -423,7 +439,7 @@ export const clientRouter = router({
 
         return Array.from(allTags).sort();
       } catch (error) {
-        console.error('Error in clients.getAllTags:', error);
+        logError(error, { context: 'Get all tags' });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to fetch tags',
