@@ -25,31 +25,38 @@ export const config = {
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-// Helper function to determine tier from subscription
+// Helper function to determine tier and billing interval from subscription
 function getTierFromSubscription(subscription: Stripe.Subscription): {
   tier: 'free' | 'professional' | 'premium';
   monthlyLimit: number;
+  billing_interval: 'monthly' | 'annual';
 } {
   const priceId = subscription.items.data[0]?.price.id;
-  
+
   const professionalMonthlyPriceId = process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID;
   const professionalAnnualPriceId = process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID;
   const premiumMonthlyPriceId = process.env.NEXT_PUBLIC_STRIPE_PREMIUM_MONTHLY_PRICE_ID;
   const premiumAnnualPriceId = process.env.NEXT_PUBLIC_STRIPE_PREMIUM_ANNUAL_PRICE_ID;
 
   // Check if it's a professional tier subscription
-  if (priceId === professionalMonthlyPriceId || priceId === professionalAnnualPriceId) {
-    return { tier: 'professional', monthlyLimit: 75 };
+  if (priceId === professionalMonthlyPriceId) {
+    return { tier: 'professional', monthlyLimit: 75, billing_interval: 'monthly' };
+  }
+  if (priceId === professionalAnnualPriceId) {
+    return { tier: 'professional', monthlyLimit: 75, billing_interval: 'annual' };
   }
 
   // Check if it's a premium tier subscription
-  if (priceId === premiumMonthlyPriceId || priceId === premiumAnnualPriceId) {
-    return { tier: 'premium', monthlyLimit: 999999 };
+  if (priceId === premiumMonthlyPriceId) {
+    return { tier: 'premium', monthlyLimit: 999999, billing_interval: 'monthly' };
+  }
+  if (priceId === premiumAnnualPriceId) {
+    return { tier: 'premium', monthlyLimit: 999999, billing_interval: 'annual' };
   }
 
-  // Default to premium for backward compatibility with existing subscriptions
+  // Default to premium monthly for backward compatibility with existing subscriptions
   console.warn(`Unknown price ID: ${priceId}, defaulting to premium tier`);
-  return { tier: 'premium', monthlyLimit: 999999 };
+  return { tier: 'premium', monthlyLimit: 999999, billing_interval: 'monthly' };
 }
 
 export default async function handler(
@@ -145,11 +152,21 @@ async function handleCheckoutSessionCompleted(
       session.subscription as string
     );
 
-    const { tier, monthlyLimit } = getTierFromSubscription(subscription);
+    const { tier, monthlyLimit, billing_interval } = getTierFromSubscription(subscription);
 
     // Extract IDs as strings (not full objects)
     const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
     const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id;
+
+    // Check if this is a trial subscription
+    const isTrialing = subscription.status === 'trialing';
+
+    // Fetch existing subscription to preserve has_used_trial if already true
+    const { data: existingSubscription } = await supabaseAdmin
+      .from('subscriptions')
+      .select('has_used_trial')
+      .eq('user_id', userId)
+      .single();
 
     // Update subscription in database
     const { error } = await supabaseAdmin
@@ -158,8 +175,10 @@ async function handleCheckoutSessionCompleted(
         stripe_customer_id: customerId,
         stripe_subscription_id: subscriptionId,
         tier,
-        status: 'active',
+        status: subscription.status,
         monthly_limit: monthlyLimit,
+        billing_interval,
+        has_used_trial: isTrialing || existingSubscription?.has_used_trial || false,
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId);
@@ -186,10 +205,13 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   }
 
   try {
-    const { tier, monthlyLimit } = getTierFromSubscription(subscription);
+    const { tier, monthlyLimit, billing_interval } = getTierFromSubscription(subscription);
 
     // Ensure we're storing the subscription ID as a string
     const subscriptionId = typeof subscription.id === 'string' ? subscription.id : String(subscription.id);
+
+    // Check if this is a trial subscription
+    const isTrialing = subscription.status === 'trialing';
 
     const { error } = await supabaseAdmin
       .from('subscriptions')
@@ -198,6 +220,8 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
         status: subscription.status,
         tier,
         monthly_limit: monthlyLimit,
+        billing_interval,
+        has_used_trial: isTrialing,
         usage_reset_date: new Date(((subscription as any).current_period_end || 0) * 1000).toISOString(),
         updated_at: new Date().toISOString(),
       })
@@ -216,17 +240,19 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
-  console.log('Subscription updated:', subscription.id);
+  console.log('[Webhook] Subscription updated:', subscription.id);
 
   const userId = subscription.metadata?.userId;
   if (!userId) {
-    console.error('No userId in subscription metadata');
+    console.error('[Webhook Error] No userId in subscription metadata for subscription:', subscription.id);
     return;
   }
 
   try {
-    // Get the tier and limit from the subscription (in case it changed)
-    const { tier, monthlyLimit } = getTierFromSubscription(subscription);
+    // Get the tier, limit, and billing interval from the subscription (in case it changed)
+    const { tier, monthlyLimit, billing_interval } = getTierFromSubscription(subscription);
+
+    console.log(`[Webhook] Updating user ${userId} to tier: ${tier}, status: ${subscription.status}, billing: ${billing_interval}`);
 
     const { error } = await supabaseAdmin
       .from('subscriptions')
@@ -234,33 +260,45 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         status: subscription.status,
         tier,
         monthly_limit: monthlyLimit,
+        billing_interval,
         usage_reset_date: new Date(((subscription as any).current_period_end || 0) * 1000).toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId);
 
     if (error) {
-      console.error('Error updating subscription:', error);
+      console.error('[Webhook Error] Failed to update subscription in database:', {
+        userId,
+        subscriptionId: subscription.id,
+        error: error.message,
+        details: error,
+      });
       throw error;
     }
 
-    console.log(`Subscription updated for user ${userId}, tier: ${tier}, status: ${subscription.status}`);
+    console.log(`[Webhook Success] Subscription updated for user ${userId}, tier: ${tier}, status: ${subscription.status}`);
   } catch (error) {
-    console.error('Failed to update subscription in database:', error);
+    console.error('[Webhook Error] Exception in handleSubscriptionUpdated:', {
+      userId,
+      subscriptionId: subscription.id,
+      error,
+    });
     throw error;
   }
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
-  console.log('Subscription deleted:', subscription.id);
+  console.log('[Webhook] Subscription deleted:', subscription.id);
 
   const userId = subscription.metadata?.userId;
   if (!userId) {
-    console.error('No userId in subscription metadata');
+    console.error('[Webhook Error] No userId in subscription metadata for subscription:', subscription.id);
     return;
   }
 
   try {
+    console.log(`[Webhook] Cancelling subscription for user ${userId}, resetting to free tier`);
+
     const { error } = await supabaseAdmin
       .from('subscriptions')
       .update({
@@ -268,18 +306,28 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
         tier: 'free',
         monthly_limit: 10,
         stripe_subscription_id: null,
+        billing_interval: null,
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId);
 
     if (error) {
-      console.error('Error cancelling subscription:', error);
+      console.error('[Webhook Error] Failed to cancel subscription in database:', {
+        userId,
+        subscriptionId: subscription.id,
+        error: error.message,
+        details: error,
+      });
       throw error;
     }
 
-    console.log(`Subscription cancelled for user ${userId}`);
+    console.log(`[Webhook Success] Subscription cancelled for user ${userId}, reset to free tier`);
   } catch (error) {
-    console.error('Failed to cancel subscription in database:', error);
+    console.error('[Webhook Error] Exception in handleSubscriptionDeleted:', {
+      userId,
+      subscriptionId: subscription.id,
+      error,
+    });
     throw error;
   }
 }

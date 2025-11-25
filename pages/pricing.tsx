@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import toast, { Toaster } from 'react-hot-toast';
 import { LoginModal } from '../components/auth/LoginModal';
 import { UserProfileMenu } from '../components/UserProfileMenu';
 import { trpc } from '../utils/trpc';
@@ -25,7 +26,7 @@ export default function Pricing() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<PlanChangeAction | null>(null);
-  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const { user, isAuthenticated, isLoading: authLoading, refreshSubscription } = useAuthStore();
   const createPortalSession = trpc.stripe.createPortalSession.useMutation();
   const cancelSubscription = trpc.stripe.cancelSubscription.useMutation();
 
@@ -54,6 +55,7 @@ export default function Pricing() {
 
   const createSubscriptionSession = trpc.stripe.createSubscriptionSession.useMutation();
   const updateSubscription = trpc.stripe.updateSubscription.useMutation();
+  const switchBillingCycle = trpc.stripe.switchBillingCycle.useMutation();
 
   // Helper function to get usage percentage
   const getUsagePercentage = () => {
@@ -86,7 +88,36 @@ export default function Pricing() {
 
   // Helper function to check if tier is current
   const isCurrentTier = (tier: 'free' | 'professional' | 'premium') => {
-    return user?.subscription?.tier === tier && user.subscription.status === 'active';
+    return user?.subscription?.tier === tier &&
+           (user.subscription.status === 'active' || user.subscription.status === 'trialing');
+  };
+
+  // Helper function to check if this is the exact current plan (tier + billing interval)
+  const isExactCurrentPlan = (tier: 'free' | 'professional' | 'premium', interval?: 'monthly' | 'annual') => {
+    if (!user?.subscription) return false;
+    const tierMatches = user.subscription.tier === tier;
+    const statusActive = user.subscription.status === 'active' || user.subscription.status === 'trialing';
+
+    // For free tier, ignore billing interval
+    if (tier === 'free') {
+      return tierMatches && statusActive;
+    }
+
+    // For paid tiers, check both tier and billing interval
+    const intervalMatches = user.subscription.billing_interval === interval;
+    return tierMatches && statusActive && intervalMatches;
+  };
+
+  // Helper function to check if user can switch billing cycles (same tier, different interval)
+  const canSwitchBillingCycle = (tier: 'free' | 'professional' | 'premium', interval: 'monthly' | 'annual') => {
+    if (!user?.subscription) return false;
+    if (tier === 'free') return false; // Free tier has no billing
+
+    const onSameTier = user.subscription.tier === tier;
+    const differentInterval = user.subscription.billing_interval !== interval;
+    const statusActive = user.subscription.status === 'active' || user.subscription.status === 'trialing';
+
+    return onSameTier && differentInterval && statusActive;
   };
 
   // Handle opening billing portal
@@ -106,12 +137,12 @@ export default function Pricing() {
       }
     } catch (error) {
       console.error('Failed to open billing portal:', error);
-      alert('Failed to open billing portal. Please try again.');
+      toast.error('Failed to open billing portal. Please try again.');
       setPortalLoading(false);
     }
   };
 
-  const handleProfessionalClick = () => {
+  const handleProfessionalClick = async () => {
     if (!user) {
       // Store the billing period preference before login
       localStorage.setItem('pendingCheckout', isAnnual ? 'professional-annual' : 'professional-monthly');
@@ -122,8 +153,28 @@ export default function Pricing() {
     const priceId = isAnnual ? PROFESSIONAL_ANNUAL_PRICE_ID : PROFESSIONAL_MONTHLY_PRICE_ID;
     const price = isAnnual ? professionalAnnualPrice : professionalMonthlyPrice;
     const currentTier = user.subscription?.tier || 'free';
+    const targetInterval = isAnnual ? 'annual' : 'monthly';
 
-    // Determine action type
+    // Check if this is a billing cycle switch (same tier, different interval)
+    if (canSwitchBillingCycle('professional', targetInterval)) {
+      setLoading(true);
+      try {
+        await switchBillingCycle.mutateAsync({
+          subscriptionId: user.subscription!.stripe_subscription_id!,
+          newPriceId: priceId,
+        });
+        await refreshSubscription();
+        toast.success(`Successfully switched to ${isAnnual ? 'annual' : 'monthly'} billing!`);
+      } catch (error) {
+        console.error('Failed to switch billing cycle:', error);
+        toast.error('Failed to switch billing cycle. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Determine action type for tier changes
     let actionType: 'upgrade' | 'downgrade' | 'switch' = 'upgrade';
     if (currentTier === 'premium') actionType = 'downgrade';
     else if (currentTier === 'professional') actionType = 'switch';
@@ -133,12 +184,12 @@ export default function Pricing() {
       targetTier: 'professional',
       targetPriceId: priceId,
       targetPrice: price,
-      billingCycle: isAnnual ? 'annual' : 'monthly',
+      billingCycle: targetInterval,
     });
     setShowConfirmModal(true);
   };
 
-  const handlePremiumClick = () => {
+  const handlePremiumClick = async () => {
     if (!user) {
       // Store the billing period preference before login
       localStorage.setItem('pendingCheckout', isAnnual ? 'premium-annual' : 'premium-monthly');
@@ -149,8 +200,28 @@ export default function Pricing() {
     const priceId = isAnnual ? PREMIUM_ANNUAL_PRICE_ID : PREMIUM_MONTHLY_PRICE_ID;
     const price = isAnnual ? premiumAnnualPrice : premiumMonthlyPrice;
     const currentTier = user.subscription?.tier || 'free';
+    const targetInterval = isAnnual ? 'annual' : 'monthly';
 
-    // Determine action type
+    // Check if this is a billing cycle switch (same tier, different interval)
+    if (canSwitchBillingCycle('premium', targetInterval)) {
+      setLoading(true);
+      try {
+        await switchBillingCycle.mutateAsync({
+          subscriptionId: user.subscription!.stripe_subscription_id!,
+          newPriceId: priceId,
+        });
+        await refreshSubscription();
+        toast.success(`Successfully switched to ${isAnnual ? 'annual' : 'monthly'} billing!`);
+      } catch (error) {
+        console.error('Failed to switch billing cycle:', error);
+        toast.error('Failed to switch billing cycle. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Determine action type for tier changes
     let actionType: 'upgrade' | 'downgrade' | 'switch' = 'upgrade';
     if (currentTier === 'premium') actionType = 'switch';
 
@@ -159,7 +230,7 @@ export default function Pricing() {
       targetTier: 'premium',
       targetPriceId: priceId,
       targetPrice: price,
-      billingCycle: isAnnual ? 'annual' : 'monthly',
+      billingCycle: targetInterval,
     });
     setShowConfirmModal(true);
   };
@@ -216,7 +287,7 @@ export default function Pricing() {
             }
           } catch (error: any) {
             console.error('Checkout error:', error);
-            alert(`Failed to start checkout: ${error.message || 'Please try again.'}`);
+            toast.error(`Failed to start checkout: ${error.message || 'Please try again.'}`);
             setLoading(false);
           }
         })();
@@ -245,6 +316,10 @@ export default function Pricing() {
         });
 
         console.log('[Pricing] Subscription cancelled successfully');
+
+        // Refresh auth store to immediately show updated status
+        await refreshSubscription();
+
         setShowConfirmModal(false);
         setPendingAction(null);
         setLoading(false);
@@ -261,11 +336,13 @@ export default function Pricing() {
         });
 
         console.log('[Pricing] Subscription updated successfully');
+
+        // Refresh auth store to immediately show new subscription
+        await refreshSubscription();
+
         setShowConfirmModal(false);
         setPendingAction(null);
         setLoading(false);
-        // Refresh current page data by re-navigating
-        router.replace(router.asPath);
       } else {
         // Create new subscription for free tier users
         console.log('[Pricing] Creating new subscription for price:', pendingAction.targetPriceId);
@@ -284,7 +361,7 @@ export default function Pricing() {
     } catch (error: any) {
       console.error('[Pricing] Plan change error:', error);
       const errorMessage = error?.message || 'Failed to update subscription. Please try again.';
-      alert(`Error: ${errorMessage}\n\nPlease contact support if this persists.`);
+      toast.error(`Error: ${errorMessage}. Please contact support if this persists.`);
       setLoading(false);
       setShowConfirmModal(false);
       setPendingAction(null);
@@ -293,6 +370,7 @@ export default function Pricing() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors">
+      <Toaster position="top-center" />
       <header className="border-b border-gray-200 dark:border-gray-800 transition-colors">
         <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
@@ -355,7 +433,10 @@ export default function Pricing() {
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                   </svg>
                   <span className="font-medium">
-                    You're currently on <span className="font-bold capitalize">{user.subscription.tier}</span>
+                    You're currently on the <span className="font-bold capitalize">
+                      {user.subscription.tier}
+                      {user.subscription.billing_interval && ` (${user.subscription.billing_interval.charAt(0).toUpperCase() + user.subscription.billing_interval.slice(1)})`}
+                    </span> plan
                     {user.subscription.billingCycle && (
                       <> • Renews {new Date(user.subscription.billingCycle).toLocaleDateString()}</>
                     )}
@@ -531,13 +612,30 @@ export default function Pricing() {
 
               {isCurrentTier('professional') ? (
                 <>
-                  <button
-                    onClick={handleManageSubscription}
-                    disabled={portalLoading}
-                    className="w-full bg-green-600 dark:bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold mb-4 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  >
-                    {portalLoading ? 'Opening...' : 'Manage Subscription'}
-                  </button>
+                  {isExactCurrentPlan('professional', isAnnual ? 'annual' : 'monthly') ? (
+                    <button
+                      disabled
+                      className="w-full bg-gray-400 dark:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold mb-4 transition-colors cursor-not-allowed"
+                    >
+                      Current Plan
+                    </button>
+                  ) : canSwitchBillingCycle('professional', isAnnual ? 'annual' : 'monthly') ? (
+                    <button
+                      onClick={handleProfessionalClick}
+                      disabled={loading}
+                      className="w-full bg-green-600 dark:bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold mb-4 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Processing...' : `Switch to ${isAnnual ? 'Annual' : 'Monthly'}`}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleManageSubscription}
+                      disabled={portalLoading}
+                      className="w-full bg-green-600 dark:bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold mb-4 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      {portalLoading ? 'Opening...' : 'Manage Subscription'}
+                    </button>
+                  )}
 
                   {/* Usage Statistics */}
                   <div className="bg-white dark:bg-gray-700 rounded-lg p-4 mb-8">
@@ -562,9 +660,9 @@ export default function Pricing() {
                 >
                   {loading ? 'Processing...' :
                    !user ? 'Sign Up for Professional' :
-                   !hasSubscription() ? 'Start Free Trial' :
+                   user.subscription?.tier === 'free' && !user.subscription?.has_used_trial ? 'Start Free Trial' :
+                   user.subscription?.tier === 'free' && user.subscription?.has_used_trial ? 'Subscribe Now' :
                    user.subscription?.tier === 'premium' ? '↓ Downgrade to Professional' :
-                   user.subscription?.tier === 'professional' ? 'Switch Billing' :
                    '↑ Upgrade to Professional'}
                 </button>
               )}
@@ -656,13 +754,30 @@ export default function Pricing() {
 
               {isCurrentTier('premium') ? (
                 <>
-                  <button
-                    onClick={handleManageSubscription}
-                    disabled={portalLoading}
-                    className="w-full bg-gray-900 dark:bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 font-semibold mb-4 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  >
-                    {portalLoading ? 'Opening...' : 'Manage Subscription'}
-                  </button>
+                  {isExactCurrentPlan('premium', isAnnual ? 'annual' : 'monthly') ? (
+                    <button
+                      disabled
+                      className="w-full bg-gray-400 dark:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold mb-4 transition-colors cursor-not-allowed"
+                    >
+                      Current Plan
+                    </button>
+                  ) : canSwitchBillingCycle('premium', isAnnual ? 'annual' : 'monthly') ? (
+                    <button
+                      onClick={handlePremiumClick}
+                      disabled={loading}
+                      className="w-full bg-gray-900 dark:bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 font-semibold mb-4 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Processing...' : `Switch to ${isAnnual ? 'Annual' : 'Monthly'}`}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleManageSubscription}
+                      disabled={portalLoading}
+                      className="w-full bg-gray-900 dark:bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 font-semibold mb-4 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      {portalLoading ? 'Opening...' : 'Manage Subscription'}
+                    </button>
+                  )}
 
                   {/* Usage Statistics */}
                   <div className="bg-white dark:bg-gray-700 rounded-lg p-4 mb-8">
@@ -681,8 +796,8 @@ export default function Pricing() {
                 >
                   {loading ? 'Processing...' :
                    !user ? 'Sign Up for Premium' :
-                   !hasSubscription() ? 'Start Free Trial' :
-                   user.subscription?.tier === 'premium' ? 'Switch Billing' :
+                   user.subscription?.tier === 'free' && !user.subscription?.has_used_trial ? 'Start Free Trial' :
+                   user.subscription?.tier === 'free' && user.subscription?.has_used_trial ? 'Subscribe Now' :
                    '↑ Upgrade to Premium'}
                 </button>
               )}

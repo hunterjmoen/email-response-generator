@@ -11,10 +11,12 @@ export interface User {
   };
   subscription: {
     tier: 'free' | 'professional' | 'premium';
-    status: 'active' | 'cancelled' | 'expired';
+    status: 'active' | 'cancelled' | 'expired' | 'past_due' | 'trialing';
     usageCount: number;
     monthlyLimit: number;
     billingCycle?: string;
+    billing_interval?: 'monthly' | 'annual';
+    has_used_trial: boolean;
     stripe_customer_id?: string;
     stripe_subscription_id?: string;
   };

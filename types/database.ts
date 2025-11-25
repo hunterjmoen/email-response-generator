@@ -50,14 +50,16 @@ export interface UserRow {
 }
 
 export interface SubscriptionRow {
-  id: string;
   user_id: string;
-  tier: 'free' | 'pro' | 'enterprise';
-  status: 'active' | 'inactive' | 'cancelled';
+  tier: 'free' | 'professional' | 'premium';
+  status: 'active' | 'cancelled' | 'past_due' | 'expired' | 'trialing';
+  stripe_customer_id?: string | null;
+  stripe_subscription_id?: string | null;
   usage_count: number;
   monthly_limit: number;
   usage_reset_date?: string | null;
-  stripe_subscription_id?: string | null;
+  billing_interval?: 'monthly' | 'annual' | null;
+  has_used_trial: boolean;
   created_at: string;
   updated_at: string;
 }

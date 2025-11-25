@@ -8,7 +8,7 @@ import { trpc } from '../../utils/trpc';
 
 export default function AccountSettings() {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const { user, isAuthenticated, isLoading: authLoading, refreshSubscription } = useAuthStore();
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const cancelSubscription = trpc.stripe.cancelSubscription.useMutation();
@@ -33,8 +33,8 @@ export default function AccountSettings() {
       alert('Your subscription will be cancelled at the end of the billing period. You will retain access until then.');
       setShowCancelModal(false);
 
-      // Refresh the page to show updated subscription status
-      router.reload();
+      // Refresh auth store to show updated subscription status
+      await refreshSubscription();
     } catch (error) {
       console.error('Failed to cancel subscription:', error);
       alert('Failed to cancel subscription. Please try again or contact support.');
@@ -84,7 +84,8 @@ export default function AccountSettings() {
             <div>
               <div className="flex items-center gap-3">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 capitalize">
-                  {subscription?.tier || 'Free'} Plan
+                  {subscription?.tier || 'Free'}
+                  {subscription?.billing_interval && ` (${subscription.billing_interval.charAt(0).toUpperCase() + subscription.billing_interval.slice(1)})`} Plan
                 </h3>
                 {isPremium && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-600 text-white">

@@ -2,6 +2,50 @@ import { z } from 'zod';
 import { router, protectedProcedure } from '../trpc';
 import { stripe } from '../lib/stripe';
 import { TRPCError } from '@trpc/server';
+import type Stripe from 'stripe';
+
+// Helper function to determine tier and billing interval from subscription
+function getTierFromSubscription(subscription: Stripe.Subscription): {
+  tier: 'free' | 'professional' | 'premium';
+  monthlyLimit: number;
+  billing_interval: 'monthly' | 'annual';
+} {
+  // Get price ID - handle both string and object formats
+  const priceItem = subscription.items.data[0]?.price;
+  const priceId = typeof priceItem === 'string' ? priceItem : priceItem?.id;
+
+  console.log('[getTierFromSubscription] Price ID:', priceId);
+
+  if (!priceId) {
+    console.warn('[getTierFromSubscription] No price ID found in subscription, defaulting to premium tier');
+    return { tier: 'premium', monthlyLimit: 999999, billing_interval: 'monthly' };
+  }
+
+  const professionalMonthlyPriceId = process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID;
+  const professionalAnnualPriceId = process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID;
+  const premiumMonthlyPriceId = process.env.NEXT_PUBLIC_STRIPE_PREMIUM_MONTHLY_PRICE_ID;
+  const premiumAnnualPriceId = process.env.NEXT_PUBLIC_STRIPE_PREMIUM_ANNUAL_PRICE_ID;
+
+  // Check if it's a professional tier subscription
+  if (priceId === professionalMonthlyPriceId) {
+    return { tier: 'professional', monthlyLimit: 75, billing_interval: 'monthly' };
+  }
+  if (priceId === professionalAnnualPriceId) {
+    return { tier: 'professional', monthlyLimit: 75, billing_interval: 'annual' };
+  }
+
+  // Check if it's a premium tier subscription
+  if (priceId === premiumMonthlyPriceId) {
+    return { tier: 'premium', monthlyLimit: 999999, billing_interval: 'monthly' };
+  }
+  if (priceId === premiumAnnualPriceId) {
+    return { tier: 'premium', monthlyLimit: 999999, billing_interval: 'annual' };
+  }
+
+  // Default to premium monthly for backward compatibility with existing subscriptions
+  console.warn(`Unknown price ID: ${priceId}, defaulting to premium tier`);
+  return { tier: 'premium', monthlyLimit: 999999, billing_interval: 'monthly' };
+}
 
 export const stripeRouter = router({
   /**
@@ -277,7 +321,7 @@ export const stripeRouter = router({
         cancelAtPeriodEnd: z.boolean().default(true),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       try {
         const subscription = await stripe.subscriptions.update(
           input.subscriptionId,
@@ -285,6 +329,24 @@ export const stripeRouter = router({
             cancel_at_period_end: input.cancelAtPeriodEnd,
           }
         );
+
+        // Immediately update the database (optimistic update)
+        // Note: Subscription stays active until period end when cancelAtPeriodEnd is true
+        // The webhook will handle the final transition to 'cancelled' when the subscription actually ends
+        if (subscription.cancel_at_period_end) {
+          const { error: dbError } = await ctx.supabase
+            .from('subscriptions')
+            .update({
+              status: 'active', // Still active until period ends
+              updated_at: new Date().toISOString(),
+            })
+            .eq('user_id', ctx.user.id);
+
+          if (dbError) {
+            console.error('Failed to update database after subscription cancellation:', dbError);
+            // Don't throw - webhook will reconcile later
+          }
+        }
 
         return subscription;
       } catch (error) {
@@ -306,10 +368,13 @@ export const stripeRouter = router({
         newPriceId: z.string(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       try {
+        console.log('[updateSubscription] Starting update:', { subscriptionId: input.subscriptionId, newPriceId: input.newPriceId });
+
         // Get the current subscription
         const subscription = await stripe.subscriptions.retrieve(input.subscriptionId);
+        console.log('[updateSubscription] Current subscription retrieved');
 
         // Update the subscription with the new price
         const updatedSubscription = await stripe.subscriptions.update(
@@ -324,13 +389,111 @@ export const stripeRouter = router({
             proration_behavior: 'create_prorations',
           }
         );
+        console.log('[updateSubscription] Stripe subscription updated successfully');
+
+        // Immediately update the database (optimistic update)
+        // Webhook will confirm and reconcile later
+        const { tier, monthlyLimit, billing_interval } = getTierFromSubscription(updatedSubscription);
+        const nextBillingDate = (updatedSubscription as any).current_period_end
+          ? new Date(((updatedSubscription as any).current_period_end || 0) * 1000).toISOString()
+          : new Date().toISOString();
+
+        console.log('[updateSubscription] Updating database:', { tier, monthlyLimit, billing_interval, userId: ctx.user.id });
+
+        const { error: dbError } = await ctx.supabase
+          .from('subscriptions')
+          .update({
+            tier,
+            monthly_limit: monthlyLimit,
+            billing_interval,
+            status: updatedSubscription.status as 'active' | 'cancelled' | 'past_due' | 'expired' | 'trialing',
+            usage_reset_date: nextBillingDate,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', ctx.user.id);
+
+        if (dbError) {
+          console.error('[updateSubscription] Database update error:', dbError);
+          // Don't throw - webhook will reconcile later
+        } else {
+          console.log('[updateSubscription] Database updated successfully');
+        }
 
         return updatedSubscription;
-      } catch (error) {
-        console.error('Failed to update subscription:', error);
+      } catch (error: any) {
+        console.error('[updateSubscription] Error:', error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to update subscription',
+          message: `Failed to update subscription: ${error?.message || 'Unknown error'}`,
+        });
+      }
+    }),
+
+  /**
+   * Switch billing cycle (monthly <-> annual) for same tier
+   */
+  switchBillingCycle: protectedProcedure
+    .input(
+      z.object({
+        subscriptionId: z.string(),
+        newPriceId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        console.log('[switchBillingCycle] Starting switch:', { subscriptionId: input.subscriptionId, newPriceId: input.newPriceId });
+
+        // Get the current subscription
+        const subscription = await stripe.subscriptions.retrieve(input.subscriptionId);
+        console.log('[switchBillingCycle] Current subscription retrieved');
+
+        // Update the subscription with the new billing cycle
+        const updatedSubscription = await stripe.subscriptions.update(
+          input.subscriptionId,
+          {
+            items: [
+              {
+                id: subscription.items.data[0].id,
+                price: input.newPriceId,
+              },
+            ],
+            proration_behavior: 'create_prorations',
+          }
+        );
+        console.log('[switchBillingCycle] Stripe subscription updated successfully');
+
+        // Update database with new billing interval
+        const { tier, monthlyLimit, billing_interval } = getTierFromSubscription(updatedSubscription);
+        const nextBillingDate = (updatedSubscription as any).current_period_end
+          ? new Date(((updatedSubscription as any).current_period_end || 0) * 1000).toISOString()
+          : new Date().toISOString();
+
+        console.log('[switchBillingCycle] Updating database:', { tier, billing_interval, userId: ctx.user.id });
+
+        const { error: dbError } = await ctx.supabase
+          .from('subscriptions')
+          .update({
+            tier,
+            monthly_limit: monthlyLimit,
+            billing_interval,
+            status: updatedSubscription.status as 'active' | 'cancelled' | 'past_due' | 'expired' | 'trialing',
+            usage_reset_date: nextBillingDate,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', ctx.user.id);
+
+        if (dbError) {
+          console.error('[switchBillingCycle] Database update error:', dbError);
+        } else {
+          console.log('[switchBillingCycle] Database updated successfully');
+        }
+
+        return updatedSubscription;
+      } catch (error: any) {
+        console.error('[switchBillingCycle] Error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to switch billing cycle: ${error?.message || 'Unknown error'}`,
         });
       }
     }),

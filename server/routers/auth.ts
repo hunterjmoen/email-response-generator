@@ -140,6 +140,7 @@ export const authRouter = router({
             status: 'active',
             usageCount: 0,
             monthlyLimit: 10,
+            has_used_trial: false,
           },
           preferences: userData.preferences,
           createdAt: userData.created_at,
@@ -266,7 +267,7 @@ export const authRouter = router({
         // Fetch subscription separately for better performance
         const { data: subscriptionData } = await supabaseAdmin
           .from('subscriptions')
-          .select('tier, status, usage_count, monthly_limit, usage_reset_date')
+          .select('tier, status, usage_count, monthly_limit, usage_reset_date, billing_interval, has_used_trial')
           .eq('user_id', data.user.id)
           .single();
 
@@ -283,6 +284,8 @@ export const authRouter = router({
             usageCount: subscriptionData?.usage_count || 0,
             monthlyLimit: subscriptionData?.monthly_limit || 10,
             billingCycle: subscriptionData?.usage_reset_date || undefined,
+            billing_interval: (subscriptionData as any)?.billing_interval as 'monthly' | 'annual' | undefined,
+            has_used_trial: (subscriptionData as any)?.has_used_trial || false,
           },
           preferences: userData.preferences,
           createdAt: userData.created_at,
