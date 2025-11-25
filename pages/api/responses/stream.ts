@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { AIResponseStreamingService } from '../../../services/ai-response-streaming';
 import { z } from 'zod';
+import { devLog, logError } from '../../../utils/logger';
 
 // Create server-side Supabase client for admin operations
 const supabaseAdmin = createClient(
@@ -27,7 +28,7 @@ const supabase = createClient(
   }
 );
 
-// Validation schema
+// Validation schema with size limits to prevent DoS
 const StreamRequestSchema = z.object({
   originalMessage: z.string().min(10).max(2000),
   context: z.object({
@@ -35,12 +36,12 @@ const StreamRequestSchema = z.object({
     messageType: z.enum(['update', 'question', 'concern', 'deliverable', 'payment', 'scope_change']),
     relationshipStage: z.enum(['new', 'established', 'difficult', 'long_term']),
     projectPhase: z.enum(['discovery', 'active', 'completion', 'maintenance', 'on_hold']),
-    clientName: z.string().optional(),
-    userName: z.string().optional(),
-    customNotes: z.string().optional(),
+    clientName: z.string().max(100).optional(),
+    userName: z.string().max(100).optional(),
+    customNotes: z.string().max(1000).optional(),
   }),
-  refinementInstructions: z.string().optional(),
-  previousResponses: z.array(z.string()).optional(),
+  refinementInstructions: z.string().max(2000).optional(),
+  previousResponses: z.array(z.string().max(5000)).max(10).optional(),
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -52,7 +53,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Verify authentication using the JWT token
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.error('[Stream API] No authorization header');
       return res.status(401).json({ error: 'Unauthorized - No token provided' });
     }
 
@@ -62,11 +62,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
-      console.error('[Stream API] Auth error:', authError?.message);
+      devLog.error('[Stream API] Auth error:', authError?.message);
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
-    console.log('[Stream API] User authenticated:', user.id);
+    devLog.log('[Stream API] User authenticated');
 
     // Validate request body
     const validationResult = StreamRequestSchema.safeParse(req.body);
@@ -169,11 +169,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .select()
         .single();
 
-      // Update usage count
-      await supabaseAdmin
-        .from('subscriptions')
-        .update({ usage_count: subscription.usage_count + 1 })
-        .eq('user_id', user.id);
+      // Update usage count atomically to prevent race conditions
+      await supabaseAdmin.rpc('increment_usage_count', { p_user_id: user.id });
 
       // Send completion message with history ID
       res.write(`data: ${JSON.stringify({
@@ -181,7 +178,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         historyId: responseHistory?.id,
       })}\n\n`);
     } catch (dbError) {
-      console.error('Error saving to history:', dbError);
+      logError(dbError, { context: 'Save response history' });
       res.write(`data: ${JSON.stringify({
         type: 'error',
         error: 'Failed to save response history',
@@ -190,14 +187,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     res.end();
   } catch (error: any) {
-    console.error('Streaming error:', error);
+    devLog.error('[Stream API] Error:', error.message, error.stack);
+    logError(error, { context: 'Streaming' });
 
-    // Send error event
-    res.write(`data: ${JSON.stringify({
-      type: 'error',
-      error: error.message || 'An error occurred during streaming',
-    })}\n\n`);
-
-    res.end();
+    // Check if we've already started streaming (headers sent)
+    if (res.headersSent) {
+      // Send error event via SSE
+      res.write(`data: ${JSON.stringify({
+        type: 'error',
+        error: error.message || 'An error occurred during streaming',
+      })}\n\n`);
+      res.end();
+    } else {
+      // Return JSON error response
+      return res.status(500).json({
+        error: error.message || 'An error occurred during generation',
+      });
+    }
   }
 }
