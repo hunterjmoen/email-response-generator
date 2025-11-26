@@ -262,6 +262,8 @@ export default function Pricing() {
                   <span className="text-5xl font-bold text-gray-900 dark:text-white">$0</span>
                   <span className="text-gray-600 dark:text-gray-400">/month</span>
                 </div>
+                {/* Placeholder to align with annual pricing text on other cards */}
+                <div className="h-6 mt-2"></div>
               </div>
 
               {isCurrentTier('free') ? (
@@ -363,11 +365,13 @@ export default function Pricing() {
                   </span>
                   <span className="text-gray-600 dark:text-gray-400">/month</span>
                 </div>
-                {isAnnual && (
-                  <p className="text-sm text-green-700 dark:text-green-400 mt-2">
-                    ${professionalAnnualPrice} billed annually
-                  </p>
-                )}
+                <div className="h-6 mt-2">
+                  {isAnnual && (
+                    <p className="text-sm text-green-700 dark:text-green-400">
+                      ${professionalAnnualPrice} billed annually
+                    </p>
+                  )}
+                </div>
               </div>
 
               {isCurrentTier('professional') ? (
@@ -475,11 +479,13 @@ export default function Pricing() {
                   </span>
                   <span className="text-gray-600 dark:text-gray-400">/month</span>
                 </div>
-                {isAnnual && (
-                  <p className="text-sm text-green-700 dark:text-green-400 mt-2">
-                    ${premiumAnnualPrice} billed annually
-                  </p>
-                )}
+                <div className="h-6 mt-2">
+                  {isAnnual && (
+                    <p className="text-sm text-green-700 dark:text-green-400">
+                      ${premiumAnnualPrice} billed annually
+                    </p>
+                  )}
+                </div>
               </div>
 
               {isCurrentTier('premium') ? (
