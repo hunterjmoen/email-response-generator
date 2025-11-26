@@ -47,10 +47,10 @@ CREATE TABLE IF NOT EXISTS users (
 -- Subscriptions table
 CREATE TABLE IF NOT EXISTS subscriptions (
     user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-    tier TEXT NOT NULL CHECK (tier IN ('free', 'premium')) DEFAULT 'free',
-    status TEXT NOT NULL CHECK (status IN ('active', 'cancelled', 'past_due', 'expired')) DEFAULT 'active',
+    tier TEXT NOT NULL CHECK (tier IN ('free', 'professional', 'premium')) DEFAULT 'free',
+    status TEXT NOT NULL CHECK (status IN ('active', 'cancelled', 'past_due', 'expired', 'trialing')) DEFAULT 'active',
 
-    -- Stripe integration (for future use)
+    -- Stripe integration
     stripe_customer_id TEXT UNIQUE,
     stripe_subscription_id TEXT UNIQUE,
 
@@ -58,6 +58,15 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     usage_count INTEGER NOT NULL DEFAULT 0,
     monthly_limit INTEGER NOT NULL DEFAULT 10, -- Free tier limit
     usage_reset_date TIMESTAMPTZ NOT NULL DEFAULT date_trunc('month', NOW()) + interval '1 month',
+
+    -- Billing tracking
+    billing_interval TEXT CHECK (billing_interval IS NULL OR billing_interval IN ('monthly', 'annual')),
+    has_used_trial BOOLEAN NOT NULL DEFAULT false,
+    cancel_at_period_end BOOLEAN NOT NULL DEFAULT false,
+
+    -- Scheduled tier changes (for downgrades)
+    scheduled_tier TEXT CHECK (scheduled_tier IS NULL OR scheduled_tier IN ('free', 'professional', 'premium')),
+    scheduled_tier_change_date TIMESTAMPTZ,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
