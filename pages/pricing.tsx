@@ -50,6 +50,21 @@ export default function Pricing() {
            (user.subscription.status === 'active' || user.subscription.status === 'trialing');
   };
 
+  // Helper function to check if user is on exact same plan (tier + billing interval)
+  const isCurrentPlan = (tier: 'free' | 'professional' | 'premium') => {
+    if (!isCurrentTier(tier)) return false;
+    if (tier === 'free') return true; // Free has no billing interval
+    const userIsAnnual = user?.subscription?.billing_interval === 'annual';
+    return userIsAnnual === isAnnual;
+  };
+
+  // Helper function to check if user can upgrade to annual (same tier, but on monthly)
+  const canUpgradeToAnnual = (tier: 'free' | 'professional' | 'premium') => {
+    if (!isCurrentTier(tier) || tier === 'free') return false;
+    const userIsAnnual = user?.subscription?.billing_interval === 'annual';
+    return !userIsAnnual && isAnnual; // User is on monthly, viewing annual
+  };
+
   // Helper function to get tier rank for comparison
   const getTierRank = (tier: string): number => {
     const ranks: Record<string, number> = { free: 0, professional: 1, premium: 2 };
@@ -374,13 +389,20 @@ export default function Pricing() {
                 </div>
               </div>
 
-              {isCurrentTier('professional') ? (
+              {isCurrentPlan('professional') ? (
                 <button
                   disabled
                   className="w-full bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 px-6 py-3 rounded-lg font-semibold mb-8 transition-colors cursor-not-allowed shadow-md"
                 >
                   Current Plan
                 </button>
+              ) : canUpgradeToAnnual('professional') ? (
+                <Link
+                  href="/settings/billing"
+                  className="w-full block text-center bg-green-600 dark:bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold mb-8 transition-colors shadow-md"
+                >
+                  Upgrade
+                </Link>
               ) : hasSubscription() && isDowngrade('professional') ? (
                 <Link
                   href="/settings/billing"
@@ -488,13 +510,20 @@ export default function Pricing() {
                 </div>
               </div>
 
-              {isCurrentTier('premium') ? (
+              {isCurrentPlan('premium') ? (
                 <button
                   disabled
                   className="w-full bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 px-6 py-3 rounded-lg font-semibold mb-8 transition-colors cursor-not-allowed shadow-md"
                 >
                   Current Plan
                 </button>
+              ) : canUpgradeToAnnual('premium') ? (
+                <Link
+                  href="/settings/billing"
+                  className="w-full block text-center bg-gray-900 dark:bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 font-semibold mb-8 transition-colors shadow-md"
+                >
+                  Upgrade
+                </Link>
               ) : hasSubscription() ? (
                 <button
                   onClick={() => handleSubscribe('premium')}
