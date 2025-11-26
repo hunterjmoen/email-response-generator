@@ -245,13 +245,13 @@ export default function Pricing() {
                 ? 'bg-green-50 dark:bg-green-900/20 border-green-600 dark:border-green-500 ring-2 ring-green-200 dark:ring-green-800'
                 : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
             }`}>
-              {isCurrentTier('free') && (
-                <div className="mb-4">
+              <div className="h-7 mb-4">
+                {isCurrentTier('free') && (
                   <span className="inline-block bg-green-600 dark:bg-green-700 text-white px-3 py-1 rounded-full text-sm font-semibold">
                     YOUR CURRENT PLAN
                   </span>
-                </div>
-              )}
+                )}
+              </div>
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Free</h3>
                 <p className="text-gray-600 dark:text-gray-300">Perfect for getting started</p>
@@ -347,6 +347,9 @@ export default function Pricing() {
                   </span>
                 )}
               </div>
+
+              {/* Placeholder to align with other cards */}
+              <div className="h-7 mb-4"></div>
 
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Professional</h3>
@@ -453,13 +456,13 @@ export default function Pricing() {
                 ? 'bg-gray-50 dark:bg-gray-800/50 border-gray-900 dark:border-gray-600 ring-2 ring-gray-200 dark:ring-gray-700'
                 : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
             }`}>
-              {isCurrentTier('premium') && (
-                <div className="mb-4">
+              <div className="h-7 mb-4">
+                {isCurrentTier('premium') && (
                   <span className="inline-block bg-gray-900 dark:bg-gray-700 text-white px-3 py-1 rounded-full text-sm font-semibold">
                     YOUR CURRENT PLAN
                   </span>
-                </div>
-              )}
+                )}
+              </div>
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Premium</h3>
                 <p className="text-gray-600 dark:text-gray-300">For power users</p>
