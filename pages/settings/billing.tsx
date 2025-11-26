@@ -84,6 +84,20 @@ export default function BillingSettings() {
     }
   }, [authLoading, isAuthenticated, router]);
 
+  // Handle URL query params for upgrade intent (e.g., from pricing page)
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && router.isReady) {
+      const { action, tier, interval } = router.query;
+      if (action === 'upgrade' && (tier === 'professional' || tier === 'premium')) {
+        setSelectedPlan(tier);
+        setSelectedInterval(interval === 'annual' ? 'annual' : 'monthly');
+        setShowUpgradeModal(true);
+        // Clear query params from URL without reload
+        router.replace('/settings/billing', undefined, { shallow: true });
+      }
+    }
+  }, [authLoading, isAuthenticated, router.isReady, router.query]);
+
   // Refresh subscription data when page loads to ensure we have the latest
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
@@ -98,6 +112,13 @@ export default function BillingSettings() {
   const isPremium = currentTier === 'premium';
   const hasActiveSubscription = !isFreeTier && subscription?.status === 'active';
   const isCancelPending = subscription?.cancel_at_period_end;
+
+  // Helper to determine if plan change is upgrade or downgrade
+  const getTierRank = (tier: string): number => {
+    const ranks: Record<string, number> = { free: 0, professional: 1, premium: 2 };
+    return ranks[tier] ?? 0;
+  };
+  const isDowngradeTo = (targetTier: string) => getTierRank(targetTier) < getTierRank(currentTier);
 
   // Usage calculations
   const usageCount = subscription?.usageCount || 0;
@@ -498,8 +519,13 @@ export default function BillingSettings() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 shadow-xl">
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              {prorationPreview.data?.isUpgrade === false ? 'Downgrade to' :
-               currentTier === selectedPlan ? 'Resubscribe to' : 'Upgrade to'} {planFeatures[selectedPlan].name}
+              {currentTier === selectedPlan && isCancelPending
+                ? `Resubscribe to ${planFeatures[selectedPlan].name}`
+                : currentTier === selectedPlan && selectedInterval !== subscription?.billing_interval
+                ? `Switch to ${selectedInterval === 'annual' ? 'Annual' : 'Monthly'} Billing`
+                : isDowngradeTo(selectedPlan)
+                ? `Downgrade to ${planFeatures[selectedPlan].name}`
+                : `Upgrade to ${planFeatures[selectedPlan].name}`}
             </h3>
 
             {/* Billing Interval Toggle */}

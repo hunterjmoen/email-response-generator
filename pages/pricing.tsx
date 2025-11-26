@@ -50,6 +50,43 @@ export default function Pricing() {
            (user.subscription.status === 'active' || user.subscription.status === 'trialing');
   };
 
+  // Helper function to check if user is on exact same plan (tier + billing interval)
+  const isCurrentPlan = (tier: 'free' | 'professional' | 'premium') => {
+    if (!isCurrentTier(tier)) return false;
+    if (tier === 'free') return true; // Free has no billing interval
+    const userIsAnnual = user?.subscription?.billing_interval === 'annual';
+    return userIsAnnual === isAnnual;
+  };
+
+  // Helper function to check if user can upgrade to annual (same tier, but on monthly)
+  const canUpgradeToAnnual = (tier: 'free' | 'professional' | 'premium') => {
+    if (!isCurrentTier(tier) || tier === 'free') return false;
+    const userIsAnnual = user?.subscription?.billing_interval === 'annual';
+    return !userIsAnnual && isAnnual; // User is on monthly, viewing annual
+  };
+
+  // Helper function to check if user can switch to monthly (same tier, but on annual)
+  const canSwitchToMonthly = (tier: 'free' | 'professional' | 'premium') => {
+    if (!isCurrentTier(tier) || tier === 'free') return false;
+    const userIsAnnual = user?.subscription?.billing_interval === 'annual';
+    return userIsAnnual && !isAnnual; // User is on annual, viewing monthly
+  };
+
+  // Helper function to get tier rank for comparison
+  const getTierRank = (tier: string): number => {
+    const ranks: Record<string, number> = { free: 0, professional: 1, premium: 2 };
+    return ranks[tier] ?? 0;
+  };
+
+  // Get current user's tier rank
+  const currentTierRank = getTierRank(user?.subscription?.tier || 'free');
+
+  // Check if target tier is an upgrade from current
+  const isUpgrade = (targetTier: string) => getTierRank(targetTier) > currentTierRank;
+
+  // Check if target tier is a downgrade from current
+  const isDowngrade = (targetTier: string) => getTierRank(targetTier) < currentTierRank;
+
   // Handle new subscription for free users
   const handleSubscribe = async (tier: 'professional' | 'premium') => {
     if (!user) {
@@ -230,13 +267,13 @@ export default function Pricing() {
                 ? 'bg-green-50 dark:bg-green-900/20 border-green-600 dark:border-green-500 ring-2 ring-green-200 dark:ring-green-800'
                 : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
             }`}>
-              {isCurrentTier('free') && (
-                <div className="mb-4">
+              <div className="h-7 mb-4">
+                {isCurrentTier('free') && (
                   <span className="inline-block bg-green-600 dark:bg-green-700 text-white px-3 py-1 rounded-full text-sm font-semibold">
                     YOUR CURRENT PLAN
                   </span>
-                </div>
-              )}
+                )}
+              </div>
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Free</h3>
                 <p className="text-gray-600 dark:text-gray-300">Perfect for getting started</p>
@@ -247,6 +284,8 @@ export default function Pricing() {
                   <span className="text-5xl font-bold text-gray-900 dark:text-white">$0</span>
                   <span className="text-gray-600 dark:text-gray-400">/month</span>
                 </div>
+                {/* Placeholder to align with annual pricing text on other cards */}
+                <div className="h-6 mt-2"></div>
               </div>
 
               {isCurrentTier('free') ? (
@@ -261,7 +300,7 @@ export default function Pricing() {
                   href="/settings/billing"
                   className="w-full block text-center bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white px-6 py-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 font-semibold mb-8 transition-colors"
                 >
-                  Manage in Billing
+                  Downgrade
                 </Link>
               ) : (
                 <button
@@ -333,6 +372,9 @@ export default function Pricing() {
                 )}
               </div>
 
+              {/* Placeholder to align with other cards */}
+              <div className="h-7 mb-4"></div>
+
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Professional</h3>
                 <p className="text-gray-600 dark:text-gray-300">For active freelancers</p>
@@ -345,26 +387,42 @@ export default function Pricing() {
                   </span>
                   <span className="text-gray-600 dark:text-gray-400">/month</span>
                 </div>
-                {isAnnual && (
-                  <p className="text-sm text-green-700 dark:text-green-400 mt-2">
-                    ${professionalAnnualPrice} billed annually
-                  </p>
-                )}
+                <div className="h-6 mt-2">
+                  {isAnnual && (
+                    <p className="text-sm text-green-700 dark:text-green-400">
+                      ${professionalAnnualPrice} billed annually
+                    </p>
+                  )}
+                </div>
               </div>
 
-              {isCurrentTier('professional') ? (
+              {isCurrentPlan('professional') ? (
+                <button
+                  disabled
+                  className="w-full bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 px-6 py-3 rounded-lg font-semibold mb-8 transition-colors cursor-not-allowed shadow-md"
+                >
+                  Current Plan
+                </button>
+              ) : canUpgradeToAnnual('professional') ? (
                 <Link
-                  href="/settings/billing"
+                  href="/settings/billing?action=upgrade&tier=professional&interval=annual"
                   className="w-full block text-center bg-green-600 dark:bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold mb-8 transition-colors shadow-md"
                 >
-                  Manage in Billing
+                  Upgrade
                 </Link>
-              ) : hasSubscription() ? (
+              ) : canSwitchToMonthly('professional') ? (
+                <Link
+                  href="/settings/billing?action=upgrade&tier=professional&interval=monthly"
+                  className="w-full block text-center bg-green-600 dark:bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold mb-8 transition-colors shadow-md"
+                >
+                  Switch to Monthly
+                </Link>
+              ) : hasSubscription() && isDowngrade('professional') ? (
                 <Link
                   href="/settings/billing"
                   className="w-full block text-center bg-green-600 dark:bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold mb-8 transition-colors shadow-md"
                 >
-                  Manage in Billing
+                  Downgrade
                 </Link>
               ) : (
                 <button
@@ -438,13 +496,13 @@ export default function Pricing() {
                 ? 'bg-gray-50 dark:bg-gray-800/50 border-gray-900 dark:border-gray-600 ring-2 ring-gray-200 dark:ring-gray-700'
                 : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
             }`}>
-              {isCurrentTier('premium') && (
-                <div className="mb-4">
+              <div className="h-7 mb-4">
+                {isCurrentTier('premium') && (
                   <span className="inline-block bg-gray-900 dark:bg-gray-700 text-white px-3 py-1 rounded-full text-sm font-semibold">
                     YOUR CURRENT PLAN
                   </span>
-                </div>
-              )}
+                )}
+              </div>
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Premium</h3>
                 <p className="text-gray-600 dark:text-gray-300">For power users</p>
@@ -457,27 +515,44 @@ export default function Pricing() {
                   </span>
                   <span className="text-gray-600 dark:text-gray-400">/month</span>
                 </div>
-                {isAnnual && (
-                  <p className="text-sm text-green-700 dark:text-green-400 mt-2">
-                    ${premiumAnnualPrice} billed annually
-                  </p>
-                )}
+                <div className="h-6 mt-2">
+                  {isAnnual && (
+                    <p className="text-sm text-green-700 dark:text-green-400">
+                      ${premiumAnnualPrice} billed annually
+                    </p>
+                  )}
+                </div>
               </div>
 
-              {isCurrentTier('premium') ? (
+              {isCurrentPlan('premium') ? (
+                <button
+                  disabled
+                  className="w-full bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 px-6 py-3 rounded-lg font-semibold mb-8 transition-colors cursor-not-allowed shadow-md"
+                >
+                  Current Plan
+                </button>
+              ) : canUpgradeToAnnual('premium') ? (
                 <Link
-                  href="/settings/billing"
+                  href="/settings/billing?action=upgrade&tier=premium&interval=annual"
                   className="w-full block text-center bg-gray-900 dark:bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 font-semibold mb-8 transition-colors shadow-md"
                 >
-                  Manage in Billing
+                  Upgrade
+                </Link>
+              ) : canSwitchToMonthly('premium') ? (
+                <Link
+                  href="/settings/billing?action=upgrade&tier=premium&interval=monthly"
+                  className="w-full block text-center bg-gray-900 dark:bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 font-semibold mb-8 transition-colors shadow-md"
+                >
+                  Switch to Monthly
                 </Link>
               ) : hasSubscription() ? (
-                <Link
-                  href="/settings/billing"
-                  className="w-full block text-center bg-gray-900 dark:bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 font-semibold mb-8 transition-colors shadow-md"
+                <button
+                  onClick={() => handleSubscribe('premium')}
+                  disabled={loading}
+                  className="w-full bg-gray-900 dark:bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 font-semibold mb-8 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                  Manage in Billing
-                </Link>
+                  {loading ? 'Processing...' : 'Upgrade'}
+                </button>
               ) : (
                 <button
                   onClick={() => handleSubscribe('premium')}
