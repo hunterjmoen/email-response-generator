@@ -20,6 +20,8 @@ export interface User {
     stripe_customer_id?: string;
     stripe_subscription_id?: string;
     cancel_at_period_end?: boolean;
+    scheduled_tier?: 'free' | 'professional' | 'premium';
+    scheduled_tier_change_date?: string;
   };
   stripe_customer_id?: string;
   preferences: {

@@ -104,7 +104,7 @@ export const useAuthStore = create<AuthStore>()(
       // Fetch subscription separately for better performance
       const { data: subscriptionData } = await supabase
         .from('subscriptions')
-        .select('tier, status, usage_count, monthly_limit, usage_reset_date, billing_interval, has_used_trial, stripe_customer_id, stripe_subscription_id, cancel_at_period_end')
+        .select('tier, status, usage_count, monthly_limit, usage_reset_date, billing_interval, has_used_trial, stripe_customer_id, stripe_subscription_id, cancel_at_period_end, scheduled_tier, scheduled_tier_change_date')
         .eq('user_id', session.user.id)
         .single();
 
@@ -141,6 +141,8 @@ export const useAuthStore = create<AuthStore>()(
           stripe_customer_id: extractId((subscriptionData as any)?.stripe_customer_id),
           stripe_subscription_id: extractId((subscriptionData as any)?.stripe_subscription_id),
           cancel_at_period_end: (subscriptionData as any)?.cancel_at_period_end || false,
+          scheduled_tier: (subscriptionData as any)?.scheduled_tier as User['subscription']['scheduled_tier'],
+          scheduled_tier_change_date: (subscriptionData as any)?.scheduled_tier_change_date || undefined,
         },
         stripe_customer_id: extractId((subscriptionData as any)?.stripe_customer_id),
         preferences: (userData.preferences as unknown as User['preferences']) || {
@@ -174,7 +176,7 @@ export const useAuthStore = create<AuthStore>()(
           // Fetch updated subscription data
           const { data: subscriptionData, error } = await supabase
             .from('subscriptions')
-            .select('tier, status, usage_count, monthly_limit, usage_reset_date, billing_interval, has_used_trial, stripe_customer_id, stripe_subscription_id, cancel_at_period_end')
+            .select('tier, status, usage_count, monthly_limit, usage_reset_date, billing_interval, has_used_trial, stripe_customer_id, stripe_subscription_id, cancel_at_period_end, scheduled_tier, scheduled_tier_change_date')
             .eq('user_id', user.id)
             .single();
 
@@ -208,6 +210,8 @@ export const useAuthStore = create<AuthStore>()(
               stripe_customer_id: extractId((subscriptionData as any).stripe_customer_id),
               stripe_subscription_id: extractId((subscriptionData as any).stripe_subscription_id),
               cancel_at_period_end: (subscriptionData as any).cancel_at_period_end || false,
+              scheduled_tier: (subscriptionData as any).scheduled_tier as User['subscription']['scheduled_tier'],
+              scheduled_tier_change_date: (subscriptionData as any).scheduled_tier_change_date || undefined,
             },
             stripe_customer_id: extractId((subscriptionData as any).stripe_customer_id),
           };

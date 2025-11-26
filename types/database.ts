@@ -60,6 +60,9 @@ export interface SubscriptionRow {
   usage_reset_date?: string | null;
   billing_interval?: 'monthly' | 'annual' | null;
   has_used_trial: boolean;
+  cancel_at_period_end?: boolean | null;
+  scheduled_tier?: 'free' | 'professional' | 'premium' | null;
+  scheduled_tier_change_date?: string | null;
   created_at: string;
   updated_at: string;
 }
