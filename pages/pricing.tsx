@@ -50,6 +50,21 @@ export default function Pricing() {
            (user.subscription.status === 'active' || user.subscription.status === 'trialing');
   };
 
+  // Helper function to get tier rank for comparison
+  const getTierRank = (tier: string): number => {
+    const ranks: Record<string, number> = { free: 0, professional: 1, premium: 2 };
+    return ranks[tier] ?? 0;
+  };
+
+  // Get current user's tier rank
+  const currentTierRank = getTierRank(user?.subscription?.tier || 'free');
+
+  // Check if target tier is an upgrade from current
+  const isUpgrade = (targetTier: string) => getTierRank(targetTier) > currentTierRank;
+
+  // Check if target tier is a downgrade from current
+  const isDowngrade = (targetTier: string) => getTierRank(targetTier) < currentTierRank;
+
   // Handle new subscription for free users
   const handleSubscribe = async (tier: 'professional' | 'premium') => {
     if (!user) {
@@ -261,7 +276,7 @@ export default function Pricing() {
                   href="/settings/billing"
                   className="w-full block text-center bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white px-6 py-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 font-semibold mb-8 transition-colors"
                 >
-                  Manage in Billing
+                  Downgrade
                 </Link>
               ) : (
                 <button
@@ -353,18 +368,18 @@ export default function Pricing() {
               </div>
 
               {isCurrentTier('professional') ? (
+                <button
+                  disabled
+                  className="w-full bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 px-6 py-3 rounded-lg font-semibold mb-8 transition-colors cursor-not-allowed shadow-md"
+                >
+                  Current Plan
+                </button>
+              ) : hasSubscription() && isDowngrade('professional') ? (
                 <Link
                   href="/settings/billing"
                   className="w-full block text-center bg-green-600 dark:bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold mb-8 transition-colors shadow-md"
                 >
-                  Manage in Billing
-                </Link>
-              ) : hasSubscription() ? (
-                <Link
-                  href="/settings/billing"
-                  className="w-full block text-center bg-green-600 dark:bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold mb-8 transition-colors shadow-md"
-                >
-                  Manage in Billing
+                  Downgrade
                 </Link>
               ) : (
                 <button
@@ -465,19 +480,20 @@ export default function Pricing() {
               </div>
 
               {isCurrentTier('premium') ? (
-                <Link
-                  href="/settings/billing"
-                  className="w-full block text-center bg-gray-900 dark:bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 font-semibold mb-8 transition-colors shadow-md"
+                <button
+                  disabled
+                  className="w-full bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 px-6 py-3 rounded-lg font-semibold mb-8 transition-colors cursor-not-allowed shadow-md"
                 >
-                  Manage in Billing
-                </Link>
+                  Current Plan
+                </button>
               ) : hasSubscription() ? (
-                <Link
-                  href="/settings/billing"
-                  className="w-full block text-center bg-gray-900 dark:bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 font-semibold mb-8 transition-colors shadow-md"
+                <button
+                  onClick={() => handleSubscribe('premium')}
+                  disabled={loading}
+                  className="w-full bg-gray-900 dark:bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 font-semibold mb-8 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                  Manage in Billing
-                </Link>
+                  {loading ? 'Processing...' : 'Upgrade'}
+                </button>
               ) : (
                 <button
                   onClick={() => handleSubscribe('premium')}
