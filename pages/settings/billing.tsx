@@ -84,6 +84,20 @@ export default function BillingSettings() {
     }
   }, [authLoading, isAuthenticated, router]);
 
+  // Handle URL query params for upgrade intent (e.g., from pricing page)
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && router.isReady) {
+      const { action, tier, interval } = router.query;
+      if (action === 'upgrade' && (tier === 'professional' || tier === 'premium')) {
+        setSelectedPlan(tier);
+        setSelectedInterval(interval === 'annual' ? 'annual' : 'monthly');
+        setShowUpgradeModal(true);
+        // Clear query params from URL without reload
+        router.replace('/settings/billing', undefined, { shallow: true });
+      }
+    }
+  }, [authLoading, isAuthenticated, router.isReady, router.query]);
+
   // Refresh subscription data when page loads to ensure we have the latest
   useEffect(() => {
     if (isAuthenticated && !authLoading) {

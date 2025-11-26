@@ -398,7 +398,7 @@ export default function Pricing() {
                 </button>
               ) : canUpgradeToAnnual('professional') ? (
                 <Link
-                  href="/settings/billing"
+                  href="/settings/billing?action=upgrade&tier=professional&interval=annual"
                   className="w-full block text-center bg-green-600 dark:bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold mb-8 transition-colors shadow-md"
                 >
                   Upgrade
@@ -519,7 +519,7 @@ export default function Pricing() {
                 </button>
               ) : canUpgradeToAnnual('premium') ? (
                 <Link
-                  href="/settings/billing"
+                  href="/settings/billing?action=upgrade&tier=premium&interval=annual"
                   className="w-full block text-center bg-gray-900 dark:bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 font-semibold mb-8 transition-colors shadow-md"
                 >
                   Upgrade
