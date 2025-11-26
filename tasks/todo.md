@@ -136,3 +136,47 @@ Security audit completed on 2025-11-24. Found **3 high-priority** and **8 medium
 - Pagination on list queries
 - Standardize error messages
 - CORS multiple origins handling
+
+---
+
+## Fix: Database error creating new user (2025-11-25)
+
+### Problem
+When registering a new user, the error "Database error creating new user" occurs with 400 Bad Request.
+
+### Root Cause
+The `on_auth_user_created` trigger on `auth.users` fires when a new auth user is created and tries to insert into the `subscriptions` table. However, `subscriptions.user_id` has a foreign key constraint to `public.users(id)`, and the `public.users` record doesn't exist yet at trigger time.
+
+**Flow that causes the error:**
+1. User registers -> Supabase creates `auth.users` record
+2. Trigger `on_auth_user_created` fires immediately
+3. Trigger tries: `INSERT INTO subscriptions (user_id) VALUES (NEW.id)`
+4. **FAILS** with FK violation because `public.users` record doesn't exist yet
+5. The app code creates `public.users` AFTER auth user creation (line 78-91 in auth.ts)
+
+### Solution
+Drop the trigger. The app already handles subscription creation in `server/routers/auth.ts` lines 114-125 after creating the user profile.
+
+### Tasks
+- [x] Drop the `on_auth_user_created` trigger
+- [x] Verify registration works
+
+---
+
+## Fix: Response data leaking between users (2025-11-25)
+
+### Problem
+When user A generates a response, logs out, and user B logs in, user B sees user A's generated response.
+
+### Root Cause
+The `clearAuth()` function in `stores/auth.ts` only clears the auth state but does NOT reset the response generation store. The in-memory response state persists across user sessions.
+
+### Solution
+Call `useResponseGenerationStore.getState().reset()` inside `clearAuth()` to clear all response data when a user logs out.
+
+### Changes Made
+- `stores/auth.ts`: Import `useResponseGenerationStore` and call `reset()` in `clearAuth()`
+- `stores/auth.ts`: Also clear `streamingResponses` from localStorage (used by `useStreamingResponse` hook)
+
+### Review
+Fixed. Response data is now properly cleared when users log out, preventing data leakage between accounts.

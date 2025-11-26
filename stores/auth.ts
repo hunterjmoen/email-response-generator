@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { User, AuthSession } from '@freelance-flow/shared';
 import { supabase } from '../utils/supabase';
+import { useResponseGenerationStore } from './response-generation';
 
 // Client-side development logging
 const isDev = process.env.NODE_ENV === 'development';
@@ -57,6 +58,12 @@ export const useAuthStore = create<AuthStore>()(
           isAuthenticated: false,
           isLoading: false,
         });
+        // Clear response generation store to prevent data leakage between users
+        useResponseGenerationStore.getState().reset();
+        // Clear streaming responses from localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('streamingResponses');
+        }
       },
 
       setLoading: (loading) => {
