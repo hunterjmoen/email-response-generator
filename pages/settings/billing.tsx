@@ -512,8 +512,13 @@ export default function BillingSettings() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 shadow-xl">
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              {prorationPreview.data?.isUpgrade === false ? 'Downgrade to' :
-               currentTier === selectedPlan ? 'Resubscribe to' : 'Upgrade to'} {planFeatures[selectedPlan].name}
+              {prorationPreview.data?.isUpgrade === false
+                ? `Downgrade to ${planFeatures[selectedPlan].name}`
+                : currentTier === selectedPlan && isCancelPending
+                ? `Resubscribe to ${planFeatures[selectedPlan].name}`
+                : currentTier === selectedPlan && selectedInterval !== subscription?.billing_interval
+                ? `Switch to ${selectedInterval === 'annual' ? 'Annual' : 'Monthly'} Billing`
+                : `Upgrade to ${planFeatures[selectedPlan].name}`}
             </h3>
 
             {/* Billing Interval Toggle */}
