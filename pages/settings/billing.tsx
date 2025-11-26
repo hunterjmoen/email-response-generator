@@ -113,6 +113,13 @@ export default function BillingSettings() {
   const hasActiveSubscription = !isFreeTier && subscription?.status === 'active';
   const isCancelPending = subscription?.cancel_at_period_end;
 
+  // Helper to determine if plan change is upgrade or downgrade
+  const getTierRank = (tier: string): number => {
+    const ranks: Record<string, number> = { free: 0, professional: 1, premium: 2 };
+    return ranks[tier] ?? 0;
+  };
+  const isDowngradeTo = (targetTier: string) => getTierRank(targetTier) < getTierRank(currentTier);
+
   // Usage calculations
   const usageCount = subscription?.usageCount || 0;
   const monthlyLimit = subscription?.monthlyLimit || 10;
@@ -512,12 +519,12 @@ export default function BillingSettings() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 shadow-xl">
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              {prorationPreview.data?.isUpgrade === false
-                ? `Downgrade to ${planFeatures[selectedPlan].name}`
-                : currentTier === selectedPlan && isCancelPending
+              {currentTier === selectedPlan && isCancelPending
                 ? `Resubscribe to ${planFeatures[selectedPlan].name}`
                 : currentTier === selectedPlan && selectedInterval !== subscription?.billing_interval
                 ? `Switch to ${selectedInterval === 'annual' ? 'Annual' : 'Monthly'} Billing`
+                : isDowngradeTo(selectedPlan)
+                ? `Downgrade to ${planFeatures[selectedPlan].name}`
                 : `Upgrade to ${planFeatures[selectedPlan].name}`}
             </h3>
 
