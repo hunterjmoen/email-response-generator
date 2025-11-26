@@ -65,6 +65,13 @@ export default function Pricing() {
     return !userIsAnnual && isAnnual; // User is on monthly, viewing annual
   };
 
+  // Helper function to check if user can switch to monthly (same tier, but on annual)
+  const canSwitchToMonthly = (tier: 'free' | 'professional' | 'premium') => {
+    if (!isCurrentTier(tier) || tier === 'free') return false;
+    const userIsAnnual = user?.subscription?.billing_interval === 'annual';
+    return userIsAnnual && !isAnnual; // User is on annual, viewing monthly
+  };
+
   // Helper function to get tier rank for comparison
   const getTierRank = (tier: string): number => {
     const ranks: Record<string, number> = { free: 0, professional: 1, premium: 2 };
@@ -403,6 +410,13 @@ export default function Pricing() {
                 >
                   Upgrade
                 </Link>
+              ) : canSwitchToMonthly('professional') ? (
+                <Link
+                  href="/settings/billing?action=upgrade&tier=professional&interval=monthly"
+                  className="w-full block text-center bg-green-600 dark:bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-semibold mb-8 transition-colors shadow-md"
+                >
+                  Switch to Monthly
+                </Link>
               ) : hasSubscription() && isDowngrade('professional') ? (
                 <Link
                   href="/settings/billing"
@@ -523,6 +537,13 @@ export default function Pricing() {
                   className="w-full block text-center bg-gray-900 dark:bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 font-semibold mb-8 transition-colors shadow-md"
                 >
                   Upgrade
+                </Link>
+              ) : canSwitchToMonthly('premium') ? (
+                <Link
+                  href="/settings/billing?action=upgrade&tier=premium&interval=monthly"
+                  className="w-full block text-center bg-gray-900 dark:bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 font-semibold mb-8 transition-colors shadow-md"
+                >
+                  Switch to Monthly
                 </Link>
               ) : hasSubscription() ? (
                 <button
