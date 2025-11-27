@@ -452,6 +452,24 @@ export const stripeRouter = router({
         const subscription = await stripe.subscriptions.retrieve(input.subscriptionId);
         devLog.log('[switchBillingCycle] Current subscription retrieved');
 
+        // Determine current and target billing intervals
+        const currentPriceId = subscription.items.data[0]?.price.id;
+        const { billing_interval: currentInterval } = getTierFromSubscription(subscription);
+
+        // Check if this is annual→monthly switch (not allowed mid-cycle)
+        const professionalMonthly = process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID;
+        const premiumMonthly = process.env.NEXT_PUBLIC_STRIPE_PREMIUM_MONTHLY_PRICE_ID;
+        const isTargetMonthly = input.newPriceId === professionalMonthly || input.newPriceId === premiumMonthly;
+
+        if (currentInterval === 'annual' && isTargetMonthly) {
+          const periodEnd = new Date(((subscription as any).current_period_end || 0) * 1000);
+          devLog.log('[switchBillingCycle] Blocking annual→monthly mid-cycle switch');
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Your annual plan is active through ${periodEnd.toLocaleDateString()}. You can switch to monthly billing when your plan renews.`,
+          });
+        }
+
         // Update the subscription with the new billing cycle
         // Also reset cancel_at_period_end in case user is resubscribing
         const updatedSubscription = await stripe.subscriptions.update(
@@ -498,6 +516,9 @@ export const stripeRouter = router({
 
         return updatedSubscription;
       } catch (error: unknown) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
         logError(error, { context: 'Switch billing cycle' });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
@@ -783,6 +804,166 @@ export const stripeRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to verify checkout session',
+        });
+      }
+    }),
+
+  /**
+   * Schedule a downgrade to take effect at end of billing period
+   * Uses Stripe subscription schedules to defer the price change
+   */
+  scheduleDowngrade: protectedProcedure
+    .input(
+      z.object({
+        subscriptionId: z.string(),
+        newPriceId: z.string(),
+        newTier: z.enum(['free', 'professional', 'premium']),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        devLog.log('[scheduleDowngrade] Starting scheduled downgrade');
+
+        // Get the current subscription
+        const subscription = await stripe.subscriptions.retrieve(input.subscriptionId);
+        const periodEnd = (subscription as any).current_period_end;
+        const periodEndDate = new Date(periodEnd * 1000);
+
+        devLog.log('[scheduleDowngrade] Period end:', periodEndDate.toISOString());
+
+        // For downgrade to free tier, we cancel at period end
+        if (input.newTier === 'free') {
+          await stripe.subscriptions.update(input.subscriptionId, {
+            cancel_at_period_end: true,
+          });
+          devLog.log('[scheduleDowngrade] Set cancel_at_period_end for free tier downgrade');
+        } else {
+          // For downgrades to paid tiers, use subscription schedule
+          // First, check if there's already a schedule
+          let schedule = subscription.schedule
+            ? await stripe.subscriptionSchedules.retrieve(subscription.schedule as string)
+            : null;
+
+          if (!schedule) {
+            // Create a schedule from the existing subscription
+            schedule = await stripe.subscriptionSchedules.create({
+              from_subscription: input.subscriptionId,
+            });
+            devLog.log('[scheduleDowngrade] Created new subscription schedule');
+          }
+
+          // Update the schedule to change price at period end
+          await stripe.subscriptionSchedules.update(schedule.id, {
+            end_behavior: 'release',
+            phases: [
+              {
+                items: [
+                  {
+                    price: subscription.items.data[0].price.id,
+                    quantity: 1,
+                  },
+                ],
+                start_date: (subscription as any).current_period_start,
+                end_date: periodEnd,
+              },
+              {
+                items: [
+                  {
+                    price: input.newPriceId,
+                    quantity: 1,
+                  },
+                ],
+                start_date: periodEnd,
+                proration_behavior: 'none',
+              },
+            ],
+          });
+          devLog.log('[scheduleDowngrade] Updated subscription schedule with new phase');
+        }
+
+        // Store scheduled downgrade in database
+        const { error: dbError } = await ctx.supabase
+          .from('subscriptions')
+          .update({
+            scheduled_tier: input.newTier,
+            scheduled_tier_change_date: periodEndDate.toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', ctx.user.id);
+
+        if (dbError) {
+          logError(dbError, { context: 'Store scheduled downgrade in database' });
+        }
+
+        devLog.log('[scheduleDowngrade] Downgrade scheduled successfully');
+
+        return {
+          success: true,
+          scheduledTier: input.newTier,
+          effectiveDate: periodEndDate.toISOString(),
+        };
+      } catch (error) {
+        logError(error, { context: 'Schedule downgrade' });
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to schedule downgrade',
+        });
+      }
+    }),
+
+  /**
+   * Cancel a scheduled downgrade
+   */
+  cancelScheduledDowngrade: protectedProcedure
+    .input(
+      z.object({
+        subscriptionId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        devLog.log('[cancelScheduledDowngrade] Cancelling scheduled downgrade');
+
+        // Get the current subscription
+        const subscription = await stripe.subscriptions.retrieve(input.subscriptionId);
+
+        // If there's a cancel_at_period_end set (downgrade to free), unset it
+        if (subscription.cancel_at_period_end) {
+          await stripe.subscriptions.update(input.subscriptionId, {
+            cancel_at_period_end: false,
+          });
+          devLog.log('[cancelScheduledDowngrade] Removed cancel_at_period_end');
+        }
+
+        // If there's a subscription schedule, release it
+        if (subscription.schedule) {
+          await stripe.subscriptionSchedules.release(subscription.schedule as string);
+          devLog.log('[cancelScheduledDowngrade] Released subscription schedule');
+        }
+
+        // Clear scheduled downgrade from database
+        const { error: dbError } = await ctx.supabase
+          .from('subscriptions')
+          .update({
+            scheduled_tier: null,
+            scheduled_tier_change_date: null,
+            cancel_at_period_end: false,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', ctx.user.id);
+
+        if (dbError) {
+          logError(dbError, { context: 'Clear scheduled downgrade from database' });
+        }
+
+        devLog.log('[cancelScheduledDowngrade] Scheduled downgrade cancelled');
+
+        return { success: true };
+      } catch (error) {
+        logError(error, { context: 'Cancel scheduled downgrade' });
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to cancel scheduled downgrade',
         });
       }
     }),

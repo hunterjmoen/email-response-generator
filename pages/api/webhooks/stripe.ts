@@ -255,6 +255,15 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
     devLog.log(`[Webhook] Updating user to tier: ${tier}, status: ${subscription.status}`);
 
+    // Check if this update matches a scheduled downgrade - if so, clear the scheduled fields
+    const { data: currentSub } = await supabaseAdmin
+      .from('subscriptions')
+      .select('scheduled_tier')
+      .eq('user_id', userId)
+      .single();
+
+    const isScheduledDowngradeComplete = currentSub?.scheduled_tier === tier;
+
     const { error } = await supabaseAdmin
       .from('subscriptions')
       .update({
@@ -263,6 +272,11 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         monthly_limit: monthlyLimit,
         billing_interval,
         usage_reset_date: new Date(((subscription as any).current_period_end || 0) * 1000).toISOString(),
+        // Clear scheduled downgrade fields if the downgrade has been applied
+        ...(isScheduledDowngradeComplete ? {
+          scheduled_tier: null,
+          scheduled_tier_change_date: null,
+        } : {}),
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId);
@@ -272,7 +286,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       throw error;
     }
 
-    devLog.log(`[Webhook Success] Subscription updated, tier: ${tier}, status: ${subscription.status}`);
+    devLog.log(`[Webhook Success] Subscription updated, tier: ${tier}, status: ${subscription.status}${isScheduledDowngradeComplete ? ' (scheduled downgrade completed)' : ''}`);
   } catch (error) {
     logError(error, { context: 'Handle subscription updated' });
     throw error;
@@ -299,6 +313,9 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
         monthly_limit: 10,
         stripe_subscription_id: null,
         billing_interval: null,
+        cancel_at_period_end: false,
+        scheduled_tier: null,
+        scheduled_tier_change_date: null,
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId);
