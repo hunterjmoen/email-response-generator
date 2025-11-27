@@ -119,6 +119,8 @@ export const authRouter = router({
             status: 'active',
             monthly_limit: 10,
             usage_count: 0,
+            has_used_trial: false,
+            cancel_at_period_end: false,
           }, {
             onConflict: 'user_id',
             ignoreDuplicates: false
