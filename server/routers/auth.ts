@@ -83,6 +83,27 @@ export const authRouter = router({
             first_name: input.firstName,
             last_name: input.lastName,
             industry: input.industry,
+            // Provide defaults explicitly in case database defaults aren't set up
+            communication_style: {
+              formality: 'professional',
+              tone: 'neutral',
+              length: 'standard',
+            },
+            preferences: {
+              defaultContext: {
+                relationshipStage: 'established',
+                projectPhase: 'active',
+                urgency: 'standard',
+                messageType: 'update',
+              },
+              emailNotifications: true,
+            },
+            privacy_settings: {
+              styleLearningConsent: false,
+              analyticsConsent: false,
+              marketingConsent: false,
+              dataRetentionPeriod: 12,
+            },
           }, {
             onConflict: 'id',
             ignoreDuplicates: false
