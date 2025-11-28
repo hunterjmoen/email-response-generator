@@ -36,9 +36,9 @@ export const responsesRouter = router({
    * Generate AI response options
    */
   generate: protectedProcedure
-    .input(MessageInputSchema)
+    .input(MessageInputSchema.extend({ clientId: z.string().uuid().optional() }))
     .mutation(async ({ input, ctx }) => {
-      const { originalMessage, context, templateId, refinementInstructions } = input;
+      const { originalMessage, context, templateId, refinementInstructions, clientId } = input;
       const { user } = ctx;
 
       try {
@@ -102,6 +102,7 @@ export const responsesRouter = router({
           .from('response_history')
           .insert({
             user_id: user.id,
+            client_id: clientId || null,
             original_message: originalMessage,
             original_message_encrypted: encryptedMessage,
             context: enrichedContext,
@@ -129,6 +130,15 @@ export const responsesRouter = router({
           .from('subscriptions')
           .update({ usage_count: subscription.usage_count + 1 })
           .eq('user_id', user.id);
+
+        // Update client's last contact date if clientId provided
+        if (clientId) {
+          await supabaseAdmin
+            .from('clients')
+            .update({ last_contact_date: new Date().toISOString() })
+            .eq('id', clientId)
+            .eq('user_id', user.id);
+        }
 
         // Prepare response
         const response: AIResponse = {
