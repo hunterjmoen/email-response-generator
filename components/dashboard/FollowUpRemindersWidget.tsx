@@ -12,8 +12,8 @@ import toast from 'react-hot-toast';
 interface Reminder {
   id: string;
   name: string;
-  email: string | null;
-  company: string | null;
+  email?: string | null;
+  company?: string | null;
   relationshipStage: string;
   priority: string;
   lastContactDate: string;
