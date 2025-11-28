@@ -153,7 +153,7 @@ export const clientRouter = router({
             health_score: input.healthScore || 50,
             follow_up_enabled: (input as any).followUpEnabled ?? true,
             follow_up_interval_days: (input as any).followUpIntervalDays ?? null,
-          })
+          } as any)
           .select()
           .single();
 
@@ -219,7 +219,7 @@ export const clientRouter = router({
             health_score: input.healthScore !== undefined ? input.healthScore : undefined,
             follow_up_enabled: (input as any).followUpEnabled !== undefined ? (input as any).followUpEnabled : undefined,
             follow_up_interval_days: (input as any).followUpIntervalDays !== undefined ? (input as any).followUpIntervalDays : undefined,
-          })
+          } as any)
           .eq('id', input.id)
           .eq('user_id', ctx.user.id)
           .select()

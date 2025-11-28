@@ -22,13 +22,13 @@ export const remindersRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     try {
       // Fetch all clients with follow-ups enabled
-      const { data, error } = await ctx.supabase
+      const { data, error } = (await ctx.supabase
         .from('clients')
         .select('*')
         .eq('user_id', ctx.user.id)
         .eq('follow_up_enabled', true)
         .eq('is_archived', false)
-        .order('last_contact_date', { ascending: true, nullsFirst: false });
+        .order('last_contact_date', { ascending: true, nullsFirst: false })) as any;
 
       if (error) {
         logError(error, { context: 'Fetch follow-up reminders' });
@@ -122,7 +122,7 @@ export const remindersRouter = router({
       try {
         const { error } = await ctx.supabase
           .from('clients')
-          .update({ last_reminded_at: new Date().toISOString() })
+          .update({ last_reminded_at: new Date().toISOString() } as any)
           .eq('id', input.clientId)
           .eq('user_id', ctx.user.id);
 
@@ -162,12 +162,12 @@ export const remindersRouter = router({
     .mutation(async ({ ctx, input }) => {
       try {
         // Fetch client to get interval
-        const { data: client, error: fetchError } = await ctx.supabase
+        const { data: client, error: fetchError } = (await ctx.supabase
           .from('clients')
           .select('follow_up_interval_days, priority')
           .eq('id', input.clientId)
           .eq('user_id', ctx.user.id)
-          .single();
+          .single()) as any;
 
         if (fetchError || !client) {
           throw new TRPCError({
@@ -187,7 +187,7 @@ export const remindersRouter = router({
 
         const { error } = await ctx.supabase
           .from('clients')
-          .update({ last_reminded_at: snoozeUntil.toISOString() })
+          .update({ last_reminded_at: snoozeUntil.toISOString() } as any)
           .eq('id', input.clientId)
           .eq('user_id', ctx.user.id);
 
