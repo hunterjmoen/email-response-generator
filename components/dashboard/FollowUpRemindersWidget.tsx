@@ -6,7 +6,7 @@ import {
   ClockIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
-import { trpc } from '../../lib/trpc';
+import { trpc } from '../../utils/trpc';
 import toast from 'react-hot-toast';
 
 interface Reminder {
