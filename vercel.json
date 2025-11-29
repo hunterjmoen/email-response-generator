@@ -11,7 +11,7 @@
         },
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "https://freelance-flow.vercel.app"
+          "value": "https://freelance-flow.com"
         },
         {
           "key": "Access-Control-Allow-Methods",
