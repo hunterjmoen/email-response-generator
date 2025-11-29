@@ -74,6 +74,42 @@ export type Database = {
           },
         ]
       }
+      follow_up_templates: {
+        Row: {
+          id: string
+          name: string
+          description: string
+          message_template: string
+          category: string
+          is_active: boolean
+          sort_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description: string
+          message_template: string
+          category: string
+          is_active?: boolean
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string
+          message_template?: string
+          category?: string
+          is_active?: boolean
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           budget: number | null

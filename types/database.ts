@@ -17,6 +17,9 @@ export interface ClientRow {
   last_contact_date?: string | null;
   health_score?: number | null;
   stripe_customer_id?: string | null;
+  follow_up_interval_days?: number | null;
+  follow_up_enabled?: boolean | null;
+  last_reminded_at?: string | null;
   created_at: string;
   updated_at: string;
   // For aggregated queries
@@ -90,4 +93,16 @@ export interface ResponseHistoryRow {
   final_response?: string | null;
   feedback_rating?: number | null;
   created_at: string;
+}
+
+export interface FollowUpTemplateRow {
+  id: string;
+  name: string;
+  description: string;
+  message_template: string;
+  category: 'general_checkin' | 'project_update' | 'payment_reminder' | 'proposal_followup' | 'reengagement';
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
 }

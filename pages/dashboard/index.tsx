@@ -1,6 +1,7 @@
 import { ProtectedRoute } from '../../components/auth/ProtectedRoute';
 import { DashboardLayout } from '../../components/layouts/DashboardLayout';
 import { HeroStats, QuickActions, RecentActivity, ActiveClientsWidget } from '../../components/dashboard';
+import { FollowUpRemindersWidget } from '../../components/dashboard/FollowUpRemindersWidget';
 import { trpc } from '../../utils/trpc';
 
 export default function Dashboard() {
@@ -39,6 +40,7 @@ export default function Dashboard() {
 
             {/* Right Column - Sidebar */}
             <div className="space-y-6">
+              <FollowUpRemindersWidget limit={5} />
               <ActiveClientsWidget clients={activeClients || []} isLoading={clientsLoading} />
             </div>
           </div>

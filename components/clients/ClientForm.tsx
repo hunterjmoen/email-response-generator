@@ -10,7 +10,7 @@ interface ClientFormProps {
 }
 
 export function ClientForm({ clientId, onClose, onSubmit }: ClientFormProps) {
-  const [formData, setFormData] = useState<ClientInput>({
+  const [formData, setFormData] = useState<ClientInput & { followUpEnabled?: boolean; followUpIntervalDays?: number | null }>({
     name: '',
     email: '',
     company: '',
@@ -20,6 +20,8 @@ export function ClientForm({ clientId, onClose, onSubmit }: ClientFormProps) {
     relationshipStage: 'established',
     tags: [],
     priority: 'medium',
+    followUpEnabled: true,
+    followUpIntervalDays: null,
   });
   const [tagInput, setTagInput] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -42,6 +44,8 @@ export function ClientForm({ clientId, onClose, onSubmit }: ClientFormProps) {
         relationshipStage: existingClient.relationshipStage,
         tags: existingClient.tags || [],
         priority: existingClient.priority || 'medium',
+        followUpEnabled: (existingClient as any).followUpEnabled ?? true,
+        followUpIntervalDays: (existingClient as any).followUpIntervalDays ?? null,
       });
     }
   }, [existingClient]);
@@ -231,6 +235,42 @@ export function ClientForm({ clientId, onClose, onSubmit }: ClientFormProps) {
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
               </select>
+            </div>
+
+            <div>
+              <label htmlFor="followUpIntervalDays" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Follow-Up Interval (days)
+              </label>
+              <input
+                type="number"
+                id="followUpIntervalDays"
+                value={formData.followUpIntervalDays ?? ''}
+                onChange={(e) => setFormData({ ...formData, followUpIntervalDays: e.target.value ? parseInt(e.target.value) : null })}
+                min="1"
+                max="90"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                placeholder={formData.priority === 'high' ? '3 (default)' : formData.priority === 'low' ? '14 (default)' : '7 (default)'}
+              />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Leave empty to use default based on priority
+              </p>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.followUpEnabled ?? true}
+                  onChange={(e) => setFormData({ ...formData, followUpEnabled: e.target.checked })}
+                  className="w-4 h-4 text-green-600 border-gray-300 dark:border-gray-600 rounded focus:ring-green-500 focus:ring-2"
+                />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Enable follow-up reminders for this client
+                </span>
+              </label>
+              <p className="ml-6 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Get notified when it's time to check in with this client
+              </p>
             </div>
           </div>
 
