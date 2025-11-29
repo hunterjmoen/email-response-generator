@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { LoginModal } from '../components/auth/LoginModal';
 import { UserProfileMenu } from '../components/UserProfileMenu';
 import { useAuthStore } from '../stores/auth';
-import ThemeToggle from '../components/shared/ThemeToggle';
 import FAQAccordion from '../components/faq/FAQAccordion';
 import { FAQ_ITEMS } from '../data/faq-items';
 
@@ -37,7 +36,6 @@ export default function Home() {
               <a href="#faq" className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition-colors">FAQ</a>
             </nav>
             <div className="flex items-center gap-4">
-              <ThemeToggle />
               {!isLoading && (
                 <>
                   {isAuthenticated ? (
