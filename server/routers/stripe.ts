@@ -133,10 +133,10 @@ export const stripeRouter = router({
         // Get or create Stripe customer for this user
         let customerId: string;
 
-        // Check if user already has a Stripe customer ID in the database
+        // Check if user already has a Stripe customer ID and trial status in the database
         const { data: existingSubscription } = await ctx.supabase
           .from('subscriptions')
-          .select('stripe_customer_id')
+          .select('stripe_customer_id, has_used_trial')
           .eq('user_id', ctx.user.id)
           .single();
 
@@ -181,6 +181,9 @@ export const stripeRouter = router({
         // Generate idempotency key to prevent duplicate sessions
         const idempotencyKey = `subscription_${ctx.user.id}_${input.priceId}_${Date.now()}`;
 
+        // Only apply trial period if user hasn't already used their free trial
+        const trialDays = existingSubscription?.has_used_trial ? undefined : input.trialPeriodDays;
+
         const session = await stripe.checkout.sessions.create({
           mode: 'subscription',
           payment_method_types: ['card'],
@@ -201,7 +204,7 @@ export const stripeRouter = router({
             terms_of_service: 'none',
           },
           subscription_data: {
-            trial_period_days: input.trialPeriodDays,
+            trial_period_days: trialDays,
             metadata: {
               userId: ctx.user.id,
               email: ctx.user.email,
