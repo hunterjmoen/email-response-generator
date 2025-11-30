@@ -241,6 +241,7 @@ export type Database = {
       subscriptions: {
         Row: {
           created_at: string
+          has_used_trial: boolean
           monthly_limit: number
           status: string
           stripe_customer_id: string | null
@@ -253,6 +254,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          has_used_trial?: boolean
           monthly_limit?: number
           status?: string
           stripe_customer_id?: string | null
@@ -265,6 +267,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          has_used_trial?: boolean
           monthly_limit?: number
           status?: string
           stripe_customer_id?: string | null
