@@ -250,8 +250,8 @@ The pricing page correctly has a Monthly/Annual toggle, but the Settings page ju
 
 ## Todo Items
 
-- [ ] Update Professional card in Settings to show price based on user's billing interval
-- [ ] Update Premium card in Settings to show price based on user's billing interval
+- [x] Update Professional card in Settings to show price based on user's billing interval
+- [x] Update Premium card in Settings to show price based on user's billing interval
 
 ## Files to Change
 
@@ -264,4 +264,22 @@ Simple fix: Use the existing `isAnnualSubscription` variable (line 118) to condi
 ---
 
 ## Review Section
-(To be filled after changes are made)
+
+### Changes Made
+
+**File: `pages/settings/billing.tsx`**
+
+1. **Professional card (lines 503-508)**:
+   - Changed from hardcoded `$10/mo` to conditional `${isAnnualSubscription ? '8' : '10'}/mo`
+   - Added "billed annually" note when user is on annual billing
+
+2. **Premium card (lines 538-543)**:
+   - Changed from hardcoded `$19/mo` to conditional `${isAnnualSubscription ? '15' : '19'}/mo`
+   - Added "billed annually" note when user is on annual billing
+
+### Impact
+
+- Only 2 small edits to existing file
+- No new files, components, or dependencies
+- Uses existing `isAnnualSubscription` variable (already defined at line 118)
+- Settings page now matches user's actual billing cycle
