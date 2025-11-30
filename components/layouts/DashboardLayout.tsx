@@ -3,6 +3,7 @@ import { DashboardSidebar } from '../navigation/DashboardSidebar';
 import { useAuthStore } from '../../stores/auth';
 import { UserProfileMenu } from '../UserProfileMenu';
 import ThemeToggle from '../shared/ThemeToggle';
+import { FeedbackButton } from '../feedback';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -41,6 +42,8 @@ export function DashboardLayout({
           {children}
         </div>
       </main>
+
+      {isAuthenticated && <FeedbackButton />}
     </div>
   );
 }

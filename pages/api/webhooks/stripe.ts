@@ -4,6 +4,8 @@ import { stripe } from '../../../server/lib/stripe';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { devLog, logError, logWarning } from '../../../utils/logger';
+import { resend, FROM_EMAIL, isEmailConfigured } from '../../../server/lib/resend';
+import { getTrialEndFeedbackEmail } from '../../../server/emails/trial-end-feedback';
 
 // Create admin Supabase client for database updates
 const supabaseAdmin = createClient(
@@ -122,6 +124,12 @@ export default async function handler(
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
         await handleInvoicePaymentFailed(invoice);
+        break;
+      }
+
+      case 'customer.subscription.trial_will_end': {
+        const subscription = event.data.object as Stripe.Subscription;
+        await handleTrialWillEnd(subscription);
         break;
       }
 
@@ -389,5 +397,77 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
         logError(error, { context: 'Handle payment failed' });
       }
     }
+  }
+}
+
+async function handleTrialWillEnd(subscription: Stripe.Subscription) {
+  devLog.log('[Webhook] Trial will end soon');
+
+  const userId = subscription.metadata?.userId;
+  if (!userId) {
+    logWarning('No userId in subscription metadata for trial_will_end', { subscriptionId: subscription.id });
+    return;
+  }
+
+  try {
+    // Check if we've already sent this email
+    const { data: existingLog } = await supabaseAdmin
+      .from('feedback_email_log')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('email_type', 'trial_ended')
+      .single();
+
+    if (existingLog) {
+      devLog.log('[Webhook] Trial end email already sent, skipping');
+      return;
+    }
+
+    // Get user data
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('email, first_name, preferences')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !userData) {
+      logError(userError || new Error('User not found'), { context: 'Fetch user for trial end email' });
+      return;
+    }
+
+    // Check email preferences
+    const prefs = userData.preferences as { emailNotifications?: boolean } | null;
+    if (prefs?.emailNotifications === false) {
+      devLog.log('[Webhook] User has email notifications disabled, skipping');
+      return;
+    }
+
+    // Send email if configured
+    if (isEmailConfigured() && resend) {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://freelanceflow.app';
+      const emailContent = getTrialEndFeedbackEmail({
+        userName: userData.first_name || 'there',
+        feedbackUrl: `${appUrl}/dashboard?feedback=true`,
+      });
+
+      await resend.emails.send({
+        from: FROM_EMAIL,
+        to: userData.email,
+        subject: emailContent.subject,
+        html: emailContent.html,
+      });
+
+      devLog.log('[Webhook] Trial end feedback email sent');
+
+      // Log that we've sent this email
+      await supabaseAdmin
+        .from('feedback_email_log')
+        .insert({ user_id: userId, email_type: 'trial_ended' });
+    } else {
+      devLog.log('[Webhook] Email not configured, skipping trial end email');
+    }
+  } catch (error) {
+    logError(error, { context: 'Handle trial will end' });
+    // Don't throw - this is a non-critical operation
   }
 }

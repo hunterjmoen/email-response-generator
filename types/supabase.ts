@@ -288,6 +288,79 @@ export type Database = {
           },
         ]
       }
+      feedback: {
+        Row: {
+          id: string
+          user_id: string
+          type: string
+          rating: number | null
+          category: string | null
+          message: string
+          page_url: string | null
+          metadata: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type?: string
+          rating?: number | null
+          category?: string | null
+          message: string
+          page_url?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: string
+          rating?: number | null
+          category?: string | null
+          message?: string
+          page_url?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_email_log: {
+        Row: {
+          id: string
+          user_id: string
+          email_type: string
+          sent_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          email_type: string
+          sent_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          email_type?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_email_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           communication_style: Json

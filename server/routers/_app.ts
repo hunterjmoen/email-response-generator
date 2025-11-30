@@ -9,6 +9,7 @@ import { settingsRouter } from './settings';
 import { dashboardRouter } from './dashboard';
 import { remindersRouter } from './reminders';
 import { templatesRouter } from './templates';
+import { feedbackRouter } from './feedback';
 
 export const appRouter = router({
   auth: authRouter,
@@ -21,6 +22,7 @@ export const appRouter = router({
   dashboard: dashboardRouter,
   reminders: remindersRouter,
   templates: templatesRouter,
+  feedback: feedbackRouter,
 });
 
 export type AppRouter = typeof appRouter;
