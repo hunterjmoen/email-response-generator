@@ -204,34 +204,46 @@ export default function BillingSettings() {
 
         // Update existing subscription (upgrades or resubscription)
         console.log('[Billing] Updating existing subscription...');
-        await updateSubscription.mutateAsync({
-          subscriptionId: subscription.stripe_subscription_id!,
-          newPriceId: priceId,
-        });
-        await refreshSubscription();
+        try {
+          await updateSubscription.mutateAsync({
+            subscriptionId: subscription.stripe_subscription_id!,
+            newPriceId: priceId,
+          });
+          await refreshSubscription();
 
-        // Show appropriate message based on action
-        if (isCancelPending && currentTier === tier) {
-          toast.success(`Your ${tier} subscription has been reactivated!`);
-        } else if (currentTier === tier) {
-          toast.success(`Successfully switched to ${interval} billing!`);
-        } else {
-          toast.success(`Successfully upgraded to ${planFeatures[tier].name}!`);
+          // Show appropriate message based on action
+          if (isCancelPending && currentTier === tier) {
+            toast.success(`Your ${tier} subscription has been reactivated!`);
+          } else if (currentTier === tier) {
+            toast.success(`Successfully switched to ${interval} billing!`);
+          } else {
+            toast.success(`Successfully upgraded to ${planFeatures[tier].name}!`);
+          }
+          setShowUpgradeModal(false);
+          return;
+        } catch (updateError: any) {
+          // If subscription was cancelled in Stripe, create a new one
+          if (updateError?.message === 'SUBSCRIPTION_CANCELLED') {
+            console.log('[Billing] Subscription was cancelled, creating new checkout session...');
+            await refreshSubscription(); // Sync local state
+            // Fall through to create new subscription
+          } else {
+            throw updateError; // Re-throw other errors
+          }
         }
-        setShowUpgradeModal(false);
-      } else {
-        // Create new subscription (free tier users or users without stripe_subscription_id)
-        console.log('[Billing] Creating new checkout session...');
-        const result = await createSubscriptionSession.mutateAsync({
-          priceId,
-          successUrl: `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${window.location.origin}/settings/billing`,
-          trialPeriodDays: subscription?.has_used_trial ? undefined : 14,
-        });
+      }
 
-        if (result.url) {
-          window.location.href = result.url;
-        }
+      // Create new subscription (free tier users, users without stripe_subscription_id, or cancelled subscriptions)
+      console.log('[Billing] Creating new checkout session...');
+      const result = await createSubscriptionSession.mutateAsync({
+        priceId,
+        successUrl: `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${window.location.origin}/settings/billing`,
+        trialPeriodDays: subscription?.has_used_trial ? undefined : 14,
+      });
+
+      if (result.url) {
+        window.location.href = result.url;
       }
     } catch (error: any) {
       console.error('Failed to change plan:', error);

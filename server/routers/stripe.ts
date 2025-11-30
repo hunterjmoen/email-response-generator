@@ -379,7 +379,31 @@ export const stripeRouter = router({
 
         // Get the current subscription
         const subscription = await stripe.subscriptions.retrieve(input.subscriptionId);
-        devLog.log('[updateSubscription] Current subscription retrieved');
+        devLog.log('[updateSubscription] Current subscription retrieved, status:', subscription.status);
+
+        // Check if subscription is cancelled - can't update a cancelled subscription
+        if (subscription.status === 'canceled') {
+          devLog.log('[updateSubscription] Subscription is cancelled, syncing database');
+
+          // Sync database to reflect the cancelled status
+          await ctx.supabase
+            .from('subscriptions')
+            .update({
+              status: 'cancelled',
+              tier: 'free',
+              monthly_limit: 10,
+              stripe_subscription_id: null,
+              billing_interval: null,
+              cancel_at_period_end: false,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('user_id', ctx.user.id);
+
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'SUBSCRIPTION_CANCELLED',
+          });
+        }
 
         // Update the subscription with the new price
         // Also reset cancel_at_period_end to false in case user is resubscribing

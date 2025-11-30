@@ -14,18 +14,43 @@ In `server/routers/stripe.ts`, the `updateSubscription` mutation doesn't check i
 
 ## Fix Plan
 
-- [ ] **1. Add status check in `updateSubscription`**
+- [x] **1. Add status check in `updateSubscription`**
   - After retrieving the subscription from Stripe, check if `subscription.status === 'canceled'`
   - If cancelled, throw a specific TRPC error with a message indicating the user needs to create a new subscription
   - Also sync the database to reflect the cancelled status
 
-- [ ] **2. Handle the error in frontend** (if needed)
+- [x] **2. Handle the error in frontend** (if needed)
   - The frontend should catch this specific error and redirect to checkout flow
   - Check if this is already handled or needs to be added
 
-## Files to Modify
-- `server/routers/stripe.ts` - Add status check in `updateSubscription`
-- `pages/settings/billing.tsx` - May need to handle the specific error (check first)
+## Files Modified
+- `server/routers/stripe.ts` - Added status check in `updateSubscription` (lines 384-406)
+- `pages/settings/billing.tsx` - Added error handling in `handleUpgrade` (lines 207-233)
 
 ## Review Section
-(To be filled after implementation)
+
+### Summary of Changes
+
+**Backend (`server/routers/stripe.ts`)**:
+- Added check after retrieving Stripe subscription: if `status === 'canceled'`, sync the database to free tier and throw `SUBSCRIPTION_CANCELLED` error
+- This ensures the database is kept in sync when Stripe has already cancelled a subscription
+
+**Frontend (`pages/settings/billing.tsx`)**:
+- Wrapped the `updateSubscription` call in a try-catch
+- If the error is `SUBSCRIPTION_CANCELLED`, the code falls through to create a new checkout session
+- Other errors are re-thrown to be handled by the outer catch block
+
+### How the Fix Works
+1. User clicks "Resubscribe" on a cancelled subscription
+2. Frontend calls `updateSubscription` with the old subscription ID
+3. Backend retrieves subscription from Stripe, sees `status: 'canceled'`
+4. Backend syncs database (sets tier to free, clears subscription ID)
+5. Backend throws `SUBSCRIPTION_CANCELLED` error
+6. Frontend catches this error, refreshes local state, falls through to checkout flow
+7. User is redirected to Stripe checkout to create a new subscription
+
+### Impact
+- Minimal code changes (~30 lines added)
+- No breaking changes to existing functionality
+- Database stays in sync with Stripe
+- User gets a seamless experience - automatically redirected to checkout
