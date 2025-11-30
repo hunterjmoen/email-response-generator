@@ -230,3 +230,56 @@ The Smart Follow-Up System is fully functional and ready for use. All migrations
 - Dismiss or snooze reminders as needed
 
 This addresses one of the top feature gaps identified in the original app analysis and provides real, measurable value to freelancers.
+
+---
+---
+
+# Pricing Settings Review - Bug Fix
+
+## Problem Identified
+
+The Settings page "Change Plan" section (billing.tsx lines 473-548) shows **hardcoded monthly prices** regardless of the user's current billing interval:
+- Professional shows `$10/mo` always (line 503)
+- Premium shows `$19/mo` always (line 533)
+
+But when the user is on an **Annual** plan, they should see:
+- Professional: `$8/mo` ($96/year)
+- Premium: `$15/mo` ($180/year)
+
+The pricing page correctly has a Monthly/Annual toggle, but the Settings page just shows monthly prices.
+
+## Todo Items
+
+- [x] Update Professional card in Settings to show price based on user's billing interval
+- [x] Update Premium card in Settings to show price based on user's billing interval
+
+## Files to Change
+
+- `/home/user/email-response-generator/pages/settings/billing.tsx` (lines 502-504 and 532-534)
+
+## Approach
+
+Simple fix: Use the existing `isAnnualSubscription` variable (line 118) to conditionally render the correct prices. No new components or toggles needed - just match the user's current billing cycle.
+
+---
+
+## Review Section
+
+### Changes Made
+
+**File: `pages/settings/billing.tsx`**
+
+1. **Professional card (lines 503-508)**:
+   - Changed from hardcoded `$10/mo` to conditional `${isAnnualSubscription ? '8' : '10'}/mo`
+   - Added "billed annually" note when user is on annual billing
+
+2. **Premium card (lines 538-543)**:
+   - Changed from hardcoded `$19/mo` to conditional `${isAnnualSubscription ? '15' : '19'}/mo`
+   - Added "billed annually" note when user is on annual billing
+
+### Impact
+
+- Only 2 small edits to existing file
+- No new files, components, or dependencies
+- Uses existing `isAnnualSubscription` variable (already defined at line 118)
+- Settings page now matches user's actual billing cycle

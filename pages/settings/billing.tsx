@@ -500,7 +500,12 @@ export default function BillingSettings() {
             'border-gray-200 dark:border-gray-700'
           }`}>
             <h4 className="font-semibold text-gray-900 dark:text-gray-100">Professional</h4>
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">$10<span className="text-sm font-normal">/mo</span></p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
+              ${isAnnualSubscription ? '8' : '10'}<span className="text-sm font-normal">/mo</span>
+            </p>
+            {isAnnualSubscription && (
+              <p className="text-xs text-gray-400 dark:text-gray-500">$96 billed annually</p>
+            )}
             <p className="text-sm text-gray-500 dark:text-gray-400">75 responses/mo</p>
             {isProfessional && !isCancelPending ? (
               <span className="inline-block mt-3 text-sm font-medium text-green-600 dark:text-green-400">
@@ -530,7 +535,12 @@ export default function BillingSettings() {
             isPremium && !isCancelPending ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'border-gray-200 dark:border-gray-700'
           }`}>
             <h4 className="font-semibold text-gray-900 dark:text-gray-100">Premium</h4>
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">$19<span className="text-sm font-normal">/mo</span></p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
+              ${isAnnualSubscription ? '15' : '19'}<span className="text-sm font-normal">/mo</span>
+            </p>
+            {isAnnualSubscription && (
+              <p className="text-xs text-gray-400 dark:text-gray-500">$180 billed annually</p>
+            )}
             <p className="text-sm text-gray-500 dark:text-gray-400">Unlimited</p>
             {isPremium && !isCancelPending ? (
               <span className="inline-block mt-3 text-sm font-medium text-purple-600 dark:text-purple-400">
