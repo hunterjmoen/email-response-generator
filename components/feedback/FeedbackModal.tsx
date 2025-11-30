@@ -100,7 +100,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                   </label>
                   <select
                     {...register('category')}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900"
                   >
                     <option value="">Select a category</option>
                     <option value="bug">Bug Report</option>
@@ -147,7 +147,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                   <textarea
                     {...register('message')}
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none text-gray-900 placeholder:text-gray-500"
                     placeholder="Tell us what you think..."
                   />
                   {errors.message && (
