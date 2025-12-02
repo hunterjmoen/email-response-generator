@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { DashboardSidebar } from '../navigation/DashboardSidebar';
 import { useAuthStore } from '../../stores/auth';
 import { UserProfileMenu } from '../UserProfileMenu';
@@ -17,10 +17,15 @@ export function DashboardLayout({
   showHeader = true
 }: DashboardLayoutProps) {
   const { user, isAuthenticated } = useAuthStore();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      <DashboardSidebar user={user} />
+      <DashboardSidebar
+        user={user}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+      />
 
       <main className="flex-1 flex flex-col overflow-hidden">
         {showHeader && (

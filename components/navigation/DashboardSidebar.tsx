@@ -9,7 +9,9 @@ import {
   ChartBarIcon,
   SparklesIcon,
   ArrowLeftOnRectangleIcon,
-  UsersIcon
+  UsersIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import { UsageIndicator } from '../usage/UsageIndicator';
 import { supabase } from '../../utils/supabase';
@@ -18,6 +20,7 @@ import type { User } from '@freelance-flow/shared';
 interface DashboardSidebarProps {
   user?: User | null;
   isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 interface NavItemProps {
@@ -27,23 +30,35 @@ interface NavItemProps {
   isActive?: boolean;
   onClick?: () => void;
   badge?: string | number;
+  isCollapsed?: boolean;
 }
 
-function NavItem({ href, icon: Icon, label, isActive, onClick, badge }: NavItemProps) {
+function NavItem({ href, icon: Icon, label, isActive, onClick, badge, isCollapsed }: NavItemProps) {
   const content = (
     <div className={`
-      group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all cursor-pointer
+      group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all cursor-pointer relative
+      ${isCollapsed ? 'justify-center' : ''}
       ${isActive
         ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
       }
     `}>
       <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300'}`} />
-      <span className="text-sm font-medium flex-1">{label}</span>
-      {badge && (
-        <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full">
-          {badge}
-        </span>
+      {!isCollapsed && (
+        <>
+          <span className="text-sm font-medium flex-1">{label}</span>
+          {badge && (
+            <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full">
+              {badge}
+            </span>
+          )}
+        </>
+      )}
+      {/* Tooltip for collapsed state */}
+      {isCollapsed && (
+        <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+          {label}
+        </div>
       )}
     </div>
   );
@@ -65,7 +80,7 @@ function NavItem({ href, icon: Icon, label, isActive, onClick, badge }: NavItemP
   );
 }
 
-export function DashboardSidebar({ user, isCollapsed = false }: DashboardSidebarProps) {
+export function DashboardSidebar({ user, isCollapsed = false, onToggleCollapse }: DashboardSidebarProps) {
   const router = useRouter();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
@@ -92,19 +107,39 @@ export function DashboardSidebar({ user, isCollapsed = false }: DashboardSidebar
   };
 
   return (
-    <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col h-screen">
+    <aside className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col h-screen transition-all duration-300 ease-in-out`}>
       {/* Logo/Brand */}
-      <div className="px-4 py-5 border-b border-gray-200 dark:border-gray-700">
-        <Link href="/" className="flex items-center gap-2.5 text-gray-900 dark:text-gray-100 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-          <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-sm">
+      <div className={`${isCollapsed ? 'px-2' : 'px-4'} py-5 border-b border-gray-200 dark:border-gray-700 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+        <Link href="/" className={`flex items-center gap-2.5 text-gray-900 dark:text-gray-100 hover:text-gray-700 dark:hover:text-gray-300 transition-colors ${isCollapsed ? 'justify-center' : ''}`}>
+          <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
             <span className="text-white font-bold text-base">FL</span>
           </div>
-          <span className="text-lg font-semibold tracking-tight">FreelanceFlow</span>
+          {!isCollapsed && <span className="text-lg font-semibold tracking-tight">FreelanceFlow</span>}
         </Link>
+        {!isCollapsed && onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors"
+            aria-label="Collapse sidebar"
+          >
+            <ChevronLeftIcon className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
+      {/* Expand button when collapsed */}
+      {isCollapsed && onToggleCollapse && (
+        <button
+          onClick={onToggleCollapse}
+          className="mx-auto mt-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors"
+          aria-label="Expand sidebar"
+        >
+          <ChevronRightIcon className="w-5 h-5" />
+        </button>
+      )}
+
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 overflow-y-auto">
+      <nav className={`flex-1 ${isCollapsed ? 'px-2' : 'px-3'} py-4 overflow-y-auto`}>
         <ul className="space-y-1">
           {navItems.map((item) => (
             <NavItem
@@ -114,6 +149,7 @@ export function DashboardSidebar({ user, isCollapsed = false }: DashboardSidebar
               label={item.label}
               isActive={isActiveRoute(item.href)}
               badge={item.badge}
+              isCollapsed={isCollapsed}
             />
           ))}
         </ul>
@@ -128,11 +164,12 @@ export function DashboardSidebar({ user, isCollapsed = false }: DashboardSidebar
             icon={Cog6ToothIcon}
             label="Settings"
             isActive={router.pathname.startsWith('/settings')}
+            isCollapsed={isCollapsed}
           />
         </ul>
 
-        {/* Usage Indicator */}
-        {user?.subscription && (
+        {/* Usage Indicator - hide when collapsed */}
+        {!isCollapsed && user?.subscription && (
           <div className="mt-6 px-1">
             <UsageIndicator
               usageCount={user.subscription.usageCount || 0}
@@ -144,42 +181,60 @@ export function DashboardSidebar({ user, isCollapsed = false }: DashboardSidebar
       </nav>
 
       {/* User Profile & Logout */}
-      <div className="px-3 py-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+      <div className={`${isCollapsed ? 'px-2' : 'px-3'} py-4 border-t border-gray-200 dark:border-gray-700 space-y-2`}>
         {user && (
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-            <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-full flex items-center justify-center font-semibold text-sm shadow-sm">
+          <div className={`group flex items-center gap-3 ${isCollapsed ? 'px-0 justify-center' : 'px-3'} py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors relative`}>
+            <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-full flex items-center justify-center font-semibold text-sm shadow-sm flex-shrink-0">
               {user.firstName && user.lastName
                 ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
                 : user.email[0].toUpperCase()}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                  {user.firstName && user.lastName
+                    ? `${user.firstName} ${user.lastName}`
+                    : user.email}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                  {user.subscription?.tier || 'free'} plan
+                </p>
+              </div>
+            )}
+            {/* Tooltip for collapsed state */}
+            {isCollapsed && (
+              <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
                 {user.firstName && user.lastName
                   ? `${user.firstName} ${user.lastName}`
                   : user.email}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                {user.subscription?.tier || 'free'} plan
-              </p>
-            </div>
+              </div>
+            )}
           </div>
         )}
 
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+          className={`group w-full flex items-center gap-3 ${isCollapsed ? 'px-0 justify-center' : 'px-3'} py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all relative`}
         >
-          <ArrowLeftOnRectangleIcon className="w-5 h-5" />
-          <span>Log out</span>
+          <ArrowLeftOnRectangleIcon className="w-5 h-5 flex-shrink-0" />
+          {!isCollapsed && <span>Log out</span>}
+          {/* Tooltip for collapsed state */}
+          {isCollapsed && (
+            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+              Log out
+            </div>
+          )}
         </button>
       </div>
 
-      {/* Footer */}
-      <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 text-center">
-        <p className="text-xs text-gray-400 dark:text-gray-500">
-          curated by <span className="font-semibold text-gray-600 dark:text-gray-400">FreelanceFlow</span>
-        </p>
-      </div>
+      {/* Footer - hide when collapsed */}
+      {!isCollapsed && (
+        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 text-center">
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            curated by <span className="font-semibold text-gray-600 dark:text-gray-400">FreelanceFlow</span>
+          </p>
+        </div>
+      )}
     </aside>
   );
 }
