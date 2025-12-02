@@ -43,7 +43,12 @@ function StatCard({ icon: Icon, label, value, subtitle, iconColor = 'text-green-
 }
 
 export function HeroStats({ stats }: HeroStatsProps) {
+  const isUnlimited = stats.monthlyLimit >= 999999;
+
   const formatUsage = () => {
+    if (isUnlimited) {
+      return `${stats.usageCount} / Unlimited`;
+    }
     return `${stats.usageCount} / ${stats.monthlyLimit}`;
   };
 
@@ -75,7 +80,7 @@ export function HeroStats({ stats }: HeroStatsProps) {
           icon={SparklesIcon}
           label="Responses Used"
           value={formatUsage()}
-          subtitle={`${stats.usagePercentage}% of monthly limit`}
+          subtitle={isUnlimited ? 'Premium plan' : `${stats.usagePercentage}% of monthly limit`}
           iconColor="text-green-600"
           bgColor="bg-green-50"
         />
