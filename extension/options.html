@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Freelance Email AI - Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="header-title">
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+        </svg>
+        <span>Freelance Email AI Settings</span>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- API Configuration -->
+      <section class="section">
+        <h2>API Configuration</h2>
+        <p class="section-description">Configure connection to the Freelance Flow API.</p>
+
+        <div class="form-group">
+          <label for="api-url">API Endpoint URL</label>
+          <input type="url" id="api-url" placeholder="https://api.freelance-flow.com">
+          <span class="help-text">Leave empty to use the default endpoint.</span>
+        </div>
+
+        <div class="form-group">
+          <button id="test-connection" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            Test Connection
+          </button>
+          <span id="connection-status" class="status-badge hidden"></span>
+        </div>
+      </section>
+
+      <!-- Account -->
+      <section class="section">
+        <h2>Account</h2>
+        <div id="account-info">
+          <div id="logged-in-info" class="hidden">
+            <p>Signed in as: <strong id="account-email">-</strong></p>
+            <button id="logout-btn" class="btn btn-secondary">Sign Out</button>
+          </div>
+          <div id="logged-out-info" class="hidden">
+            <p>Not signed in. Sign in from the extension popup to use AI responses.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Response Preferences -->
+      <section class="section">
+        <h2>Response Preferences</h2>
+        <p class="section-description">Customize how AI responses are generated.</p>
+
+        <div class="form-group">
+          <label for="default-tone">Default Tone</label>
+          <select id="default-tone">
+            <option value="professional">Professional</option>
+            <option value="friendly">Friendly</option>
+            <option value="collaborative">Collaborative</option>
+            <option value="firm">Firm</option>
+          </select>
+          <span class="help-text">The preferred tone for generated responses.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="response-count">Number of Variants</label>
+          <select id="response-count">
+            <option value="1">1 response</option>
+            <option value="2">2 responses</option>
+            <option value="3" selected>3 responses</option>
+          </select>
+          <span class="help-text">How many response variants to generate.</span>
+        </div>
+      </section>
+
+      <!-- Context Defaults -->
+      <section class="section">
+        <h2>Default Context</h2>
+        <p class="section-description">Default values for email context (can be changed per email).</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="default-urgency">Urgency</label>
+            <select id="default-urgency">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="default-relationship">Relationship</label>
+            <select id="default-relationship">
+              <option value="new">New</option>
+              <option value="ongoing" selected>Ongoing</option>
+              <option value="established">Established</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="default-project-phase">Project Phase</label>
+            <select id="default-project-phase">
+              <option value="inquiry">Inquiry</option>
+              <option value="proposal">Proposal</option>
+              <option value="active" selected>Active</option>
+              <option value="maintenance">Maintenance</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="default-message-type">Message Type</label>
+            <select id="default-message-type">
+              <option value="question">Question</option>
+              <option value="request" selected>Request</option>
+              <option value="update">Update</option>
+              <option value="complaint">Complaint</option>
+              <option value="followup">Follow-up</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Save Button -->
+      <div class="actions">
+        <button id="save-btn" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Save Settings
+        </button>
+        <span id="save-status" class="status-message hidden"></span>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <p>Freelance Email AI v1.0.0</p>
+    </footer>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

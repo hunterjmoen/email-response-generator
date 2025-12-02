@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Freelance Email AI</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-title">
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+        </svg>
+        <span>Freelance Email AI</span>
+      </div>
+      <button id="settings-btn" class="icon-btn" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Login View -->
+    <section id="login-view" class="view hidden">
+      <div class="login-container">
+        <h2>Sign In</h2>
+        <p class="login-subtitle">Sign in to generate AI responses</p>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required placeholder="you@example.com">
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required placeholder="Your password">
+          </div>
+          <div id="login-error" class="error-message hidden"></div>
+          <button type="submit" id="login-btn" class="btn btn-primary">
+            <span>Sign In</span>
+            <span class="spinner hidden"></span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Main View (Email & Responses) -->
+    <section id="main-view" class="view hidden">
+      <!-- User info bar -->
+      <div class="user-bar">
+        <span id="user-email">user@example.com</span>
+        <button id="logout-btn" class="text-btn">Sign Out</button>
+      </div>
+
+      <!-- Email Preview -->
+      <div id="email-preview" class="email-preview">
+        <div class="email-meta">
+          <div class="email-from">
+            <span class="label">From:</span>
+            <span id="preview-from">-</span>
+          </div>
+          <div class="email-subject">
+            <span class="label">Subject:</span>
+            <span id="preview-subject">-</span>
+          </div>
+        </div>
+        <div class="email-body">
+          <p id="preview-body">Open an email in Gmail and click "Generate Response" to get started.</p>
+        </div>
+      </div>
+
+      <!-- Generate Button -->
+      <button id="generate-btn" class="btn btn-primary btn-full" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+        </svg>
+        <span>Generate Response</span>
+        <span class="spinner hidden"></span>
+      </button>
+
+      <!-- Responses Container -->
+      <div id="responses-container" class="responses-container hidden">
+        <h3>Generated Responses</h3>
+        <div id="responses-list" class="responses-list">
+          <!-- Response cards will be inserted here -->
+        </div>
+      </div>
+    </section>
+
+    <!-- No Email View -->
+    <section id="no-email-view" class="view hidden">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="4" width="20" height="16" rx="2"/>
+          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+        </svg>
+        <h3>No Email Selected</h3>
+        <p>Open an email in Gmail and click the "Generate Response" button to get started.</p>
+      </div>
+    </section>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
