@@ -180,3 +180,93 @@ Call `useResponseGenerationStore.getState().reset()` inside `clearAuth()` to cle
 
 ### Review
 Fixed. Response data is now properly cleared when users log out, preventing data leakage between accounts.
+
+---
+
+## Chrome Extension Build: Gmail Email AI Assistant (2025-12-02)
+
+### Project Overview
+Build a Chrome extension that integrates with Gmail to capture emails and send them to the existing `/api/responses/stream` endpoint for AI-powered response generation.
+
+### Key Integration Points
+- **API Endpoint**: `/api/responses/stream` (POST, Server-Sent Events)
+- **Authentication**: Bearer token (from Supabase auth)
+- **Request Format**: `{ originalMessage, context }`
+- **Response**: SSE stream with 3 response options (professional, casual, formal)
+
+---
+
+### Phase 1: Extension Foundation
+- [ ] 1.1 Create extension directory structure
+- [ ] 1.2 Create manifest.json (Manifest v3)
+- [ ] 1.3 Create extension icons (16x16, 48x48, 128x128)
+
+### Phase 2: Content Script (Gmail Integration)
+- [ ] 2.1 Create content.js for Gmail page injection
+- [ ] 2.2 Implement Gmail DOM detection (detect when email is open)
+- [ ] 2.3 Implement button injection near Reply/Forward buttons
+- [ ] 2.4 Implement email data extraction (sender, subject, body, thread)
+
+### Phase 3: Background Service Worker
+- [ ] 3.1 Create background.js service worker
+- [ ] 3.2 Implement message passing between content script and popup
+- [ ] 3.3 Implement API communication with streaming endpoint
+- [ ] 3.4 Implement secure credential storage
+
+### Phase 4: Popup Interface
+- [ ] 4.1 Create popup.html with clean UI
+- [ ] 4.2 Create popup.css for styling
+- [ ] 4.3 Create popup.js for logic
+- [ ] 4.4 Implement email preview display
+- [ ] 4.5 Implement SSE streaming response display
+- [ ] 4.6 Implement copy-to-clipboard functionality
+- [ ] 4.7 Implement regenerate/tone selection
+
+### Phase 5: Settings/Options Page
+- [ ] 5.1 Create options.html settings page
+- [ ] 5.2 Create options.css for styling
+- [ ] 5.3 Create options.js for logic
+- [ ] 5.4 Implement API endpoint configuration
+- [ ] 5.5 Implement API key/token storage
+- [ ] 5.6 Implement connection test functionality
+- [ ] 5.7 Implement tone preference settings
+
+### Phase 6: Polish & Documentation
+- [ ] 6.1 Add error handling for all edge cases
+- [ ] 6.2 Test with Gmail light and dark themes
+- [ ] 6.3 Create README with installation instructions
+- [ ] 6.4 Final testing and cleanup
+
+---
+
+### Technical Decisions
+
+**API Integration Strategy:**
+The existing streaming API expects:
+```javascript
+POST /api/responses/stream
+Headers: { Authorization: 'Bearer <token>' }
+Body: {
+  originalMessage: string,  // The email content
+  context: {
+    relationshipStage: 'new' | 'ongoing' | 'established',
+    projectPhase: 'inquiry' | 'proposal' | 'active' | 'maintenance',
+    urgency: 'low' | 'medium' | 'high',
+    messageType: 'question' | 'request' | 'update' | 'complaint' | 'followup'
+  }
+}
+```
+
+**Authentication Approach:**
+- Store API base URL and auth token in chrome.storage.sync
+- User enters their existing auth token from the app
+
+**Gmail DOM Selectors Strategy:**
+- Use multiple fallback selectors for robustness
+- Watch for Gmail's dynamic DOM updates with MutationObserver
+- Target the action buttons area in email view
+
+---
+
+### Extension Review Section
+(To be filled after completion)
