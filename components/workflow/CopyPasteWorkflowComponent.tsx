@@ -23,6 +23,7 @@ export function CopyPasteWorkflowComponent() {
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [useStreaming, setUseStreaming] = useState(true); // Enable streaming by default
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { user, isAuthenticated, isLoading: authLoading, refreshSubscription } = useAuthStore();
   const {
     currentInput,
@@ -237,7 +238,11 @@ export function CopyPasteWorkflowComponent() {
 
   return (
     <div className="flex h-screen bg-white dark:bg-gray-900">
-      <DashboardSidebar user={user} />
+      <DashboardSidebar
+        user={user}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+      />
 
       <main className="flex-1 flex flex-col">
         <header className="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
