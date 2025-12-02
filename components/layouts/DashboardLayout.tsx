@@ -1,6 +1,7 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode } from 'react';
 import { DashboardSidebar } from '../navigation/DashboardSidebar';
 import { useAuthStore } from '../../stores/auth';
+import { useUIStore } from '../../stores/ui';
 import { UserProfileMenu } from '../UserProfileMenu';
 import ThemeToggle from '../shared/ThemeToggle';
 import { FeedbackButton } from '../feedback';
@@ -17,14 +18,14 @@ export function DashboardLayout({
   showHeader = true
 }: DashboardLayoutProps) {
   const { user, isAuthenticated } = useAuthStore();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const { sidebarCollapsed, toggleSidebar } = useUIStore();
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <DashboardSidebar
         user={user}
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={toggleSidebar}
       />
 
       <main className="flex-1 flex flex-col overflow-hidden">

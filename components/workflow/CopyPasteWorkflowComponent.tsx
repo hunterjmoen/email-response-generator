@@ -8,6 +8,7 @@ import { TemplateSelector } from './TemplateSelector';
 import { QuickActions } from './QuickActions';
 import { useResponseGenerationStore, useCurrentResponseOptions } from '../../stores/response-generation';
 import { useAuthStore } from '../../stores/auth';
+import { useUIStore } from '../../stores/ui';
 import { trpc } from '../../utils/trpc';
 import { type ValidatedMessageInput } from '@freelance-flow/shared';
 import { UserProfileMenu } from '../UserProfileMenu';
@@ -23,8 +24,8 @@ export function CopyPasteWorkflowComponent() {
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [useStreaming, setUseStreaming] = useState(true); // Enable streaming by default
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { user, isAuthenticated, isLoading: authLoading, refreshSubscription } = useAuthStore();
+  const { sidebarCollapsed, toggleSidebar } = useUIStore();
   const {
     currentInput,
     currentResponse,
@@ -240,8 +241,8 @@ export function CopyPasteWorkflowComponent() {
     <div className="flex h-screen bg-white dark:bg-gray-900">
       <DashboardSidebar
         user={user}
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={toggleSidebar}
       />
 
       <main className="flex-1 flex flex-col">
