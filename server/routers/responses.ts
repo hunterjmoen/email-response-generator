@@ -340,6 +340,63 @@ export const responsesRouter = router({
     }),
 
   /**
+   * Get a single response history item by ID
+   */
+  getHistoryById: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ input, ctx }) => {
+      const { id } = input;
+      const { user } = ctx;
+
+      try {
+        const { data: history, error } = await supabaseAdmin
+          .from('response_history')
+          .select('*')
+          .eq('id', id)
+          .eq('user_id', user.id)
+          .single();
+
+        if (error || !history) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Response history not found',
+          });
+        }
+
+        // Transform snake_case database columns to camelCase for TypeScript
+        return {
+          id: history.id,
+          userId: history.user_id,
+          originalMessage: history.original_message,
+          context: history.context,
+          generatedOptions: history.generated_options,
+          selectedResponse: history.selected_response,
+          userRating: history.user_rating,
+          userFeedback: history.user_feedback,
+          templateUsed: history.template_used,
+          refinementCount: history.refinement_count,
+          refinementInstructions: history.refinement_instructions,
+          openaiModel: history.openai_model,
+          generationCostCents: history.generation_cost_cents,
+          confidenceScore: history.confidence_score,
+          createdAt: history.created_at,
+          updatedAt: history.updated_at,
+        } as ResponseHistory;
+      } catch (error: any) {
+        console.error('History fetch by ID error:', error);
+
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch history item',
+        });
+      }
+    }),
+
+  /**
    * Regenerate responses with refinement
    */
   regenerate: protectedProcedure

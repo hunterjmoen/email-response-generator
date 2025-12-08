@@ -117,7 +117,7 @@ export const dashboardRouter = router({
       try {
         const { data: responses, error } = await supabaseAdmin
           .from('response_history')
-          .select('id, created_at, user_rating, context, template_used, selected_response_encrypted')
+          .select('id, created_at, user_rating, context, template_used, selected_response_encrypted, original_message')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(limit);
@@ -136,15 +136,26 @@ export const dashboardRouter = router({
               response.selected_response_encrypted
             );
 
+            // Get original message from database column for fallback preview
+            const originalMessage = response.original_message as string | undefined;
+
+            // Use selected response if available, otherwise fall back to original message
+            let preview: string;
+            if (selectedResponse) {
+              preview = selectedResponse.substring(0, 100) + (selectedResponse.length > 100 ? '...' : '');
+            } else if (originalMessage) {
+              preview = originalMessage.substring(0, 100) + (originalMessage.length > 100 ? '...' : '');
+            } else {
+              preview = 'View details';
+            }
+
             return {
               id: response.id as string,
               timestamp: response.created_at as string,
               rating: response.user_rating as number | null,
               templateUsed: response.template_used as string | null,
               messageType: (response.context?.messageType as string) || 'update',
-              preview: selectedResponse
-                ? selectedResponse.substring(0, 100) + (selectedResponse.length > 100 ? '...' : '')
-                : '[No response selected]',
+              preview,
             };
           })
         );
