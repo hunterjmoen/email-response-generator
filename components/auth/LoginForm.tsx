@@ -97,8 +97,8 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToPasswordRes
             height={28}
           />
           <span className="text-lg font-semibold tracking-tight">
-            <span className="text-[#1e3a5f]">Freelance</span>
-            <span className="text-gray-400">Flow</span>
+            <span className="text-emerald-600">Freelance</span>
+            <span className="text-gray-500">Flow</span>
           </span>
         </div>
       </button>

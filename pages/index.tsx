@@ -37,8 +37,8 @@ export default function Home() {
                 height={40}
               />
               <span className="text-xl font-semibold tracking-tight">
-                <span className="text-[#1e3a5f] dark:text-white">Freelance</span>
-                <span className="text-gray-400">Flow</span>
+                <span className="text-emerald-600 dark:text-emerald-400">Freelance</span>
+                <span className="text-gray-500 dark:text-gray-400">Flow</span>
               </span>
             </Link>
             <nav className="hidden md:flex items-center gap-10">
