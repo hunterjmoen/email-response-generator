@@ -426,3 +426,41 @@ tsconfig.tsbuildinfo         # Build artifact
 ```
 
 ### Cleanup Complete!
+
+---
+---
+
+# Fix Dark/Light Mode Flickering
+
+## Problem
+When switching between dark and light mode, users experience flickering. The transition should be smooth and seamless.
+
+## Root Cause Analysis
+The flickering is caused by:
+1. **No blocking script to set theme before paint** - The theme is initialized in a `useEffect` in `_app.tsx`, which runs *after* the initial render. This causes a flash of the default theme before the stored theme is applied.
+2. **The wildcard `*` selector for transitions in globals.css** - Having `transition-property` on ALL elements is problematic because it causes unexpected animation effects and performance issues.
+
+## Plan
+
+- [x] Add a blocking script in `_document.tsx` to apply theme class immediately before hydration
+- [x] Fix `globals.css` to remove the overly broad `*` transition selector
+
+## Review
+
+### Changes Made
+
+**1. `pages/_document.tsx`**
+- Added inline blocking script that runs before React hydration
+- Script reads `theme-storage` from localStorage and applies the theme class immediately
+- Falls back to `light` theme if storage is unavailable
+
+**2. `styles/globals.css`**
+- Removed the wildcard `*` transition selector that was causing flickering
+- Removed explicit transitions from html/body (not needed - theme switch is now instant)
+- Kept the base styles for html/body (bg color, text color)
+
+### Why This Works
+- The blocking script runs synchronously before the page paints
+- Theme class is applied to `<html>` immediately, so Tailwind's `dark:` classes work from first paint
+- No transitions means instant theme switch with no flicker
+- The `useEffect` in `_app.tsx` still runs for system theme detection, but the initial theme is already set

@@ -3,22 +3,12 @@
 @tailwind utilities;
 
 @layer base {
-  /* Prevent flash of unstyled content during theme transitions */
   html {
     @apply h-full bg-gray-50 dark:bg-gray-900;
-    transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
   }
 
   body {
     @apply h-full font-sans antialiased text-gray-900 dark:text-gray-100;
-    transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
-  }
-
-  /* Smooth transitions for all color changes */
-  * {
-    transition-property: background-color, border-color, color, fill, stroke;
-    transition-duration: 200ms;
-    transition-timing-function: ease-in-out;
   }
 }
 
