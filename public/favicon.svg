@@ -1,26 +1,32 @@
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="faviconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#10b981"/>
-      <stop offset="100%" style="stop-color:#059669"/>
-    </linearGradient>
-  </defs>
-  <!-- Stylized F with curved top and flowing arrow -->
-  <path d="M5 7C5 4.5 7 3 9 3C11 3 15 3 18 6C21 9 21 11 19 13C17 15 14 15 13 15L13 27C13 29 11.5 30 10 30C8.5 30 7 29 7 27L7 15L7 11C7 10 8.5 10 10 10L16 10"
-        stroke="url(#faviconGradient)"
+  <!-- FreelanceFlow Favicon - Stylized F with arrow -->
+  <!-- Curved top of F -->
+  <path d="M6 8C6 5 7.5 4 10 4L20 4C23 4 24 5.5 22.5 8C21 10.5 18 12 15 12"
+        stroke="#10b981"
+        stroke-width="3"
+        stroke-linecap="round"
+        fill="none"/>
+  <!-- Vertical stem -->
+  <path d="M10 4L10 28"
+        stroke="#10b981"
+        stroke-width="3"
+        stroke-linecap="round"
+        fill="none"/>
+  <!-- Middle bar -->
+  <path d="M10 16L18 16"
+        stroke="#10b981"
+        stroke-width="3"
+        stroke-linecap="round"
+        fill="none"/>
+  <!-- Arrow -->
+  <path d="M17 22C21 22 25 23 28 26"
+        stroke="#059669"
         stroke-width="2.5"
         stroke-linecap="round"
-        stroke-linejoin="round"
         fill="none"/>
-  <!-- Arrow flowing out -->
-  <path d="M19 18C22 18 25 19 27 22"
-        stroke="url(#faviconGradient)"
-        stroke-width="2"
-        stroke-linecap="round"
-        fill="none"/>
-  <path d="M24 20L27 22L25 25"
-        stroke="url(#faviconGradient)"
-        stroke-width="2"
+  <path d="M25 24L28 26L25 29"
+        stroke="#059669"
+        stroke-width="2.5"
         stroke-linecap="round"
         stroke-linejoin="round"
         fill="none"/>
