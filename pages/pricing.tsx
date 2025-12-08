@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import Image from 'next/image';
 import toast, { Toaster } from 'react-hot-toast';
 import { LoginModal } from '../components/auth/LoginModal';
 import { UserProfileMenu } from '../components/UserProfileMenu';
@@ -158,10 +159,16 @@ export default function Pricing() {
         <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
-                <span className="text-green-600 dark:text-green-400 font-bold text-sm">FL</span>
-              </div>
-              <span className="text-xl font-semibold text-gray-900 dark:text-white">FreelanceFlow</span>
+              <Image
+                src="/images/logo-icon.svg"
+                alt="FreelanceFlow"
+                width={36}
+                height={36}
+              />
+              <span className="text-xl font-semibold tracking-tight">
+                <span className="text-[#1e3a5f] dark:text-white">Freelance</span>
+                <span className="text-gray-400">Flow</span>
+              </span>
             </Link>
             <nav className="hidden md:flex items-center gap-8">
               <Link href="/#features" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">Platform</Link>

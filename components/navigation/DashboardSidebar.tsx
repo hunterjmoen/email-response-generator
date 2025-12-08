@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import {
   HomeIcon,
@@ -111,10 +112,19 @@ export function DashboardSidebar({ user, isCollapsed = false, onToggleCollapse }
       {/* Logo/Brand */}
       <div className={`${isCollapsed ? 'px-2' : 'px-4'} py-5 border-b border-gray-200 dark:border-gray-700 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
         <Link href="/" className={`flex items-center gap-2.5 text-gray-900 dark:text-gray-100 hover:text-gray-700 dark:hover:text-gray-300 transition-colors ${isCollapsed ? 'justify-center' : ''}`}>
-          <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
-            <span className="text-white font-bold text-base">FL</span>
-          </div>
-          {!isCollapsed && <span className="text-lg font-semibold tracking-tight">FreelanceFlow</span>}
+          <Image
+            src="/images/logo-icon.svg"
+            alt="FreelanceFlow"
+            width={36}
+            height={36}
+            className="flex-shrink-0"
+          />
+          {!isCollapsed && (
+            <span className="text-lg font-semibold tracking-tight">
+              <span className="text-[#1e3a5f] dark:text-white">Freelance</span>
+              <span className="text-gray-400">Flow</span>
+            </span>
+          )}
         </Link>
         {!isCollapsed && onToggleCollapse && (
           <button

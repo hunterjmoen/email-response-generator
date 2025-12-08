@@ -6,6 +6,7 @@ import { trpc } from '../../utils/trpc';
 import { useAuthStore } from '../../stores/auth';
 import { useRouter } from 'next/router';
 import { createClient } from '@supabase/supabase-js';
+import Image from 'next/image';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -88,10 +89,17 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onSwitchToPasswordRes
         onClick={() => router.push('/')}
         className="absolute top-6 left-6 z-10 text-white hover:text-gray-200 transition-colors"
       >
-        <div className="flex items-center gap-2">
-          <div className="bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2">
-            <span className="text-xl font-bold text-emerald-600">FreelanceFlow</span>
-          </div>
+        <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2">
+          <Image
+            src="/images/logo-icon.svg"
+            alt="FreelanceFlow"
+            width={28}
+            height={28}
+          />
+          <span className="text-lg font-semibold tracking-tight">
+            <span className="text-[#1e3a5f]">Freelance</span>
+            <span className="text-gray-400">Flow</span>
+          </span>
         </div>
       </button>
 

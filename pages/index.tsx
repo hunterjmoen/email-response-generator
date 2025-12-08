@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { LoginModal } from '../components/auth/LoginModal';
 import { UserProfileMenu } from '../components/UserProfileMenu';
 import { useAuthStore } from '../stores/auth';
@@ -29,7 +30,16 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">FREELANCEFLOW</span>
+              <Image
+                src="/images/logo-icon.svg"
+                alt="FreelanceFlow"
+                width={40}
+                height={40}
+              />
+              <span className="text-xl font-semibold tracking-tight">
+                <span className="text-[#1e3a5f] dark:text-white">Freelance</span>
+                <span className="text-gray-400">Flow</span>
+              </span>
             </Link>
             <nav className="hidden md:flex items-center gap-10">
               <a href="#features" className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition-colors">Features</a>
@@ -300,8 +310,17 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="text-center md:text-left">
-              <Link href="/" className="inline-block mb-4">
-                <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-400 bg-clip-text text-transparent">FREELANCEFLOW</span>
+              <Link href="/" className="inline-flex items-center gap-2 mb-4">
+                <Image
+                  src="/images/logo-icon.svg"
+                  alt="FreelanceFlow"
+                  width={36}
+                  height={36}
+                />
+                <span className="text-xl font-semibold tracking-tight">
+                  <span className="text-[#1e3a5f] dark:text-white">Freelance</span>
+                  <span className="text-gray-400">Flow</span>
+                </span>
               </Link>
               <p className="text-sm text-gray-600 dark:text-gray-300 max-w-md">
                 AI-powered client communication for freelancers. Save time, stay professional, maintain boundaries.

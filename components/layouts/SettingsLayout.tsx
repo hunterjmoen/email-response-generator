@@ -1,5 +1,6 @@
 import { ReactNode, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { UserProfileMenu } from '../UserProfileMenu';
 
@@ -70,10 +71,16 @@ export function SettingsLayout({ children }: SettingsLayoutProps) {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-8">
               <Link href="/dashboard/generate" className="flex items-center gap-2 text-gray-900 dark:text-gray-100 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-                <div className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
-                  <span className="text-green-600 dark:text-green-400 font-bold text-sm">FL</span>
-                </div>
-                <span className="text-xl font-semibold">FreelanceFlow</span>
+                <Image
+                  src="/images/logo-icon.svg"
+                  alt="FreelanceFlow"
+                  width={32}
+                  height={32}
+                />
+                <span className="text-xl font-semibold tracking-tight">
+                  <span className="text-[#1e3a5f] dark:text-white">Freelance</span>
+                  <span className="text-gray-400">Flow</span>
+                </span>
               </Link>
 
               {/* Desktop Navigation */}
