@@ -5,8 +5,24 @@
       <stop offset="100%" style="stop-color:#059669"/>
     </linearGradient>
   </defs>
-  <!-- F shape with arrow - inspired by FreelanceFlow logo -->
-  <path d="M8 6C8 4.89543 8.89543 4 10 4H24C25.1046 4 26 4.89543 26 6V10C26 11.1046 25.1046 12 24 12H16V16H22C23.1046 16 24 16.8954 24 18V22C24 23.1046 23.1046 24 22 24H16V32C16 33.1046 15.1046 34 14 34H10C8.89543 34 8 33.1046 8 32V6Z" fill="url(#logoGradient)"/>
-  <!-- Arrow pointing right -->
-  <path d="M22 28L30 28M30 28L26 24M30 28L26 32" stroke="url(#logoGradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Stylized F with curved top and flowing arrow -->
+  <!-- Main F vertical stroke -->
+  <path d="M6 8C6 5.5 8 4 10.5 4C13 4 18 4 22 8C26 12 26 14 24 16C22 18 18 18 16 18L16 34C16 36 14.5 38 12 38C9.5 38 8 36 8 34L8 18L8 14C8 12 10 12 12 12L20 12"
+        stroke="url(#logoGradient)"
+        stroke-width="3.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        fill="none"/>
+  <!-- Arrow flowing out -->
+  <path d="M24 22C28 22 32 24 34 28"
+        stroke="url(#logoGradient)"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        fill="none"/>
+  <path d="M30 26L34 28L32 32"
+        stroke="url(#logoGradient)"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        fill="none"/>
 </svg>
