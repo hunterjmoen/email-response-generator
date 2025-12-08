@@ -53,6 +53,7 @@ export const clientRouter = router({
           createdAt: row.created_at,
           updatedAt: row.updated_at,
           projectCount: row.projects?.[0]?.count || 0,
+          toneFingerprint: (row as any).tone_fingerprint ?? undefined,
         }));
 
         return {

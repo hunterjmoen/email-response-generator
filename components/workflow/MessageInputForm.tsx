@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { MessageInputSchema, type ValidatedMessageInput, MESSAGE_VALIDATION } from '@freelance-flow/shared';
 import { ContextSelector } from './ContextSelector';
+import { ScopeAlert } from './ScopeAlert';
+import { trpc } from '../../utils/trpc';
 
 interface MessageInputFormProps {
   onSubmit: (data: ValidatedMessageInput) => void;
@@ -10,8 +12,38 @@ interface MessageInputFormProps {
   defaultValues?: Partial<ValidatedMessageInput>;
 }
 
+// Debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 export function MessageInputForm({ onSubmit, isLoading = false, defaultValues }: MessageInputFormProps) {
   const [charCount, setCharCount] = useState(defaultValues?.originalMessage?.length || 0);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [scopeCreepData, setScopeCreepData] = useState<{
+    detected: boolean;
+    phrases?: string[];
+    confidence?: number;
+  } | null>(null);
+  const [suggestedContext, setSuggestedContext] = useState<{
+    urgency?: string;
+    messageType?: string;
+    sentiment?: string;
+    confidence?: number;
+  } | null>(null);
+  const lastAnalyzedMessage = useRef<string>('');
 
   const methods = useForm<ValidatedMessageInput>({
     resolver: zodResolver(MessageInputSchema),
@@ -32,8 +64,69 @@ export function MessageInputForm({ onSubmit, isLoading = false, defaultValues }:
 
   const { register, handleSubmit, formState: { errors, isValid }, watch, trigger, setValue } = methods;
 
-  // Watch the message field to update character count
+  // Context detection mutation
+  const contextDetection = trpc.context.detect.useMutation();
+
+  // Watch the message for debounced analysis
   const messageValue = watch('originalMessage');
+  const debouncedMessage = useDebounce(messageValue, 500);
+
+  // Analyze message when it changes (debounced)
+  useEffect(() => {
+    const analyzeMessage = async () => {
+      // Only analyze if message is long enough and different from last analyzed
+      if (
+        debouncedMessage &&
+        debouncedMessage.length >= 10 &&
+        debouncedMessage !== lastAnalyzedMessage.current
+      ) {
+        lastAnalyzedMessage.current = debouncedMessage;
+        setIsAnalyzing(true);
+
+        try {
+          const result = await contextDetection.mutateAsync({ message: debouncedMessage });
+
+          // Update suggested context
+          setSuggestedContext({
+            urgency: result.detected.urgency,
+            messageType: result.detected.messageType,
+            sentiment: result.detected.sentiment,
+            confidence: result.detected.confidence,
+          });
+
+          // Update scope creep data
+          setScopeCreepData({
+            detected: result.scopeCreepDetected,
+            phrases: result.scopeCreepPhrases,
+            confidence: result.scopeCreepConfidence,
+          });
+
+          // Auto-fill context fields with suggested values
+          setValue('context.urgency', result.detected.urgency);
+          setValue('context.messageType', result.detected.messageType);
+        } catch (error) {
+          console.error('Context detection failed:', error);
+          // Clear suggestions on error
+          setSuggestedContext(null);
+          setScopeCreepData(null);
+        } finally {
+          setIsAnalyzing(false);
+        }
+      } else if (!debouncedMessage || debouncedMessage.length < 10) {
+        // Clear suggestions if message is too short
+        setSuggestedContext(null);
+        setScopeCreepData(null);
+        lastAnalyzedMessage.current = '';
+      }
+    };
+
+    analyzeMessage();
+  }, [debouncedMessage, setValue]);
+
+  // Handle dismissing scope creep alert
+  const handleDismissScopeAlert = useCallback(() => {
+    setScopeCreepData(null);
+  }, []);
 
   // Trigger validation on mount to ensure all fields (including hidden context fields) are validated
   useEffect(() => {
@@ -82,12 +175,41 @@ export function MessageInputForm({ onSubmit, isLoading = false, defaultValues }:
           {errors.originalMessage && (
             <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.originalMessage.message}</p>
           )}
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Minimum {MESSAGE_VALIDATION.minLength} characters required for quality response generation
-          </p>
+          <div className="mt-1 flex items-center justify-between">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Minimum {MESSAGE_VALIDATION.minLength} characters required for quality response generation
+            </p>
+            {/* AI Analysis Indicator */}
+            {isAnalyzing && (
+              <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400">
+                <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span>Analyzing message...</span>
+              </div>
+            )}
+            {!isAnalyzing && suggestedContext && (
+              <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
+                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <span>Context auto-detected ({Math.round((suggestedContext.confidence || 0) * 100)}% confidence)</span>
+              </div>
+            )}
+          </div>
         </div>
 
-          <ContextSelector />
+          {/* Scope Creep Alert */}
+          {scopeCreepData?.detected && (
+            <ScopeAlert
+              phrases={scopeCreepData.phrases || []}
+              confidence={scopeCreepData.confidence || 0}
+              onDismiss={handleDismissScopeAlert}
+            />
+          )}
+
+          <ContextSelector suggestedContext={suggestedContext} />
 
           <div className="flex justify-end">
             <button

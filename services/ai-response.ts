@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { type AIResponseOptions, type ResponseContext, type GenerateResponseInput } from '@freelance-flow/shared';
+import { type ToneFingerprint, ToneAnalysisService } from './tone-analysis';
 
 // OpenAI Client Configuration
 const openai = new OpenAI({
@@ -17,7 +18,8 @@ export class AIResponseService {
   static async generateResponses(
     originalMessage: string,
     context: ResponseContext,
-    styleProfile?: any
+    styleProfile?: any,
+    clientToneFingerprint?: ToneFingerprint
   ): Promise<AIResponseOptions[]> {
     try {
       const prompt = this.buildPrompt(originalMessage, context);
@@ -27,7 +29,7 @@ export class AIResponseService {
         messages: [
           {
             role: 'system',
-            content: this.getSystemPrompt(styleProfile),
+            content: this.getSystemPrompt(styleProfile, clientToneFingerprint),
           },
           {
             role: 'user',
@@ -67,6 +69,25 @@ export class AIResponseService {
    */
   private static buildPrompt(originalMessage: string, context: ResponseContext): string {
     const contextDescription = this.getContextDescription(context);
+    const isScopeChange = context.messageType === 'scope_change';
+
+    // Special instructions for scope creep situations
+    const scopeCreepInstructions = isScopeChange ? `
+
+IMPORTANT - SCOPE CREEP HANDLING:
+This message contains a request for additional work outside the original scope. Generate responses that:
+1. Acknowledge the request positively and show you understand what they're asking for
+2. Professionally reframe the request as new/additional scope that requires discussion
+3. Suggest next steps: scheduling a call, providing a quote, or discussing timeline implications
+4. Maintain a helpful, collaborative tone while setting clear boundaries
+5. NEVER agree to do the extra work for free or minimize its impact
+6. If timeline concerns are mentioned, address how the additional work affects delivery
+
+Response variations should include:
+- One that offers to provide a quick estimate for the additional work
+- One that suggests discussing the request in more detail before proceeding
+- One that politely explains this is outside the current scope and offers alternatives
+` : '';
 
     return `
 Please generate 2-3 professional response options for the following client message:
@@ -76,7 +97,7 @@ CLIENT MESSAGE:
 
 CONTEXT:
 ${contextDescription}
-
+${scopeCreepInstructions}
 Requirements:
 - Generate exactly 2-3 response variations (brief, standard, detailed)
 - Each response should be professional and appropriate for the context
@@ -93,7 +114,7 @@ Return responses in JSON format with the exact structure specified in the system
   /**
    * Get system prompt for consistent response formatting
    */
-  private static getSystemPrompt(styleProfile?: any): string {
+  private static getSystemPrompt(styleProfile?: any, clientToneFingerprint?: ToneFingerprint): string {
     let styleInstructions = '';
 
     if (styleProfile) {
@@ -115,9 +136,34 @@ When generating responses, carefully incorporate these style elements to match t
       `.trim();
     }
 
+    // TonePrint: Client tone mirroring instructions
+    let clientToneInstructions = '';
+    if (clientToneFingerprint && clientToneFingerprint.sampleCount >= 1) {
+      const toneDescription = ToneAnalysisService.describeFingerprint(clientToneFingerprint);
+      clientToneInstructions = `
+
+CLIENT COMMUNICATION STYLE (TonePrint):
+This client has a specific communication style that you should mirror to build rapport:
+- Style: ${toneDescription}
+- Formality: ${clientToneFingerprint.formality}
+- Message length preference: ${clientToneFingerprint.brevity}
+- Uses emojis: ${clientToneFingerprint.emojiUsage ? 'Yes - feel free to include appropriate emojis' : 'No - avoid emojis'}
+- Greeting style: ${clientToneFingerprint.greetingStyle}
+- Sign-off style: ${clientToneFingerprint.signOffStyle}
+- Typical sentence length: ~${clientToneFingerprint.avgSentenceLength} words
+
+Mirror this client's communication style in your responses while maintaining professionalism.
+${clientToneFingerprint.formality === 'casual' ? 'Use a more relaxed, friendly tone.' : ''}
+${clientToneFingerprint.formality === 'formal' ? 'Maintain a more formal, business-like tone.' : ''}
+${clientToneFingerprint.brevity === 'terse' ? 'Keep responses concise and to the point.' : ''}
+${clientToneFingerprint.brevity === 'verbose' ? 'Provide more detailed, thorough responses.' : ''}
+      `.trim();
+    }
+
     return `
 You are an expert freelancer communication assistant. Generate professional email/message responses that help freelancers communicate effectively with their clients.
 ${styleInstructions}
+${clientToneInstructions}
 
 Always respond with valid JSON in this exact format:
 {

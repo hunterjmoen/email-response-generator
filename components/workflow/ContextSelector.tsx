@@ -2,12 +2,22 @@ import { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { type ValidatedMessageInput, type ResponseContext } from '@freelance-flow/shared';
 import { trpc } from '../../utils/trpc';
+import { TonePrintBadge } from './TonePrintBadge';
+import { type ToneFingerprint } from '../../services/tone-analysis';
+
+interface SuggestedContext {
+  urgency?: string;
+  messageType?: string;
+  sentiment?: string;
+  confidence?: number;
+}
 
 interface ContextSelectorProps {
   onChange?: (context: ResponseContext) => void;
+  suggestedContext?: SuggestedContext | null;
 }
 
-export function ContextSelector({ onChange }: ContextSelectorProps) {
+export function ContextSelector({ onChange, suggestedContext }: ContextSelectorProps) {
   const { register, watch, setValue } = useFormContext<ValidatedMessageInput>();
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
@@ -36,6 +46,9 @@ export function ContextSelector({ onChange }: ContextSelectorProps) {
   const handleClientChange = (clientId: string) => {
     setSelectedClientId(clientId);
     setSelectedProjectId(''); // Reset project when client changes
+
+    // Store clientId in form for API submission
+    setValue('clientId' as any, clientId || undefined);
 
     // Auto-populate relationship stage and client name from client
     const selectedClient = clients?.find((c) => c.id === clientId);
@@ -133,9 +146,19 @@ export function ContextSelector({ onChange }: ContextSelectorProps) {
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Selecting a client will auto-populate relationship stage
-          </p>
+          <div className="mt-2 flex items-center gap-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Selecting a client will auto-populate relationship stage
+            </p>
+            {/* TonePrint Badge - show if client has tone fingerprint */}
+            {selectedClientId && (() => {
+              const selectedClient = clients?.find((c) => c.id === selectedClientId);
+              const fingerprint = selectedClient?.toneFingerprint as ToneFingerprint | undefined;
+              return fingerprint && fingerprint.sampleCount >= 1 ? (
+                <TonePrintBadge fingerprint={fingerprint} />
+              ) : null;
+            })()}
+          </div>
         </div>
 
         {/* Project Selection */}
@@ -163,11 +186,22 @@ export function ContextSelector({ onChange }: ContextSelectorProps) {
         {/* Urgency */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Urgency Level
+            <span className="flex items-center gap-2">
+              Urgency Level
+              {suggestedContext?.urgency && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                  AI suggested
+                </span>
+              )}
+            </span>
           </label>
           <select
             {...register('context.urgency')}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-gray-100"
+            className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-gray-100 ${
+              suggestedContext?.urgency
+                ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/10'
+                : 'border-gray-300 dark:border-gray-600'
+            }`}
             onChange={(e) => handleFieldChange('urgency', e.target.value as any)}
           >
             {urgencyOptions.map((option) => (
@@ -182,11 +216,22 @@ export function ContextSelector({ onChange }: ContextSelectorProps) {
         {/* Message Type */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Message Type
+            <span className="flex items-center gap-2">
+              Message Type
+              {suggestedContext?.messageType && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                  AI suggested
+                </span>
+              )}
+            </span>
           </label>
           <select
             {...register('context.messageType')}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-gray-100"
+            className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-gray-100 ${
+              suggestedContext?.messageType
+                ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/10'
+                : 'border-gray-300 dark:border-gray-600'
+            }`}
             onChange={(e) => handleFieldChange('messageType', e.target.value as any)}
           >
             {messageTypeOptions.map((option) => (

@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { TRPCError } from '@trpc/server';
 import { AIResponseService } from '../../services/ai-response';
 import { encryptionService } from '../../services/encryption';
+import { ToneAnalysisService, type ToneFingerprint } from '../../services/tone-analysis';
 import {
   MessageInputSchema,
   ResponseFeedbackSchema,
@@ -83,12 +84,28 @@ export const responsesRouter = router({
           userName: userProfile.first_name,
         };
 
-        // Generate AI responses with style profile (Premium-only feature)
+        // Fetch client's tone fingerprint if clientId provided
+        let clientToneFingerprint: ToneFingerprint | undefined;
+        if (clientId) {
+          const { data: clientData } = await supabaseAdmin
+            .from('clients')
+            .select('tone_fingerprint')
+            .eq('id', clientId)
+            .eq('user_id', user.id)
+            .single();
+
+          if (clientData?.tone_fingerprint) {
+            clientToneFingerprint = clientData.tone_fingerprint as ToneFingerprint;
+          }
+        }
+
+        // Generate AI responses with style profile (Premium-only feature) and client tone
         const styleProfile = subscription.tier === 'premium' ? userProfile.style_profile : undefined;
         const aiResponses = await AIResponseService.generateResponses(
           originalMessage,
           enrichedContext,
-          styleProfile
+          styleProfile,
+          clientToneFingerprint
         );
 
         // Estimate cost
@@ -131,11 +148,33 @@ export const responsesRouter = router({
           .update({ usage_count: subscription.usage_count + 1 })
           .eq('user_id', user.id);
 
-        // Update client's last contact date if clientId provided
+        // Update client's last contact date and tone fingerprint if clientId provided
         if (clientId) {
+          // Analyze the client's message to build their tone fingerprint
+          const toneAnalysis = ToneAnalysisService.analyzeMessage(originalMessage);
+
+          // Fetch existing fingerprint
+          const { data: clientData } = await supabaseAdmin
+            .from('clients')
+            .select('tone_fingerprint')
+            .eq('id', clientId)
+            .eq('user_id', user.id)
+            .single();
+
+          // Merge with existing fingerprint
+          const existingFingerprint = clientData?.tone_fingerprint as ToneFingerprint | null;
+          const updatedFingerprint = ToneAnalysisService.mergeFingerprints(
+            existingFingerprint,
+            toneAnalysis
+          );
+
+          // Update client with new fingerprint and last contact date
           await supabaseAdmin
             .from('clients')
-            .update({ last_contact_date: new Date().toISOString() })
+            .update({
+              last_contact_date: new Date().toISOString(),
+              tone_fingerprint: updatedFingerprint,
+            })
             .eq('id', clientId)
             .eq('user_id', user.id);
         }

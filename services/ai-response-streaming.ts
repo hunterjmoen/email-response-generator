@@ -114,6 +114,7 @@ export class AIResponseStreamingService {
    */
   private static buildPrompt(originalMessage: string, context: ResponseContext, refinementInstructions?: string, previousResponses?: string[]): string {
     const contextDescription = this.getContextDescription(context);
+    const isScopeChange = context.messageType === 'scope_change';
 
     let previousResponsesText = '';
     if (previousResponses && previousResponses.length > 0 && refinementInstructions) {
@@ -129,6 +130,19 @@ Please generate NEW responses that incorporate the refinement instructions above
 `;
     }
 
+    // Special instructions for scope creep situations
+    const scopeCreepInstructions = isScopeChange ? `
+
+IMPORTANT - SCOPE CREEP HANDLING:
+This message contains a request for additional work outside the original scope. Your response MUST:
+1. Acknowledge the request positively - show you understand what they're asking
+2. Professionally reframe this as new/additional scope requiring discussion
+3. Suggest concrete next steps: provide a quote, schedule a call, or discuss timeline impact
+4. Be helpful and collaborative while setting clear professional boundaries
+5. NEVER agree to do extra work for free or minimize its complexity
+6. Address any timeline concerns by explaining how additional work affects delivery
+` : '';
+
     return `
 Please generate a professional response for the following client message:
 
@@ -138,7 +152,7 @@ CLIENT MESSAGE:
 CONTEXT:
 ${contextDescription}
 ${previousResponsesText}
-
+${scopeCreepInstructions}
 Requirements:
 - Be professional and appropriate for the context
 ${context.clientName ? `- Start with "Hello ${context.clientName}," or "Hi ${context.clientName}," depending on the tone` : '- Use an appropriate greeting'}
