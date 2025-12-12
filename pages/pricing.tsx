@@ -344,8 +344,8 @@ export default function Pricing() {
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Context Selection</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Professional, friendly, or direct</p>
+                    <p className="font-medium text-gray-900 dark:text-white">Scope Creep Detection</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Preview alerts only</p>
                   </div>
                 </div>
 
@@ -354,8 +354,8 @@ export default function Pricing() {
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Copy-Paste Workflow</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Works everywhere</p>
+                    <p className="font-medium text-gray-900 dark:text-white">7-Day Response History</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Access recent responses</p>
                   </div>
                 </div>
               </div>
@@ -450,8 +450,8 @@ export default function Pricing() {
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">75 responses per month</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Perfect for regular use</p>
+                    <p className="font-medium text-gray-900 dark:text-white">200 responses per month</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">For daily professional use</p>
                   </div>
                 </div>
 
@@ -460,8 +460,8 @@ export default function Pricing() {
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">All Free features</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">AI generation & context selection</p>
+                    <p className="font-medium text-gray-900 dark:text-white">Protect Scope Mode</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Detect & respond to scope creep</p>
                   </div>
                 </div>
 
@@ -470,7 +470,27 @@ export default function Pricing() {
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Full Client Management</p>
+                    <p className="font-medium text-gray-900 dark:text-white">Change Order Builder</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Create pricing responses in one click</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white">Lock & Copy</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Verify pricing before sending</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white">Client Management</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Organize projects & clients</p>
                   </div>
                 </div>
@@ -482,16 +502,6 @@ export default function Pricing() {
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">Unlimited Response History</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Access all past responses</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Priority Support</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Get help when you need it</p>
                   </div>
                 </div>
               </div>
@@ -580,7 +590,7 @@ export default function Pricing() {
                   </svg>
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">Unlimited responses</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">No monthly limits whatsoever</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">No monthly limits</p>
                   </div>
                 </div>
 
@@ -590,7 +600,7 @@ export default function Pricing() {
                   </svg>
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">All Professional features</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Plus exclusive extras</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Protect Scope, Change Orders & more</p>
                   </div>
                 </div>
 
@@ -599,7 +609,7 @@ export default function Pricing() {
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">🌟 AI Style Learning</p>
+                    <p className="font-medium text-gray-900 dark:text-white">TonePrint Voice Matching</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">AI learns your unique voice</p>
                   </div>
                 </div>
@@ -615,22 +625,22 @@ export default function Pricing() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Priority Support</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Fastest response times</p>
+                    <p className="font-medium text-gray-600 dark:text-gray-400">Priority Support</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-500">Fastest response times</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Early Access</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">New features first</p>
+                    <p className="font-medium text-gray-600 dark:text-gray-400">Early Access</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-500">New features first</p>
                   </div>
                 </div>
               </div>
@@ -652,7 +662,16 @@ export default function Pricing() {
                 Which plan is right for me?
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                <strong>Free</strong> is perfect for trying out the platform. <strong>Professional</strong> ($10/mo) is ideal if you need 2-3 responses per day and want full client management. <strong>Premium</strong> ($19/mo) is best for power users who want unlimited responses plus exclusive AI Style Learning that adapts to your unique voice.
+                <strong>Free</strong> is perfect for trying out the platform with basic scope detection alerts. <strong>Professional</strong> ($10/mo) is ideal for freelancers who need Protect Scope mode to detect scope creep, create change orders with pricing, and set professional boundaries. <strong>Premium</strong> ($19/mo) is best for power users who want unlimited responses plus TonePrint voice matching that adapts to your unique communication style.
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-gray-700 rounded-xl p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                What is Protect Scope?
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Protect Scope detects when clients request work outside your original agreement. It highlights scope creep phrases in their messages, helps you create professional change orders with itemized pricing and timeline impacts, and generates boundary-setting responses you can verify and copy. This feature is available on Professional and Premium plans.
               </p>
             </div>
 
@@ -661,7 +680,7 @@ export default function Pricing() {
                 What happens if I exceed my monthly limit?
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                You'll be prompted to upgrade to the next tier. Your account remains active—you can still access your history and client data, but you'll need to upgrade to generate new responses. Free users can upgrade to Professional (75 responses) or Premium (unlimited).
+                You'll be prompted to upgrade to the next tier. Your account remains active—you can still access your history and client data, but you'll need to upgrade to generate new responses. Free users can upgrade to Professional (200 responses) or Premium (unlimited).
               </p>
             </div>
 
@@ -685,10 +704,10 @@ export default function Pricing() {
 
             <div className="bg-white dark:bg-gray-700 rounded-xl p-6 shadow-sm">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                What is AI Style Learning?
+                What is TonePrint Voice Matching?
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Exclusive to Premium, AI Style Learning analyzes your communication patterns and adapts future responses to match your unique voice, tone, and phrasing. The AI learns from your feedback and generates responses that sound authentically like you.
+                Exclusive to Premium, TonePrint analyzes your communication patterns and adapts future responses to match your unique voice, tone, and phrasing. The AI learns from your feedback and generates responses that sound authentically like you.
               </p>
             </div>
 
