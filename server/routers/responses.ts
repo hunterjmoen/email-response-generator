@@ -524,4 +524,171 @@ export const responsesRouter = router({
       }
     }),
 
+  /**
+   * Generate a response focused on moving the project forward
+   */
+  generateMoveForwardResponse: protectedProcedure
+    .input(
+      z.object({
+        originalMessage: z.string().min(1),
+        projectContext: z.string().optional(),
+        clientId: z.string().uuid().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { originalMessage, projectContext, clientId } = input;
+      const { user } = ctx;
+
+      try {
+        // Fetch user profile for name
+        const { data: userProfile } = await supabaseAdmin
+          .from('users')
+          .select('first_name')
+          .eq('id', user.id)
+          .single();
+
+        // Fetch client name if provided
+        let clientName: string | undefined;
+        if (clientId) {
+          const { data: clientData } = await supabaseAdmin
+            .from('clients')
+            .select('name')
+            .eq('id', clientId)
+            .eq('user_id', user.id)
+            .single();
+          clientName = clientData?.name;
+        }
+
+        // Generate the move forward response
+        const response = await AIResponseService.generateMoveForwardResponse(
+          originalMessage,
+          {
+            clientName,
+            userName: userProfile?.first_name,
+            projectContext,
+          }
+        );
+
+        return { response };
+      } catch (error: any) {
+        console.error('Move forward response generation error:', error);
+
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || 'Failed to generate response',
+        });
+      }
+    }),
+
+  /**
+   * Generate a boundary-setting response with change order details
+   */
+  generateBoundaryResponse: protectedProcedure
+    .input(
+      z.object({
+        originalMessage: z.string().min(1),
+        changeOrderData: z.object({
+          title: z.string(),
+          description: z.string().optional(),
+          lineItems: z.array(
+            z.object({
+              description: z.string(),
+              hours: z.number(),
+              rate: z.number(),
+            })
+          ),
+          additionalTimelineDays: z.number(),
+          subtotal: z.number(),
+        }),
+        clientId: z.string().uuid().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { originalMessage, changeOrderData, clientId } = input;
+      const { user } = ctx;
+
+      try {
+        // Fetch user profile for name
+        const { data: userProfile } = await supabaseAdmin
+          .from('users')
+          .select('first_name')
+          .eq('id', user.id)
+          .single();
+
+        // Fetch client name if provided
+        let clientName: string | undefined;
+        if (clientId) {
+          const { data: clientData } = await supabaseAdmin
+            .from('clients')
+            .select('name')
+            .eq('id', clientId)
+            .eq('user_id', user.id)
+            .single();
+          clientName = clientData?.name;
+        }
+
+        // Generate the boundary response
+        const response = await AIResponseService.generateBoundaryResponse(
+          originalMessage,
+          changeOrderData,
+          {
+            clientName,
+            userName: userProfile?.first_name,
+          }
+        );
+
+        return { response };
+      } catch (error: any) {
+        console.error('Boundary response generation error:', error);
+
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || 'Failed to generate boundary response',
+        });
+      }
+    }),
+
+  /**
+   * Log scope creep detection feedback for improving detection
+   */
+  logScopeCreepFeedback: protectedProcedure
+    .input(
+      z.object({
+        originalMessage: z.string(),
+        detectedPhrases: z.array(z.string()),
+        confidence: z.number().min(0).max(1),
+        isCorrect: z.boolean(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { originalMessage, detectedPhrases, confidence, isCorrect } = input;
+      const { user } = ctx;
+
+      try {
+        await supabaseAdmin
+          .from('scope_creep_feedback')
+          .insert({
+            user_id: user.id,
+            original_message: originalMessage,
+            detected_phrases: detectedPhrases,
+            confidence,
+            is_correct: isCorrect,
+          });
+
+        return { success: true };
+      } catch (error: any) {
+        console.error('Failed to log scope creep feedback:', error);
+        // Don't throw - this is analytics, shouldn't break the user flow
+        return { success: false };
+      }
+    }),
+
 });

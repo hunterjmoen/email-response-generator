@@ -1,16 +1,19 @@
 import { useCallback, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { MessageInputForm } from './MessageInputForm';
+import { MessageInputForm, type ScopeCreepData } from './MessageInputForm';
 import { ResponseDisplay } from './ResponseDisplay';
 import { StreamingResponseDisplay } from './StreamingResponseDisplay';
 import { TemplateSelector } from './TemplateSelector';
 import { QuickActions } from './QuickActions';
+import { JobsToBedoneTabs } from './JobsToBedoneTabs';
+import { ProtectScopePanel } from './ProtectScopePanel';
+import { MoveForwardPanel } from './MoveForwardPanel';
 import { useResponseGenerationStore, useCurrentResponseOptions } from '../../stores/response-generation';
 import { useAuthStore } from '../../stores/auth';
 import { useUIStore } from '../../stores/ui';
 import { trpc } from '../../utils/trpc';
-import { type ValidatedMessageInput } from '@freelance-flow/shared';
+import { type ValidatedMessageInput, type JTBDMode } from '@freelance-flow/shared';
 import { UserProfileMenu } from '../UserProfileMenu';
 import { DashboardSidebar } from '../navigation/DashboardSidebar';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
@@ -24,6 +27,8 @@ export function CopyPasteWorkflowComponent() {
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [useStreaming, setUseStreaming] = useState(true); // Enable streaming by default
+  const [activeMode, setActiveMode] = useState<JTBDMode>('reply_fast');
+  const [scopeCreepData, setScopeCreepData] = useState<ScopeCreepData | null>(null);
   const { user, isAuthenticated, isLoading: authLoading, refreshSubscription } = useAuthStore();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
   const {
@@ -270,22 +275,15 @@ export function CopyPasteWorkflowComponent() {
 
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            {/* Single-page workflow */}
+            {/* JTBD Tabs - Always visible when in input mode */}
             {!currentResponse && !isLoading && !isStreaming && streamingResponses.length === 0 && (
               <>
-                <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Generate AI Response</h2>
-                  <p className="text-gray-600 dark:text-gray-400">Paste your client's message and get professional responses instantly</p>
-                  <button
-                    onClick={() => setShowTemplates(!showTemplates)}
-                    className="mt-4 inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    {showTemplates ? 'Hide Templates' : 'Use Quick Template'}
-                  </button>
-                </div>
+                {/* Jobs-to-be-Done Tabs */}
+                <JobsToBedoneTabs
+                  activeMode={activeMode}
+                  onModeChange={setActiveMode}
+                  scopeCreepDetected={scopeCreepData?.detected || false}
+                />
 
                 {!isAuthenticated && (
                   <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
@@ -295,34 +293,65 @@ export function CopyPasteWorkflowComponent() {
                   </div>
                 )}
 
-                {/* Template Selector */}
-                {showTemplates && (
-                  <div className="mb-6">
-                    <TemplateSelector
-                      onSelectTemplate={handleTemplateSelect}
-                      onClose={() => setShowTemplates(false)}
-                      compact={true}
-                    />
-                  </div>
+                {/* Reply Fast Mode (Default) */}
+                {activeMode === 'reply_fast' && (
+                  <>
+                    <div className="flex justify-end mb-4">
+                      <button
+                        onClick={() => setShowTemplates(!showTemplates)}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                        {showTemplates ? 'Hide Templates' : 'Templates'}
+                      </button>
+                    </div>
+
+                    {/* Template Selector */}
+                    {showTemplates && (
+                      <div className="mb-6">
+                        <TemplateSelector
+                          onSelectTemplate={handleTemplateSelect}
+                          onClose={() => setShowTemplates(false)}
+                          compact={true}
+                        />
+                      </div>
+                    )}
+
+                    {/* Message Input Form */}
+                    {!showTemplates && (
+                      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+                        <MessageInputForm
+                          onSubmit={handleInputSubmit}
+                          isLoading={isLoading}
+                          onScopeCreepDetected={setScopeCreepData}
+                          defaultValues={{
+                            originalMessage: '',
+                            context: {
+                              urgency: 'standard',
+                              messageType: 'update',
+                              relationshipStage: 'established',
+                              projectPhase: 'active',
+                            }
+                          }}
+                        />
+                      </div>
+                    )}
+                  </>
                 )}
 
-                {/* Integrated form with collapsible advanced options */}
-                {!showTemplates && (
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-                    <MessageInputForm
-                      onSubmit={handleInputSubmit}
-                      isLoading={isLoading}
-                      defaultValues={{
-                        originalMessage: '',
-                        context: {
-                          urgency: 'standard',
-                          messageType: 'update',
-                          relationshipStage: 'established',
-                          projectPhase: 'active',
-                        }
-                      }}
-                    />
-                  </div>
+                {/* Protect Scope Mode */}
+                {activeMode === 'protect_scope' && (
+                  <ProtectScopePanel
+                    onScopeCreepDetected={setScopeCreepData}
+                    defaultHourlyRate={100}
+                  />
+                )}
+
+                {/* Move Forward Mode */}
+                {activeMode === 'move_forward' && (
+                  <MoveForwardPanel />
                 )}
               </>
             )}

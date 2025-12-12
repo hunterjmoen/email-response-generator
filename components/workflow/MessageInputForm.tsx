@@ -6,10 +6,17 @@ import { ContextSelector } from './ContextSelector';
 import { ScopeAlert } from './ScopeAlert';
 import { trpc } from '../../utils/trpc';
 
+export interface ScopeCreepData {
+  detected: boolean;
+  phrases?: string[];
+  confidence?: number;
+}
+
 interface MessageInputFormProps {
   onSubmit: (data: ValidatedMessageInput) => void;
   isLoading?: boolean;
   defaultValues?: Partial<ValidatedMessageInput>;
+  onScopeCreepDetected?: (data: ScopeCreepData | null) => void;
 }
 
 // Debounce hook
@@ -29,7 +36,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export function MessageInputForm({ onSubmit, isLoading = false, defaultValues }: MessageInputFormProps) {
+export function MessageInputForm({ onSubmit, isLoading = false, defaultValues, onScopeCreepDetected }: MessageInputFormProps) {
   const [charCount, setCharCount] = useState(defaultValues?.originalMessage?.length || 0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [scopeCreepData, setScopeCreepData] = useState<{
@@ -95,11 +102,13 @@ export function MessageInputForm({ onSubmit, isLoading = false, defaultValues }:
           });
 
           // Update scope creep data
-          setScopeCreepData({
+          const newScopeCreepData = {
             detected: result.scopeCreepDetected,
             phrases: result.scopeCreepPhrases,
             confidence: result.scopeCreepConfidence,
-          });
+          };
+          setScopeCreepData(newScopeCreepData);
+          onScopeCreepDetected?.(newScopeCreepData);
 
           // Auto-fill context fields with suggested values
           setValue('context.urgency', result.detected.urgency);
@@ -109,6 +118,7 @@ export function MessageInputForm({ onSubmit, isLoading = false, defaultValues }:
           // Clear suggestions on error
           setSuggestedContext(null);
           setScopeCreepData(null);
+          onScopeCreepDetected?.(null);
         } finally {
           setIsAnalyzing(false);
         }
@@ -116,6 +126,7 @@ export function MessageInputForm({ onSubmit, isLoading = false, defaultValues }:
         // Clear suggestions if message is too short
         setSuggestedContext(null);
         setScopeCreepData(null);
+        onScopeCreepDetected?.(null);
         lastAnalyzedMessage.current = '';
       }
     };

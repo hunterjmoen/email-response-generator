@@ -270,6 +270,177 @@ ${context.customNotes ? `- Additional Context: ${context.customNotes}` : ''}
   }
 
   /**
+   * Generate a response focused on moving the project forward
+   */
+  static async generateMoveForwardResponse(
+    originalMessage: string,
+    context?: {
+      clientName?: string;
+      userName?: string;
+      projectContext?: string;
+    }
+  ): Promise<string> {
+    const prompt = `
+Generate a professional, proactive response that moves the project forward.
+
+CLIENT MESSAGE:
+"${originalMessage}"
+
+${context?.projectContext ? `PROJECT CONTEXT: ${context.projectContext}` : ''}
+
+REQUIREMENTS:
+1. Identify any unclear points or missing info and ask clarifying questions
+2. Propose concrete next steps with clear action items
+3. If timeline/deliverables are mentioned, confirm understanding
+4. Keep the tone collaborative and solution-oriented
+5. Use "Just to confirm..." or "To make sure we're aligned..." language where appropriate
+6. Keep it concise - 3-5 sentences max
+${context?.clientName ? `7. Address the client as "${context.clientName}"` : ''}
+${context?.userName ? `8. Sign off with "${context.userName}"` : ''}
+
+Focus on action items and clarity. End with a specific question or proposed next step.
+
+Generate ONLY the response text, no JSON or formatting.
+    `.trim();
+
+    try {
+      const completion = await openai.chat.completions.create({
+        model: DEFAULT_MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a proactive, organized freelancer who keeps projects moving forward. Generate responses that clarify requirements and propose clear next steps.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 350,
+      });
+
+      const responseContent = completion.choices[0]?.message?.content;
+      if (!responseContent) {
+        throw new Error('Empty response from OpenAI');
+      }
+
+      return responseContent.trim();
+    } catch (error: any) {
+      console.error('AIResponseService: Error generating move forward response', error);
+
+      if (error.status === 429) {
+        throw new Error('OpenAI quota exceeded. Please check your billing at https://platform.openai.com/account/billing');
+      }
+
+      if (error.status === 401) {
+        throw new Error('Invalid OpenAI API key. Please verify your OPENAI_API_KEY in .env.local');
+      }
+
+      // Fallback to template response
+      const greeting = context?.clientName ? `Hi ${context.clientName},\n\n` : '';
+      const signOff = context?.userName ? `\n\nBest,\n${context.userName}` : '';
+
+      return `${greeting}Thanks for the update! Just to make sure we're aligned - could you clarify the priority of these items? Once I have that, I can map out the next steps and timeline for you.${signOff}`;
+    }
+  }
+
+  /**
+   * Generate a boundary-setting response with change order details inline
+   */
+  static async generateBoundaryResponse(
+    originalMessage: string,
+    changeOrderData: {
+      title: string;
+      description?: string;
+      lineItems: { description: string; hours: number; rate: number }[];
+      additionalTimelineDays: number;
+      subtotal: number;
+    },
+    context?: {
+      clientName?: string;
+      userName?: string;
+    }
+  ): Promise<string> {
+    const lineItemsSummary = changeOrderData.lineItems
+      .map((item) => `${item.description} (~${item.hours}h)`)
+      .join(', ');
+
+    const timelineText =
+      changeOrderData.additionalTimelineDays > 0
+        ? `and would extend our timeline by approximately ${changeOrderData.additionalTimelineDays} ${changeOrderData.additionalTimelineDays === 1 ? 'day' : 'days'}`
+        : '';
+
+    const prompt = `
+Generate a professional, friendly response to a client who has requested additional work outside the current project scope.
+
+ORIGINAL CLIENT MESSAGE:
+"${originalMessage}"
+
+CHANGE ORDER DETAILS:
+- Work requested: ${changeOrderData.title}
+- Scope items: ${lineItemsSummary}
+- Estimated cost: $${changeOrderData.subtotal.toFixed(2)}
+${timelineText ? `- Timeline impact: ${timelineText}` : ''}
+
+REQUIREMENTS:
+1. Be warm and positive - show you're happy to help
+2. Naturally weave the cost and timeline into the message (NOT as a separate block)
+3. Keep it conversational, not like a formal quote
+4. End with a clear call-to-action asking if they'd like to proceed
+5. Keep it concise - 3-4 sentences max
+${context?.clientName ? `6. Address the client as "${context.clientName}"` : ''}
+${context?.userName ? `7. Sign off with "${context.userName}"` : ''}
+
+EXAMPLE TONE (but don't copy exactly):
+"Happy to help with that! Adding [feature] would be about $X and take roughly X days on top of our current timeline. Want me to go ahead with it?"
+
+Generate ONLY the response text, no JSON or formatting.
+    `.trim();
+
+    try {
+      const completion = await openai.chat.completions.create({
+        model: DEFAULT_MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a friendly, professional freelancer who sets clear boundaries while maintaining positive client relationships. Generate concise, natural-sounding responses.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 300,
+      });
+
+      const responseContent = completion.choices[0]?.message?.content;
+      if (!responseContent) {
+        throw new Error('Empty response from OpenAI');
+      }
+
+      return responseContent.trim();
+    } catch (error: any) {
+      console.error('AIResponseService: Error generating boundary response', error);
+
+      if (error.status === 429) {
+        throw new Error('OpenAI quota exceeded. Please check your billing at https://platform.openai.com/account/billing');
+      }
+
+      if (error.status === 401) {
+        throw new Error('Invalid OpenAI API key. Please verify your OPENAI_API_KEY in .env.local');
+      }
+
+      // Fallback to template response if AI fails
+      const greeting = context?.clientName ? `Hi ${context.clientName},\n\n` : '';
+      const signOff = context?.userName ? `\n\nBest,\n${context.userName}` : '';
+
+      return `${greeting}Thanks for reaching out about this! I'd be happy to help with ${changeOrderData.title.toLowerCase()}. This would be approximately $${changeOrderData.subtotal.toFixed(2)}${timelineText ? ` ${timelineText}` : ''}. Would you like me to proceed with this as an add-on to our current project?${signOff}`;
+    }
+  }
+
+  /**
    * Regenerate responses with refinement instructions
    */
   static async regenerateWithRefinement(

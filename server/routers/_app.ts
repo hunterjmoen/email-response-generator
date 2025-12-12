@@ -11,6 +11,7 @@ import { remindersRouter } from './reminders';
 import { templatesRouter } from './templates';
 import { feedbackRouter } from './feedback';
 import { contextRouter } from './context';
+import { changeOrderRouter } from './changeOrders';
 
 export const appRouter = router({
   auth: authRouter,
@@ -25,6 +26,7 @@ export const appRouter = router({
   templates: templatesRouter,
   feedback: feedbackRouter,
   context: contextRouter,
+  changeOrders: changeOrderRouter,
 });
 
 export type AppRouter = typeof appRouter;

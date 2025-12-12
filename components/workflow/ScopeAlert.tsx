@@ -1,10 +1,23 @@
-interface ScopeAlertProps {
+import { useState, useCallback } from 'react';
+
+export interface ScopeAlertProps {
   phrases: string[];
   confidence: number;
   onDismiss: () => void;
+  onFeedback?: (isCorrect: boolean, phrases: string[]) => void;
 }
 
-export function ScopeAlert({ phrases, confidence, onDismiss }: ScopeAlertProps) {
+export function ScopeAlert({ phrases, confidence, onDismiss, onFeedback }: ScopeAlertProps) {
+  const [feedbackGiven, setFeedbackGiven] = useState<boolean | null>(null);
+
+  const handleFeedback = useCallback(
+    (isCorrect: boolean) => {
+      setFeedbackGiven(isCorrect);
+      onFeedback?.(isCorrect, phrases);
+    },
+    [onFeedback, phrases]
+  );
+
   return (
     <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
       <div className="flex items-start gap-3">
@@ -61,14 +74,45 @@ export function ScopeAlert({ phrases, confidence, onDismiss }: ScopeAlertProps) 
             </div>
           )}
 
-          <div className="mt-3 flex items-center gap-3">
-            <span className="text-xs text-amber-600 dark:text-amber-400">
-              Confidence: {Math.round(confidence * 100)}%
-            </span>
-            <span className="text-xs text-amber-600 dark:text-amber-400">|</span>
-            <span className="text-xs text-amber-700 dark:text-amber-300">
-              Consider setting clear boundaries in your response
-            </span>
+          <div className="mt-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-amber-600 dark:text-amber-400">
+                Confidence: {Math.round(confidence * 100)}%
+              </span>
+            </div>
+
+            {/* Feedback buttons */}
+            {feedbackGiven === null ? (
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-amber-600 dark:text-amber-400 mr-2">
+                  Was this correct?
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleFeedback(true)}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 rounded transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleFeedback(false)}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Not scope creep
+                </button>
+              </div>
+            ) : (
+              <span className="text-xs text-amber-600 dark:text-amber-400">
+                {feedbackGiven ? 'Thanks for confirming!' : 'Thanks, we\'ll improve detection'}
+              </span>
+            )}
           </div>
         </div>
       </div>

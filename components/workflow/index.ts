@@ -1,4 +1,10 @@
-export { MessageInputForm } from './MessageInputForm';
+export { MessageInputForm, type ScopeCreepData } from './MessageInputForm';
 export { ContextSelector } from './ContextSelector';
 export { ResponseDisplay } from './ResponseDisplay';
 export { CopyPasteWorkflowComponent } from './CopyPasteWorkflowComponent';
+export { JobsToBedoneTabs } from './JobsToBedoneTabs';
+export { ScopeAlert, type ScopeAlertProps } from './ScopeAlert';
+export { ChangeOrderBuilder } from './ChangeOrderBuilder';
+export { ProtectScopePanel } from './ProtectScopePanel';
+export { MoveForwardPanel } from './MoveForwardPanel';
+export { TonePrintShowcase } from './TonePrintShowcase';
