@@ -41,20 +41,9 @@ const nextConfig = {
 
     return [
       {
-        // Apply security headers to all routes
-        source: '/:path*',
+        // Apply security headers to all routes (except API which handles its own CORS)
+        source: '/((?!api).*)',
         headers: securityHeaders,
-      },
-      {
-        // Apply CORS headers to API routes
-        source: '/api/:path*',
-        headers: [
-          ...securityHeaders,
-          { key: 'Access-Control-Allow-Credentials', value: 'true' },
-          { key: 'Access-Control-Allow-Origin', value: allowedOrigins[0] },
-          { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,DELETE,OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization' },
-        ],
       },
     ];
   },

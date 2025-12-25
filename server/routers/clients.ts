@@ -132,6 +132,64 @@ export const clientRouter = router({
       }
     }),
 
+  // Get client by email address (for Chrome extension)
+  getByEmail: protectedProcedure
+    .input(z.object({ email: z.string().email() }))
+    .query(async ({ input, ctx }) => {
+      try {
+        const { data, error } = await ctx.supabase
+          .from('clients')
+          .select('*')
+          .eq('email', input.email)
+          .eq('user_id', ctx.user.id)
+          .maybeSingle();
+
+        if (error) {
+          logError(error, { context: 'Fetch client by email' });
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to fetch client',
+          });
+        }
+
+        // Return null if no client found (not an error)
+        if (!data) {
+          return null;
+        }
+
+        const row = data as ClientRow;
+        const client: Client = {
+          id: row.id,
+          userId: row.user_id,
+          name: row.name,
+          email: row.email ?? undefined,
+          company: row.company ?? undefined,
+          phone: row.phone ?? undefined,
+          website: row.website ?? undefined,
+          notes: row.notes ?? undefined,
+          relationshipStage: row.relationship_stage as Client['relationshipStage'],
+          tags: row.tags || [],
+          priority: (row.priority as Client['priority']) || 'medium',
+          isArchived: row.is_archived || false,
+          lastContactDate: row.last_contact_date ?? undefined,
+          healthScore: row.health_score || 50,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        };
+
+        return client;
+      } catch (error) {
+        logError(error, { context: 'Get client by email' });
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'An unexpected error occurred',
+        });
+      }
+    }),
+
   create: protectedProcedure
     .input(clientSchema)
     .mutation(async ({ input, ctx }) => {

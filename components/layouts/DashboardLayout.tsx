@@ -5,6 +5,7 @@ import { useUIStore } from '../../stores/ui';
 import { UserProfileMenu } from '../UserProfileMenu';
 import ThemeToggle from '../shared/ThemeToggle';
 import { FeedbackButton } from '../feedback';
+import { ExtensionBanner } from '../dashboard/ExtensionBanner';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -45,6 +46,7 @@ export function DashboardLayout({
         )}
 
         <div className="flex-1 overflow-y-auto">
+          {isAuthenticated && <ExtensionBanner />}
           {children}
         </div>
       </main>

@@ -58,12 +58,32 @@ export const createContext = async (opts: CreateNextContextOptions): Promise<Con
   )
 
   try {
-    // Get user from session cookie
-    const { data: { user }, error } = await supabase.auth.getUser();
+    let user = null;
+    let authSource = 'none';
 
-    devLog.log('[tRPC Context] Session check:', { hasUser: !!user });
+    // Check for Bearer token first (for Chrome extension)
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.slice(7);
+      const { data: { user: tokenUser }, error: tokenError } = await supabaseAdmin.auth.getUser(token);
+      if (!tokenError && tokenUser) {
+        user = tokenUser;
+        authSource = 'bearer';
+      }
+    }
 
-    if (error || !user) {
+    // Fall back to cookie-based auth if no Bearer token
+    if (!user) {
+      const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser();
+      if (!cookieError && cookieUser) {
+        user = cookieUser;
+        authSource = 'cookie';
+      }
+    }
+
+    devLog.log('[tRPC Context] Session check:', { hasUser: !!user, authSource });
+
+    if (!user) {
       return { req, res, supabase: supabaseAdmin };
     }
 

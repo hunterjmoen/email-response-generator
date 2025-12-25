@@ -12,8 +12,9 @@ function addCorsHeaders(response: NextResponse, origin: string | null): NextResp
     ? allowedOriginsString.split(',').map(o => o.trim())
     : [defaultOrigin];
 
-  // Check if origin is allowed
-  const isAllowedOrigin = origin && allowedOrigins.includes(origin);
+  // Check if origin is allowed (including Chrome extension origins)
+  const isExtensionOrigin = origin?.startsWith('chrome-extension://') || false;
+  const isAllowedOrigin = origin && (allowedOrigins.includes(origin) || isExtensionOrigin);
 
   // Add CORS headers if origin is allowed
   if (isAllowedOrigin) {
