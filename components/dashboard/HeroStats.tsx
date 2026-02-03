@@ -78,9 +78,9 @@ export function HeroStats({ stats }: HeroStatsProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard
           icon={SparklesIcon}
-          label="Responses Used"
+          label="Total Responses"
           value={formatUsage()}
-          subtitle={isUnlimited ? 'Premium plan' : `${stats.usagePercentage}% of monthly limit`}
+          subtitle={isUnlimited ? 'All time • Premium plan' : `${stats.usagePercentage}% of monthly limit`}
           iconColor="text-green-600"
           bgColor="bg-green-50"
         />

@@ -76,7 +76,7 @@ export function ClientStats({ clients }: ClientStatsProps) {
             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">New Leads</p>
             <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.newLeads}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Avg {stats.avgProjectCount} projects/client
+              Potential clients
             </p>
           </div>
           <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
@@ -94,7 +94,7 @@ export function ClientStats({ clients }: ClientStatsProps) {
             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Needs Attention</p>
             <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.needsAttention}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {stats.highValue} high-value clients (5+ projects)
+              Requires follow-up
             </p>
           </div>
           <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-full">

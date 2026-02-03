@@ -12,6 +12,7 @@ export default function Home() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isMounted, setIsMounted] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isAuthenticated, isLoading } = useAuthStore();
 
   // Prevent hydration mismatch by only rendering auth UI on client
@@ -47,6 +48,20 @@ export default function Home() {
               <a href="#faq" className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition-colors">FAQ</a>
             </nav>
             <div className="flex items-center gap-4">
+              {/* Mobile hamburger menu button */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors md:hidden"
+                aria-label="Toggle menu"
+              >
+                <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {mobileMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
               <ThemeToggle />
               {!isLoading && (
                 <>
@@ -68,6 +83,35 @@ export default function Home() {
           </div>
         </div>
       </header>
+
+      {/* Mobile menu dropdown */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+          <nav className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-4">
+            <a
+              href="#features"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition-colors py-2"
+            >
+              Features
+            </a>
+            <Link
+              href="/pricing"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition-colors py-2"
+            >
+              Pricing
+            </Link>
+            <a
+              href="#faq"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition-colors py-2"
+            >
+              FAQ
+            </a>
+          </nav>
+        </div>
+      )}
 
       <section className="relative pt-24 pb-32 bg-gradient-to-br from-green-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden transition-colors">
         <div className="absolute inset-0 overflow-hidden">
@@ -331,7 +375,7 @@ export default function Home() {
               <div>
                 <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-4">Product</h4>
                 <ul className="space-y-3">
-                  <li><Link href="#features" className="text-sm text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors">Features</Link></li>
+                  <li><Link href="/#features" className="text-sm text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors">Features</Link></li>
                   <li><Link href="/pricing" className="text-sm text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors">Pricing</Link></li>
                   <li><a href="#faq" className="text-sm text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors">FAQ</a></li>
                 </ul>
@@ -340,7 +384,7 @@ export default function Home() {
           </div>
 
           <div className="border-t border-gray-200 dark:border-gray-700 mt-12 pt-8 text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400">© 2025 FreelanceFlow. All rights reserved.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">© {new Date().getFullYear()} FreelanceFlow. All rights reserved.</p>
           </div>
         </div>
       </footer>

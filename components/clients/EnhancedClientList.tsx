@@ -505,7 +505,7 @@ export function EnhancedClientList({
                       />
                     </div>
                     <span className={`text-xs font-medium ${getHealthScoreColor(client.healthScore ?? 50)}`}>
-                      {client.healthScore ?? 50}
+                      {client.healthScore ?? 50}/100
                     </span>
                   </div>
                 </td>

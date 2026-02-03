@@ -157,9 +157,11 @@ export function FollowUpRemindersWidget({ limit = 5 }: FollowUpRemindersWidgetPr
                 </div>
                 <div className="flex items-center gap-3 mt-1 text-sm text-gray-600 dark:text-gray-400">
                   <span>Last contact: {formatLastContact(reminder.daysSinceContact)}</span>
-                  <span className="text-xs text-gray-400 dark:text-gray-500">
-                    ({reminder.daysSinceContact} of {reminder.followUpInterval} days)
-                  </span>
+                  {reminder.daysSinceContact > reminder.followUpInterval && (
+                    <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+                      {reminder.daysSinceContact - reminder.followUpInterval} days overdue
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
